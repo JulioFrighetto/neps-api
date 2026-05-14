@@ -1,0 +1,42 @@
+from fastapi import FastAPI
+
+from app.core.database import Base, engine, seed_admin
+from app.core.models import *  # noqa: F401, F403 — registers all models with Base.metadata
+from app.core.settings import settings
+from app.domains.course.router import router as course_router
+from app.domains.education_institution.router import router as edu_institution_router
+from app.domains.health_center.router import router as health_center_router
+from app.domains.internship.router import router as internship_router
+from app.domains.room.router import router as room_router
+from app.domains.student.router import router as student_router
+from app.domains.user.auth_router import router as auth_router
+from app.domains.user.router import router as user_router
+
+# Create all tables on startup (SQLite dev mode)
+Base.metadata.create_all(bind=engine)
+
+seed_admin()
+
+app = FastAPI(
+    title=settings.APP_NAME,
+    version=settings.APP_VERSION,
+    docs_url="/docs",
+    redoc_url="/redoc",
+)
+
+# ── Routers ───────────────────────────────────────────────────────────────────
+API_PREFIX = "/api/v1"
+
+app.include_router(auth_router, prefix=API_PREFIX)
+app.include_router(user_router, prefix=API_PREFIX)
+app.include_router(edu_institution_router, prefix=API_PREFIX)
+app.include_router(course_router, prefix=API_PREFIX)
+app.include_router(health_center_router, prefix=API_PREFIX)
+app.include_router(room_router, prefix=API_PREFIX)
+app.include_router(student_router, prefix=API_PREFIX)
+app.include_router(internship_router, prefix=API_PREFIX)
+
+
+@app.get("/", tags=["Health"])
+def root():
+    return {"status": "ok", "app": settings.APP_NAME, "version": settings.APP_VERSION}

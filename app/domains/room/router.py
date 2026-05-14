@@ -1,0 +1,71 @@
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+
+from app.core.database import get_db
+from app.domains.room import repository
+from app.domains.room.schemas import (
+    RoomCreate,
+    RoomResponse,
+    RoomScheduleCreate,
+    RoomScheduleResponse,
+    RoomTimeTableCreate,
+    RoomTimeTableResponse,
+    RoomUpdate,
+)
+
+router = APIRouter(prefix="/rooms", tags=["Rooms"])
+
+
+@router.get("/", response_model=list[RoomResponse])
+def list_rooms(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    return repository.get_all(db, skip=skip, limit=limit)
+
+
+@router.get("/{room_id}", response_model=RoomResponse)
+def get_room(room_id: int, db: Session = Depends(get_db)):
+    room = repository.get_by_id(db, room_id)
+    if not room:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sala não encontrada")
+    return room
+
+
+@router.get("/by-health-center/{health_center_id}", response_model=list[RoomResponse])
+def list_rooms_by_health_center(health_center_id: int, db: Session = Depends(get_db)):
+    return repository.get_by_health_center(db, health_center_id)
+
+
+@router.post("/", response_model=RoomResponse, status_code=status.HTTP_201_CREATED)
+def create_room(data: RoomCreate, db: Session = Depends(get_db)):
+    return repository.create(db, data)
+
+
+@router.patch("/{room_id}", response_model=RoomResponse)
+def update_room(room_id: int, data: RoomUpdate, db: Session = Depends(get_db)):
+    room = repository.update(db, room_id, data)
+    if not room:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sala não encontrada")
+    return room
+
+
+@router.delete("/{room_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_room(room_id: int, db: Session = Depends(get_db)):
+    deleted = repository.delete(db, room_id)
+    if not deleted:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sala não encontrada")
+
+
+# ── Schedules ─────────────────────────────────────────────────────────────────
+
+@router.get("/{room_id}/schedules", response_model=list[RoomScheduleResponse])
+def list_room_schedules(room_id: int, db: Session = Depends(get_db)):
+    return repository.get_schedules_by_room(db, room_id)
+
+
+@router.post("/schedules", response_model=RoomScheduleResponse, status_code=status.HTTP_201_CREATED)
+def create_schedule(data: RoomScheduleCreate, db: Session = Depends(get_db)):
+    return repository.create_schedule(db, data)
+
+
+@router.post("/timetables", response_model=RoomTimeTableResponse, status_code=status.HTTP_201_CREATED)
+def create_timetable(data: RoomTimeTableCreate, db: Session = Depends(get_db)):
+    return repository.create_timetable(db, data)
