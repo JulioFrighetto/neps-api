@@ -1,6 +1,6 @@
 # Import all models here so SQLAlchemy's metadata is fully populated
 # before create_all() is called.
-from app.domains.education_institution.model import EducationInstitution  # noqa: F401
+from app.domains.education_institute.model import EducationInstitute  # noqa: F401
 from app.domains.course.model import Course  # noqa: F401
 from app.domains.internship_field.model import InternshipField  # noqa: F401
 from app.domains.region.model import Region  # noqa: F401

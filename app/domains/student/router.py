@@ -26,9 +26,9 @@ def list_students_by_course(course_id: int, db: Session = Depends(get_db)):
     return repository.get_by_course(db, course_id)
 
 
-@router.get("/by-institution/{institution_id}", response_model=list[StudentResponse])
-def list_students_by_institution(institution_id: int, db: Session = Depends(get_db)):
-    return repository.get_by_institution(db, institution_id)
+@router.get("/by-institute/{institute_id}", response_model=list[StudentResponse])
+def list_students_by_institute(institute_id: int, db: Session = Depends(get_db)):
+    return repository.get_by_institute(db, institute_id)
 
 
 @router.post("/", response_model=StudentResponse, status_code=status.HTTP_201_CREATED)

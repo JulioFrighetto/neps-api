@@ -10,8 +10,8 @@ class Course(Base):
     __tablename__ = "courses"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    edu_institution_id: Mapped[int] = mapped_column(
-        ForeignKey("education_institutions.id"), nullable=False
+    edu_institute_id: Mapped[int] = mapped_column(
+        ForeignKey("education_institutes.id"), nullable=False
     )
     name: Mapped[str] = mapped_column(String(20), nullable=False)
     requires_gurney: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
@@ -21,8 +21,8 @@ class Course(Base):
     )
 
     # Relationships
-    education_institution: Mapped["EducationInstitution"] = relationship(  # noqa: F821
-        "EducationInstitution", back_populates="courses"
+    education_institute: Mapped["EducationInstitute"] = relationship(  # noqa: F821
+        "EducationInstitute", back_populates="courses"
     )
     students: Mapped[list["Student"]] = relationship(  # noqa: F821
         "Student", back_populates="course"

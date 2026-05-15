@@ -14,7 +14,7 @@ class Student(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     edu_institute_id: Mapped[int] = mapped_column(
-        ForeignKey("education_institutions.id"), nullable=False
+        ForeignKey("education_institutes.id"), nullable=False
     )
     course_id: Mapped[int] = mapped_column(ForeignKey("courses.id"), nullable=False)
     status: Mapped[str] = mapped_column(String(20), default="PENDING", nullable=False)
@@ -25,7 +25,7 @@ class Student(Base):
     )
 
     # Relationships
-    education_institution: Mapped["EducationInstitution"] = relationship(  # noqa: F821
-        "EducationInstitution", back_populates="students"
+    education_institute: Mapped["EducationInstitute"] = relationship(  # noqa: F821
+        "EducationInstitute", back_populates="students"
     )
     course: Mapped["Course"] = relationship("Course", back_populates="students")  # noqa: F821

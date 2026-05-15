@@ -16,8 +16,8 @@ def get_by_course(db: Session, course_id: int) -> list[Student]:
     return db.query(Student).filter(Student.course_id == course_id).all()
 
 
-def get_by_institution(db: Session, institution_id: int) -> list[Student]:
-    return db.query(Student).filter(Student.edu_institute_id == institution_id).all()
+def get_by_institute(db: Session, institute_id: int) -> list[Student]:
+    return db.query(Student).filter(Student.edu_institute_id == institute_id).all()
 
 
 def create(db: Session, data: StudentCreate) -> Student:

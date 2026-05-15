@@ -4,6 +4,30 @@ API REST para gestão de estágios pelo NEPS.
 
 ---
 
+## Tecnologias
+
+<p align="left">
+  <a href="https://www.python.org/">
+    <img src="https://img.shields.io/badge/Python-3.12-blue?logo=python&logoColor=white" alt="Python 3.12">
+  </a>
+
+  <a href="https://pypi.org/project/fastapi/0.111.0/">
+    <img src="https://img.shields.io/badge/FastAPI-0.111.0-009688?logo=fastapi&logoColor=white" alt="FastAPI">
+  </a>
+
+  <a href="https://pypi.org/project/SQLAlchemy/2.0.30/">
+    <img src="https://img.shields.io/badge/SQLAlchemy-2.0.30-red?logo=sqlalchemy&logoColor=white" alt="SQLAlchemy">
+  </a>
+
+  <a href="https://pypi.org/project/pydantic/2.7.1/">
+    <img src="https://img.shields.io/badge/Pydantic-2.7.1-E92063?logo=pydantic&logoColor=white" alt="Pydantic">
+  </a>
+
+  <a href="https://pypi.org/project/uvicorn/0.29.0/">
+    <img src="https://img.shields.io/badge/Uvicorn-0.29.0-4051B5?logo=uvicorn&logoColor=white" alt="Uvicorn">
+  </a>
+</p>
+
 ## Estrutura do projeto
 
 ```
@@ -15,7 +39,7 @@ NEPS-API/
 │   │   ├── models.py                # Registry central de modelos (garante create_all)
 │   │   └── settings.py              # Configurações via Pydantic Settings / .env
 │   └── domains/
-│       ├── education_institution/   # Instituição de Ensino
+│       ├── education_institute/   # Instituição de Ensino
 │       │   ├── model.py
 │       │   ├── schemas.py
 │       │   ├── repository.py

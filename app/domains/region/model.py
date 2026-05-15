@@ -10,8 +10,8 @@ class Region(Base):
     __tablename__ = "regions"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    priority_education_institution: Mapped[int | None] = mapped_column(
-        ForeignKey("education_institutions.id"), nullable=True
+    priority_education_institute: Mapped[int | None] = mapped_column(
+        ForeignKey("education_institutes.id"), nullable=True
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

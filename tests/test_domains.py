@@ -43,11 +43,11 @@ def client(db):
     app.dependency_overrides.clear()
 
 
-# ── EducationInstitution ──────────────────────────────────────────────────────
+# ── EducationInstitute ──────────────────────────────────────────────────────
 
-def test_create_education_institution(client):
+def test_create_education_institute(client):
     response = client.post(
-        "/api/v1/education-institutions",
+        "/api/v1/education-institutes",
         json={"name": "UNISINOS", "is_active": True},
     )
     assert response.status_code == 201
@@ -56,9 +56,9 @@ def test_create_education_institution(client):
     assert data["id"] is not None
 
 
-def test_list_education_institutions(client):
-    client.post("/api/v1/education-institutions", json={"name": "UNISINOS"})
-    response = client.get("/api/v1/education-institutions")
+def test_list_education_institutes(client):
+    client.post("/api/v1/education-institutes", json={"name": "UNISINOS"})
+    response = client.get("/api/v1/education-institutes")
     assert response.status_code == 200
     assert len(response.json()) >= 1
 
@@ -99,11 +99,11 @@ def test_create_room(client):
 # ── Course ────────────────────────────────────────────────────────────────────
 
 def test_create_course(client):
-    inst = client.post("/api/v1/education-institutions", json={"name": "PUCRS"}).json()
+    inst = client.post("/api/v1/education-institutes", json={"name": "PUCRS"}).json()
     response = client.post(
         "/api/v1/courses",
         json={
-            "edu_institution_id": inst["id"],
+            "edu_institute_id": inst["id"],
             "name": "Enfermagem",
             "requires_gurney": True,
         },
@@ -115,10 +115,10 @@ def test_create_course(client):
 # ── Student ───────────────────────────────────────────────────────────────────
 
 def test_create_student(client):
-    inst = client.post("/api/v1/education-institutions", json={"name": "FEEVALE"}).json()
+    inst = client.post("/api/v1/education-institutes", json={"name": "FEEVALE"}).json()
     course = client.post(
         "/api/v1/courses",
-        json={"edu_institution_id": inst["id"], "name": "Fisioterapia", "requires_gurney": False},
+        json={"edu_institute_id": inst["id"], "name": "Fisioterapia", "requires_gurney": False},
     ).json()
     response = client.post(
         "/api/v1/students",

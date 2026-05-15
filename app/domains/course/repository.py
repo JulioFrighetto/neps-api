@@ -12,8 +12,8 @@ def get_by_id(db: Session, course_id: int) -> Course | None:
     return db.query(Course).filter(Course.id == course_id).first()
 
 
-def get_by_institution(db: Session, institution_id: int) -> list[Course]:
-    return db.query(Course).filter(Course.edu_institution_id == institution_id).all()
+def get_by_institute(db: Session, institute_id: int) -> list[Course]:
+    return db.query(Course).filter(Course.edu_institute_id == institute_id).all()
 
 
 def create(db: Session, data: CourseCreate) -> Course:

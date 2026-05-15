@@ -4,7 +4,7 @@ from pydantic import BaseModel, ConfigDict
 
 
 class CourseBase(BaseModel):
-    edu_institution_id: int
+    edu_institute_id: int
     name: str
     requires_gurney: bool = False
 

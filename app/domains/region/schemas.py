@@ -4,7 +4,7 @@ from pydantic import BaseModel, ConfigDict
 
 
 class RegionBase(BaseModel):
-    priority_education_institution: int | None = None
+    priority_education_institute: int | None = None
     is_active: bool = True
 
 
@@ -13,7 +13,7 @@ class RegionCreate(RegionBase):
 
 
 class RegionUpdate(BaseModel):
-    priority_education_institution: int | None = None
+    priority_education_institute: int | None = None
     is_active: bool | None = None
 
 

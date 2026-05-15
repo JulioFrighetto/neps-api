@@ -3,21 +3,21 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict
 
 
-class EducationInstitutionBase(BaseModel):
+class EducationInstituteBase(BaseModel):
     name: str
     is_active: bool = True
 
 
-class EducationInstitutionCreate(EducationInstitutionBase):
+class EducationInstituteCreate(EducationInstituteBase):
     pass
 
 
-class EducationInstitutionUpdate(BaseModel):
+class EducationInstituteUpdate(BaseModel):
     name: str | None = None
     is_active: bool | None = None
 
 
-class EducationInstitutionResponse(EducationInstitutionBase):
+class EducationInstituteResponse(EducationInstituteBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
