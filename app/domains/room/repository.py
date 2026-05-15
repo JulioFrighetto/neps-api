@@ -17,8 +17,8 @@ def get_by_id(db: Session, room_id: int) -> Room | None:
     return db.query(Room).filter(Room.id == room_id).first()
 
 
-def get_by_health_center(db: Session, health_center_id: int) -> list[Room]:
-    return db.query(Room).filter(Room.health_center_id == health_center_id).all()
+def get_by_internship_field(db: Session, internship_field_id: int) -> list[Room]:
+    return db.query(Room).filter(Room.internship_field_id == internship_field_id).all()
 
 
 def create(db: Session, data: RoomCreate) -> Room:

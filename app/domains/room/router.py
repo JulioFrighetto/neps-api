@@ -29,9 +29,9 @@ def get_room(room_id: int, db: Session = Depends(get_db)):
     return room
 
 
-@router.get("/by-health-center/{health_center_id}", response_model=list[RoomResponse])
-def list_rooms_by_health_center(health_center_id: int, db: Session = Depends(get_db)):
-    return repository.get_by_health_center(db, health_center_id)
+@router.get("/by-internship_field/{internship_field_id}", response_model=list[RoomResponse])
+def list_rooms_by_internship_field(internship_field_id: int, db: Session = Depends(get_db)):
+    return repository.get_by_internship_field(db, internship_field_id)
 
 
 @router.post("/", response_model=RoomResponse, status_code=status.HTTP_201_CREATED)

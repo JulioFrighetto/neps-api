@@ -8,7 +8,7 @@ Shift = Literal["MAN", "TRD", "VSP"]
 
 
 class RoomBase(BaseModel):
-    health_center_id: int
+    internship_field_id: int
     name: str
     room_capacity: int
     has_gurney: bool = False

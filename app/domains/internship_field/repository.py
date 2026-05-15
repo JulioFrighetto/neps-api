@@ -1,47 +1,47 @@
 from sqlalchemy.orm import Session
 
-from app.domains.health_center.model import HealthCenter, Region
-from app.domains.health_center.schemas import (
-    HealthCenterCreate,
-    HealthCenterUpdate,
+from app.domains.internship_field.model import InternshipField, Region
+from app.domains.internship_field.schemas import (
+    InternshipFieldCreate,
+    InternshipFieldUpdate,
     RegionCreate,
     RegionUpdate,
 )
 
 
-# HealthCenter
-def get_all(db: Session, skip: int = 0, limit: int = 100) -> list[HealthCenter]:
-    return db.query(HealthCenter).offset(skip).limit(limit).all()
+# InternshipField
+def get_all(db: Session, skip: int = 0, limit: int = 100) -> list[InternshipField]:
+    return db.query(InternshipField).offset(skip).limit(limit).all()
 
 
-def get_by_id(db: Session, health_center_id: int) -> HealthCenter | None:
-    return db.query(HealthCenter).filter(HealthCenter.id == health_center_id).first()
+def get_by_id(db: Session, internship_field_id: int) -> InternshipField | None:
+    return db.query(InternshipField).filter(InternshipField.id == internship_field_id).first()
 
 
-def create(db: Session, data: HealthCenterCreate) -> HealthCenter:
-    health_center = HealthCenter(**data.model_dump())
-    db.add(health_center)
+def create(db: Session, data: InternshipFieldCreate) -> InternshipField:
+    internship_field = InternshipField(**data.model_dump())
+    db.add(internship_field)
     db.commit()
-    db.refresh(health_center)
-    return health_center
+    db.refresh(internship_field)
+    return internship_field
 
 
-def update(db: Session, health_center_id: int, data: HealthCenterUpdate) -> HealthCenter | None:
-    health_center = get_by_id(db, health_center_id)
-    if not health_center:
+def update(db: Session, internship_field_id: int, data: InternshipFieldUpdate) -> InternshipField | None:
+    internship_field = get_by_id(db, internship_field_id)
+    if not internship_field:
         return None
     for field, value in data.model_dump(exclude_unset=True).items():
-        setattr(health_center, field, value)
+        setattr(internship_field, field, value)
     db.commit()
-    db.refresh(health_center)
-    return health_center
+    db.refresh(internship_field)
+    return internship_field
 
 
-def delete(db: Session, health_center_id: int) -> bool:
-    health_center = get_by_id(db, health_center_id)
-    if not health_center:
+def delete(db: Session, internship_field_id: int) -> bool:
+    internship_field = get_by_id(db, internship_field_id)
+    if not internship_field:
         return False
-    db.delete(health_center)
+    db.delete(internship_field)
     db.commit()
     return True
 

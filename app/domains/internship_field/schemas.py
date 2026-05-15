@@ -3,23 +3,23 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict
 
 
-class HealthCenterBase(BaseModel):
+class InternshipFieldBase(BaseModel):
     name: str
     region_id: int | None = None
     is_active: bool = True
 
 
-class HealthCenterCreate(HealthCenterBase):
+class InternshipFieldCreate(InternshipFieldBase):
     pass
 
 
-class HealthCenterUpdate(BaseModel):
+class InternshipFieldUpdate(BaseModel):
     name: str | None = None
     region_id: int | None = None
     is_active: bool | None = None
 
 
-class HealthCenterResponse(HealthCenterBase):
+class InternshipFieldResponse(InternshipFieldBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int

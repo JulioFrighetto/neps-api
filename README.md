@@ -21,7 +21,7 @@ NEPS-API/
 │       │   ├── repository.py
 │       │   └── router.py
 │       ├── course/                  # Curso
-│       ├── health_center/           # UBS + Região
+│       ├── internship_field/           # UBS + Região
 │       ├── room/                    # Sala + RoomSchedule + RoomTimeTable + TimeTableStudent
 │       ├── student/                 # Aluno
 │       └── internship/              # Vaga de Estágio + Registro + Documentos

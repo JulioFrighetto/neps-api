@@ -6,8 +6,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 
 
-class HealthCenter(Base):
-    __tablename__ = "health_centers"
+class InternshipField(Base):
+    __tablename__ = "internship_field"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -19,7 +19,7 @@ class HealthCenter(Base):
     )
 
     # Relationships
-    rooms: Mapped[list["Room"]] = relationship("Room", back_populates="health_center")  # noqa: F821
+    rooms: Mapped[list["Room"]] = relationship("Room", back_populates="internship_field")  # noqa: F821
     # users relationship will be added when the User domain is implemented
 
 
@@ -37,6 +37,6 @@ class Region(Base):
     )
 
     # Relationships
-    health_centers: Mapped[list["HealthCenter"]] = relationship(
-        "HealthCenter", foreign_keys="HealthCenter.region_id"
+    internship_field: Mapped[list["InternshipField"]] = relationship(
+        "InternshipField", foreign_keys="InternshipField.region_id"
     )
