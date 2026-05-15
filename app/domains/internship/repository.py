@@ -16,10 +16,10 @@ def get_all(db: Session, skip: int = 0, limit: int = 100) -> list[Internship]:
 def get_by_id(db: Session, internship_id: int) -> Internship | None:
     return db.query(Internship).filter(Internship.id == internship_id).first()
 
-def get_by_edu_institute(db: Session, edu_institute: int) -> list[Internship]:
+def get_by_edu_institute(db: Session, edu_institute_id: int) -> list[Internship]:
     return db.query(Internship)\
         .join(Student, Internship.student_id == Student.id)\
-        .filter(Student.edu_institute_id == edu_institute)\
+        .filter(Student.edu_institute_id == edu_institute_id)\
         .all()
 
 def get_by_field(db: Session, field_id: int) -> list[Internship]:
