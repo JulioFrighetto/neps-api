@@ -29,9 +29,3 @@ class Student(Base):
         "EducationInstitution", back_populates="students"
     )
     course: Mapped["Course"] = relationship("Course", back_populates="students")  # noqa: F821
-    internship_records: Mapped[list["InternshipRecord"]] = relationship(  # noqa: F821
-        "InternshipRecord", back_populates="student"
-    )
-    timetable_slots: Mapped[list["TimeTableStudent"]] = relationship(  # noqa: F821
-        "TimeTableStudent", back_populates="student"
-    )

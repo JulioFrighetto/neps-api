@@ -1,10 +1,8 @@
 from sqlalchemy.orm import Session
 
-from app.domains.room.model import Room, RoomSchedule, RoomTimeTable
+from app.domains.room.model import Room
 from app.domains.room.schemas import (
     RoomCreate,
-    RoomScheduleCreate,
-    RoomTimeTableCreate,
     RoomUpdate,
 )
 
@@ -47,25 +45,3 @@ def delete(db: Session, room_id: int) -> bool:
     db.delete(room)
     db.commit()
     return True
-
-
-# RoomSchedule
-def create_schedule(db: Session, data: RoomScheduleCreate) -> RoomSchedule:
-    schedule = RoomSchedule(**data.model_dump())
-    db.add(schedule)
-    db.commit()
-    db.refresh(schedule)
-    return schedule
-
-
-def get_schedules_by_room(db: Session, room_id: int) -> list[RoomSchedule]:
-    return db.query(RoomSchedule).filter(RoomSchedule.room_id == room_id).all()
-
-
-# RoomTimeTable
-def create_timetable(db: Session, data: RoomTimeTableCreate) -> RoomTimeTable:
-    timetable = RoomTimeTable(**data.model_dump())
-    db.add(timetable)
-    db.commit()
-    db.refresh(timetable)
-    return timetable

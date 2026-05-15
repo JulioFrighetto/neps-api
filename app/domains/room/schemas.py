@@ -32,36 +32,3 @@ class RoomResponse(RoomBase):
     id: int
     created_at: datetime
     updated_at: datetime
-
-
-# RoomSchedule schemas
-class RoomScheduleBase(BaseModel):
-    room_id: int
-    week_day: WeekDay
-
-
-class RoomScheduleCreate(RoomScheduleBase):
-    pass
-
-
-class RoomScheduleResponse(RoomScheduleBase):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-
-
-# RoomTimeTable schemas
-class RoomTimeTableBase(BaseModel):
-    schedule_id: int
-    time_table: Shift
-    is_active: bool = True
-
-
-class RoomTimeTableCreate(RoomTimeTableBase):
-    pass
-
-
-class RoomTimeTableResponse(RoomTimeTableBase):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int

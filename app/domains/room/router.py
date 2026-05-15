@@ -6,10 +6,6 @@ from app.domains.room import repository
 from app.domains.room.schemas import (
     RoomCreate,
     RoomResponse,
-    RoomScheduleCreate,
-    RoomScheduleResponse,
-    RoomTimeTableCreate,
-    RoomTimeTableResponse,
     RoomUpdate,
 )
 
@@ -52,20 +48,3 @@ def delete_room(room_id: int, db: Session = Depends(get_db)):
     deleted = repository.delete(db, room_id)
     if not deleted:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sala não encontrada")
-
-
-# ── Schedules ─────────────────────────────────────────────────────────────────
-
-@router.get("/{room_id}/schedules", response_model=list[RoomScheduleResponse])
-def list_room_schedules(room_id: int, db: Session = Depends(get_db)):
-    return repository.get_schedules_by_room(db, room_id)
-
-
-@router.post("/schedules", response_model=RoomScheduleResponse, status_code=status.HTTP_201_CREATED)
-def create_schedule(data: RoomScheduleCreate, db: Session = Depends(get_db)):
-    return repository.create_schedule(db, data)
-
-
-@router.post("/timetables", response_model=RoomTimeTableResponse, status_code=status.HTTP_201_CREATED)
-def create_timetable(data: RoomTimeTableCreate, db: Session = Depends(get_db)):
-    return repository.create_timetable(db, data)
