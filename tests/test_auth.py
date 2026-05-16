@@ -4,6 +4,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.core.database import Base, get_db
+from app.core.email import EmailDeliveryError
+from app.core.jwt import create_reset_token, decode_reset_token
 from app.core.models import *  # noqa: F401, F403
 from app.main import app
 
@@ -101,6 +103,86 @@ def test_refresh_with_access_token_rejected(client):
     tokens = _seed_and_login(client)
     resp = client.post("/api/v1/auth/refresh", json={"refresh_token": tokens["access_token"]})
     assert resp.status_code == 401
+
+
+def test_reset_password_request_sends_email(client, monkeypatch):
+    _seed_and_login(client, email="reset@test.com", password="oldpass")
+
+    captured = {}
+
+    def fake_send_email(to_email, subject, body):
+        captured["to_email"] = to_email
+        captured["subject"] = subject
+        captured["body"] = body
+
+    monkeypatch.setattr("app.domains.user.auth_router.send_email", fake_send_email)
+
+    resp = client.post(
+        "/api/v1/auth/reset-password",
+        json={"email": "reset@test.com"},
+    )
+    assert resp.status_code == 204
+
+    assert captured["to_email"] == "reset@test.com"
+    assert captured["subject"] == "Redefinição de senha"
+    assert "http://localhost:5173/reset-password?token=" in captured["body"]
+
+
+def test_reset_password_confirm_with_token(client):
+    from app.domains.user.repository import create
+    from app.domains.user.schemas import UserCreate
+
+    db = next(app.dependency_overrides[get_db]())
+    user = create(db, UserCreate(name="Reset", email="token@test.com", password="oldpass"))
+    token = create_reset_token(user.email)
+
+    decoded = decode_reset_token(token)
+    assert decoded["email"] == "token@test.com"
+    assert "requested_at" in decoded
+
+    resp = client.post(
+        "/api/v1/auth/reset-password/confirm",
+        json={"hash": token, "new_password": "newpass"},
+    )
+    assert resp.status_code == 204
+
+    assert client.post("/api/v1/auth/login", json={"email": "token@test.com", "password": "oldpass"}).status_code == 401
+    assert client.post("/api/v1/auth/login", json={"email": "token@test.com", "password": "newpass"}).status_code == 200
+
+
+def test_reset_password_confirm_rejects_invalid_hash(client):
+    resp = client.post(
+        "/api/v1/auth/reset-password/confirm",
+        json={"hash": "invalid-hash", "new_password": "newpass"},
+    )
+    assert resp.status_code == 401
+
+
+def test_test_email_route(client, monkeypatch):
+    captured = {}
+
+    def fake_send_email(to_email, subject, body):
+        captured["to_email"] = to_email
+        captured["subject"] = subject
+        captured["body"] = body
+
+    monkeypatch.setattr("app.domains.user.auth_router.send_email", fake_send_email)
+
+    resp = client.post("/api/v1/auth/test-email", json={"email": "alexdonay@gmail.com"})
+    assert resp.status_code == 204
+    assert captured["to_email"] == "alexdonay@gmail.com"
+    assert captured["subject"] == "Teste de envio de e-mail"
+
+
+def test_test_email_route_returns_502_on_smtp_failure(client, monkeypatch):
+    def fake_send_email(*args, **kwargs):
+        raise EmailDeliveryError("Falha ao enviar e-mail: autenticação recusada")
+
+    monkeypatch.setattr("app.domains.user.auth_router.send_email", fake_send_email)
+
+    resp = client.post("/api/v1/auth/test-email", json={"email": "alexdonay@gmail.com"})
+    assert resp.status_code == 502
+    assert resp.json()["detail"] == "Falha ao enviar e-mail: autenticação recusada"
 
 
 def test_create_user(client):
