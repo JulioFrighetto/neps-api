@@ -54,6 +54,20 @@ def change_password(
     return user
 
 
+def reset_password(db: Session, user_id: int, new_password: str) -> User | None:
+    user = get_by_id(db, user_id)
+    if not user:
+        return None
+    user.password = hash_password(new_password)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+def has_email(db: Session, email: str) -> bool:
+    return get_by_email(db, email) is not None
+
+
 def delete(db: Session, user_id: int) -> bool:
     user = get_by_id(db, user_id)
     if not user:

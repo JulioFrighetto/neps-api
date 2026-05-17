@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import AliasChoices, BaseModel, ConfigDict, EmailStr, Field
 
 
 class UserBase(BaseModel):
@@ -47,3 +47,21 @@ class TokenResponse(BaseModel):
 
 class RefreshRequest(BaseModel):
     refresh_token: str
+
+
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+
+
+class PasswordResetConfirmRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    reset_hash: str = Field(
+        validation_alias=AliasChoices("hash", "reset_hash", "reset_token"),
+        serialization_alias="hash",
+    )
+    new_password: str
+
+
+class TestEmailRequest(BaseModel):
+    email: EmailStr

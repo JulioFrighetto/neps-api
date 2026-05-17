@@ -85,6 +85,49 @@ open http://localhost:8000/docs
 | `ALGORITHM` | Algoritmo para gerar os tokens  |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Tempo para o token expirar |
 | `REFRESH_TOKEN_EXPIRE_DAYS` | Dias para o token de refresh expirar  |
+| `RESET_TOKEN_EXPIRE_MINUTES` | Tempo para o link de redefinição expirar |
+| `FRONTEND_URL` | URL do frontend para montar o link do e-mail |
+| `SMTP_HOST` | Servidor SMTP para envio dos e-mails |
+| `SMTP_PORT` | Porta SMTP |
+| `SMTP_USERNAME` | Usuário SMTP |
+| `SMTP_PASSWORD` | Senha SMTP |
+| `SMTP_FROM` | E-mail remetente |
+| `SMTP_FROM_NAME` | Nome exibido como remetente |
+| `SMTP_USE_TLS` | Usa TLS no envio |
+| `SMTP_USE_SSL` | Usa SSL no envio |
+| `CORS_ORIGINS` | Lista JSON com as origens permitidas no navegador |
+
+Exemplo de `.env`:
+
+```env
+DATABASE_URL="sqlite:///./neps.db"
+APP_NAME="Neps API"
+APP_VERSION="0.1.0"
+DEBUG=true
+SECRET_KEY="coloque_uma_chave_forte_aqui"
+ALGORITHM="HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES=60
+REFRESH_TOKEN_EXPIRE_DAYS=7
+RESET_TOKEN_EXPIRE_MINUTES=30
+FRONTEND_URL="http://localhost:5173"
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT=587
+SMTP_USERNAME="alexdonay@gmail.com"
+SMTP_PASSWORD="sua_senha_de_app_do_gmail"
+SMTP_FROM="alexdonay@gmail.com"
+SMTP_FROM_NAME="NEPS API"
+SMTP_USE_TLS=true
+SMTP_USE_SSL=false
+CORS_ORIGINS=["http://localhost:3000","http://localhost:5173","http://localhost:8000","http://127.0.0.1:3000","http://127.0.0.1:5173","http://127.0.0.1:8000"]
+```
+
+Se você for enviar pelo Gmail, use senha de app na `SMTP_PASSWORD`.
+
+Fluxo de recuperação de senha:
+
+1. `POST /api/v1/auth/reset-password` com o `email` do usuário.
+1. O backend envia um e-mail com link para `FRONTEND_URL/reset-password?token=...`.
+1. O frontend envia `POST /api/v1/auth/reset-password/confirm` com `reset_token` e `new_password`.
 
 ---
 
@@ -92,6 +135,14 @@ open http://localhost:8000/docs
 
 ```bash
 python -c "import secrets; print(secrets.token_hex(32))"
+```
+
+---
+
+## Rodar seed
+
+```bash
+python.exe -c "from app.core.database import Base, engine, seed_admin; Base.metadata.create_all(bind=engine); seed_admin(); print('seed_admin executed')"
 ```
 
 ---
