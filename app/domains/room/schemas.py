@@ -1,14 +1,10 @@
 from datetime import datetime
-from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
-WeekDay = Literal["SEG", "TER", "QUA", "QUI", "SEX"]
-Shift = Literal["MAN", "TRD", "VSP"]
-
 
 class RoomBase(BaseModel):
-    internship_field_id: int
+    service_id: int
     name: str
     room_capacity: int
     has_gurney: bool = False

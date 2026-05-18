@@ -7,8 +7,11 @@ from app.domains.region.schemas import (
 )
 
 # Region
-def get_all_regions(db: Session, skip: int = 0, limit: int = 100) -> list[Region]:
-    return db.query(Region).offset(skip).limit(limit).all()
+def get_all_regions(db: Session, skip: int = 0, limit: int = 100) -> tuple[list[Region], int]:
+    query = db.query(Region)
+    total = query.count()
+    items = query.offset(skip).limit(limit).all()
+    return items, total
 
 
 def get_region_by_id(db: Session, region_id: int) -> Region | None:

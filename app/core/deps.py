@@ -41,3 +41,14 @@ def get_current_user(
             detail="Usuário não encontrado ou inativo",
         )
     return user
+
+
+def get_current_admin_user(
+    current_user=Depends(get_current_user),
+):
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acesso restrito a administradores",
+        )
+    return current_user

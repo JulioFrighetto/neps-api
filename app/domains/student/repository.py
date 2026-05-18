@@ -4,20 +4,29 @@ from app.domains.student.model import Student
 from app.domains.student.schemas import StudentCreate, StudentUpdate
 
 
-def get_all(db: Session, skip: int = 0, limit: int = 100) -> list[Student]:
-    return db.query(Student).offset(skip).limit(limit).all()
+def get_all(db: Session, skip: int = 0, limit: int = 100) -> tuple[list[Student], int]:
+    query = db.query(Student)
+    total = query.count()
+    items = query.offset(skip).limit(limit).all()
+    return items, total
 
 
 def get_by_id(db: Session, student_id: int) -> Student | None:
     return db.query(Student).filter(Student.id == student_id).first()
 
 
-def get_by_course(db: Session, course_id: int) -> list[Student]:
-    return db.query(Student).filter(Student.course_id == course_id).all()
+def get_by_course(db: Session, course_id: int, skip: int = 0, limit: int = 100) -> tuple[list[Student], int]:
+    query = db.query(Student).filter(Student.course_id == course_id)
+    total = query.count()
+    items = query.offset(skip).limit(limit).all()
+    return items, total
 
 
-def get_by_institute(db: Session, institute_id: int) -> list[Student]:
-    return db.query(Student).filter(Student.edu_institute_id == institute_id).all()
+def get_by_institute(db: Session, institute_id: int, skip: int = 0, limit: int = 100) -> tuple[list[Student], int]:
+    query = db.query(Student).filter(Student.edu_institute_id == institute_id)
+    total = query.count()
+    items = query.offset(skip).limit(limit).all()
+    return items, total
 
 
 def create(db: Session, data: StudentCreate) -> Student:

@@ -2,6 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.deps import get_current_user
+from app.core.schemas import Page
 from app.domains.internship_field import repository
 from app.domains.internship_field.schemas import (
     InternshipFieldCreate,
@@ -12,9 +14,22 @@ from app.domains.internship_field.schemas import (
 router = APIRouter(tags=["Internship Field"])
 
 
-@router.get("/internship-field", response_model=list[InternshipFieldResponse])
-def list_internship_field(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    return repository.get_all(db, skip=skip, limit=limit)
+@router.get("/internship-field", response_model=Page[InternshipFieldResponse])
+def list_internship_field(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    if current_user.role == "admin":
+        items, total = repository.get_all(db, skip=skip, limit=limit)
+    elif current_user.role == "internship_field" and current_user.internship_field_id is not None:
+        field = repository.get_by_id(db, current_user.internship_field_id)
+        items = [field] if field else []
+        total = 1 if field else 0
+    else:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
+    return Page(items=items, total=total, skip=skip, limit=limit, has_next=skip + limit < total)
 
 
 @router.get("/internship-field/{internship_field_id}", response_model=InternshipFieldResponse)
@@ -38,10 +53,3 @@ def update_internship_field(
     if not hc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="UBS não encontrada")
     return hc
-
-
-@router.delete("/internship-field/{internship_field_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_internship_field(internship_field_id: int, db: Session = Depends(get_db)):
-    deleted = repository.delete(db, internship_field_id)
-    if not deleted:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="UBS não encontrada")

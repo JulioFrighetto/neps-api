@@ -1,0 +1,1 @@
+from app.domains.room_schedule import model, schemas

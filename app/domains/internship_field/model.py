@@ -19,5 +19,4 @@ class InternshipField(Base):
     )
 
     # Relationships
-    rooms: Mapped[list["Room"]] = relationship("Room", back_populates="internship_field")  # noqa: F821
-    # users relationship will be added when the User domain is implemented
+    users: Mapped[list["User"]] = relationship("User", back_populates="internship_field")  # noqa: F821

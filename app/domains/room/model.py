@@ -10,7 +10,7 @@ class Room(Base):
     __tablename__ = "rooms"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    internship_field_id: Mapped[int] = mapped_column(ForeignKey("internship_field.id"), nullable=False)
+    service_id: Mapped[int] = mapped_column(ForeignKey("services.id"), nullable=False)
     name: Mapped[str] = mapped_column(String(20), nullable=False)
     room_capacity: Mapped[int] = mapped_column(Integer, nullable=False)
     has_gurney: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
@@ -20,11 +20,12 @@ class Room(Base):
         DateTime, server_default=func.now(), onupdate=func.now()
     )
 
-    # Relationships
-    internship_field: Mapped["InternshipField"] = relationship(  # noqa: F821
-        "InternshipField", back_populates="rooms"
-    )
+    service: Mapped["Service"] = relationship("Service", back_populates="rooms")  # noqa: F821
 
     internships: Mapped[list["Internship"]] = relationship(
         "Internship", back_populates="room"
+    )
+
+    schedules: Mapped[list["RoomSchedule"]] = relationship(  # noqa: F821
+        "RoomSchedule", back_populates="room"
     )

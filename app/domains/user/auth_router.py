@@ -27,8 +27,28 @@ from app.domains.user.schemas import (
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
+def _build_access_token_extra(user) -> dict[str, int | str | None]:
+    return {
+        "user_name": user.name,
+        "service_id": user.service_id,
+        "service_name": user.service.name if user.service else None,
+        "education_institute_id": user.education_institute_id,
+        "education_institute_name": (
+            user.education_institute.name if user.education_institute else None
+        ),
+    }
+
+
 @router.post("/login", response_model=TokenResponse)
 def login(data: LoginRequest, db: Session = Depends(get_db)):
+    # Reject login early if the account exists but is inactive
+    existing = repository.get_by_email(db, data.email)
+    if existing and not existing.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Usuário inativo",
+        )
+
     user = repository.authenticate(db, data.email, data.password)
     if not user:
         raise HTTPException(
@@ -36,7 +56,10 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
             detail="Credenciais inválidas",
         )
     return TokenResponse(
-        access_token=create_access_token(user.id),
+        access_token=create_access_token(
+            user.id,
+            extra=_build_access_token_extra(user),
+        ),
         refresh_token=create_refresh_token(user.id),
     )
 
@@ -62,7 +85,10 @@ def refresh(data: RefreshRequest, db: Session = Depends(get_db)):
             detail="Usuário não encontrado ou inativo",
         )
     return TokenResponse(
-        access_token=create_access_token(user.id),
+        access_token=create_access_token(
+            user.id,
+            extra=_build_access_token_extra(user),
+        ),
         refresh_token=create_refresh_token(user.id),
     )
 
@@ -128,8 +154,3 @@ def test_email(data: TestEmailRequest):
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=str(exc),
         )
-
-
-@router.get("/me", response_model=UserResponse)
-def me(current_user=Depends(get_current_user)):
-    return current_user

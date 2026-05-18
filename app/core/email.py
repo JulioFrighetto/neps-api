@@ -62,3 +62,13 @@ def build_password_reset_body(reset_link: str) -> str:
         f"Acesse o link abaixo para redefinir sua senha:\n{reset_link}\n\n"
         "Se você não solicitou isso, pode ignorar este e-mail."
     )
+
+
+def build_welcome_body(reset_link: str, name: str) -> str:
+    return (
+        f"Olá, {name}!\n\n"
+        "Seu cadastro na NEPS API foi criado com sucesso.\n\n"
+        "Para acessar o sistema pela primeira vez, defina sua senha usando o link abaixo:\n"
+        f"{reset_link}\n\n"
+        "Se você não esperava este cadastro, entre em contato com o suporte."
+    )

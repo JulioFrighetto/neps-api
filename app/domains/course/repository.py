@@ -4,16 +4,15 @@ from app.domains.course.model import Course
 from app.domains.course.schemas import CourseCreate, CourseUpdate
 
 
-def get_all(db: Session, skip: int = 0, limit: int = 100) -> list[Course]:
-    return db.query(Course).offset(skip).limit(limit).all()
+def get_all(db: Session, skip: int = 0, limit: int = 100) -> tuple[list[Course], int]:
+    query = db.query(Course)
+    total = query.count()
+    items = query.offset(skip).limit(limit).all()
+    return items, total
 
 
 def get_by_id(db: Session, course_id: int) -> Course | None:
     return db.query(Course).filter(Course.id == course_id).first()
-
-
-def get_by_institute(db: Session, institute_id: int) -> list[Course]:
-    return db.query(Course).filter(Course.edu_institute_id == institute_id).all()
 
 
 def create(db: Session, data: CourseCreate) -> Course:

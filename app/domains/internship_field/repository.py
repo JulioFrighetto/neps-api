@@ -7,8 +7,11 @@ from app.domains.internship_field.schemas import (
 )
 
 
-def get_all(db: Session, skip: int = 0, limit: int = 100) -> list[InternshipField]:
-    return db.query(InternshipField).offset(skip).limit(limit).all()
+def get_all(db: Session, skip: int = 0, limit: int = 100) -> tuple[list[InternshipField], int]:
+    query = db.query(InternshipField)
+    total = query.count()
+    items = query.offset(skip).limit(limit).all()
+    return items, total
 
 
 def get_by_id(db: Session, internship_field_id: int) -> InternshipField | None:
