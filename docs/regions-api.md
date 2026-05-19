@@ -17,6 +17,7 @@ GET /regions
 | limit | int | 100 | Limite de registros retornados |
 
 **Response:** `200 OK`
+
 ```json
 [
   {
@@ -48,6 +49,7 @@ GET /regions/{region_id}
 | region_id | int | ID da região |
 
 **Response:** `200 OK`
+
 ```json
 {
   "id": 1,
@@ -57,6 +59,7 @@ GET /regions/{region_id}
 ```
 
 **Error Responses:**
+
 - `404 Not Found` - Região não encontrada
 
 ---
@@ -68,6 +71,7 @@ POST /regions
 ```
 
 **Request Body:**
+
 ```json
 {
   "name": "Nome da Região",
@@ -82,6 +86,7 @@ POST /regions
 | is_active | bool | Não | Status da região (padrão: true) |
 
 **Response:** `201 Created`
+
 ```json
 {
   "id": 1,
@@ -91,6 +96,7 @@ POST /regions
 ```
 
 **Error Responses:**
+
 - `422 Unprocessable Entity` - Dados inválidos
 
 ---
@@ -107,6 +113,7 @@ PATCH /regions/{region_id}
 | region_id | int | ID da região |
 
 **Request Body:**
+
 ```json
 {
   "name": "Novo Nome",
@@ -121,6 +128,7 @@ PATCH /regions/{region_id}
 | is_active | bool | Novo status |
 
 **Response:** `200 OK`
+
 ```json
 {
   "id": 1,
@@ -130,6 +138,7 @@ PATCH /regions/{region_id}
 ```
 
 **Error Responses:**
+
 - `404 Not Found` - Região não encontrada
 
 ---
@@ -148,6 +157,7 @@ DELETE /regions/{region_id}
 **Response:** `204 No Content`
 
 **Error Responses:**
+
 - `404 Not Found` - Região não encontrada
 
 **Observação:** A exclusão pode falhar se houver serviços ou outros registros dependentes associados a esta região.
@@ -157,6 +167,7 @@ DELETE /regions/{region_id}
 ## Schemas completos
 
 ### RegionResponse
+
 ```typescript
 interface RegionResponse {
   id: number;
@@ -166,6 +177,7 @@ interface RegionResponse {
 ```
 
 ### RegionCreate
+
 ```typescript
 interface RegionCreate {
   name: string;
@@ -174,6 +186,7 @@ interface RegionCreate {
 ```
 
 ### RegionUpdate
+
 ```typescript
 interface RegionUpdate {
   name?: string | null;
@@ -186,47 +199,52 @@ interface RegionUpdate {
 ## Exemplos de uso
 
 ### Listar todas as regiões
+
 ```javascript
-const response = await fetch('/api/v1/regions');
+const response = await fetch("/api/v1/regions");
 const regions = await response.json();
 ```
 
 ### Criar uma região
+
 ```javascript
-const response = await fetch('/api/v1/regions', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
+const response = await fetch("/api/v1/regions", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
-    name: 'Brasília',
-    is_active: true
-  })
+    name: "Brasília",
+    is_active: true,
+  }),
 });
 ```
 
 ### Atualizar uma região
+
 ```javascript
-const response = await fetch('/api/v1/regions/1', {
-  method: 'PATCH',
-  headers: { 'Content-Type': 'application/json' },
+const response = await fetch("/api/v1/regions/1", {
+  method: "PATCH",
+  headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
-    name: 'São Paulo - Capital'
-  })
+    name: "São Paulo - Capital",
+  }),
 });
 ```
 
 ### Excluir uma região
+
 ```javascript
-const response = await fetch('/api/v1/regions/1', {
-  method: 'DELETE'
+const response = await fetch("/api/v1/regions/1", {
+  method: "DELETE",
 });
 // Response: 204 No Content
 ```
 
 ### Listar regiões inativas
+
 ```javascript
-const response = await fetch('/api/v1/regions?limit=100');
+const response = await fetch("/api/v1/regions?limit=100");
 const allRegions = await response.json();
-const inactiveRegions = allRegions.filter(r => !r.is_active);
+const inactiveRegions = allRegions.filter((r) => !r.is_active);
 ```
 
 ---
@@ -241,4 +259,3 @@ const inactiveRegions = allRegions.filter(r => !r.is_active);
 ## Observações
 
 - As regiões podem ter serviços associados (`Service.region_id`)
-- As regiões podem ter campos de estágio associados (`InternshipField.region_id`)

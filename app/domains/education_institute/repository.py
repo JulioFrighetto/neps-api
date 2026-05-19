@@ -52,9 +52,8 @@ def create(db: Session, data: EducationInstituteCreate) -> EducationInstitute:
         institute.regions = regions
     
     db.add(institute)
-    db.flush()  # Flush to get the institute.id before creating user
+    db.flush()  
     
-    # Create user for this education institute if email is provided
     if effective_user_email:
         temp_password = secrets.token_urlsafe(16)
         user = User(

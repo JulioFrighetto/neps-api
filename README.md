@@ -45,10 +45,8 @@ NEPS-API/
 │       │   ├── repository.py
 │       │   └── router.py
 │       ├── course/                  # Curso
-│       ├── internship_field/           # UBS + Região
 │       ├── room/                    # Sala + RoomSchedule + RoomTimeTable + TimeTableStudent
-│       ├── student/                 # Aluno
-│       └── internship/              # Vaga de Estágio + Registro + Documentos
+│       └── student/                 # Aluno
 ├── tests/
 │   └── test_domains.py
 ├── .env
@@ -76,26 +74,26 @@ open http://localhost:8000/docs
 
 ## Variáveis de ambiente (`.env`)
 
-| Variável | Padrão | Descrição |
-|---|---|---|
-| `DATABASE_URL` | URL do banco de dados |
-| `APP_NAME` | Nome exibido na UI |
-| `APP_VERSION` | Versão da API |
-| `SECRET_KEY` | Chave secreta |
-| `ALGORITHM` | Algoritmo para gerar os tokens  |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | Tempo para o token expirar |
-| `REFRESH_TOKEN_EXPIRE_DAYS` | Dias para o token de refresh expirar  |
-| `RESET_TOKEN_EXPIRE_MINUTES` | Tempo para o link de redefinição expirar |
-| `FRONTEND_URL` | URL do frontend para montar o link do e-mail |
-| `SMTP_HOST` | Servidor SMTP para envio dos e-mails |
-| `SMTP_PORT` | Porta SMTP |
-| `SMTP_USERNAME` | Usuário SMTP |
-| `SMTP_PASSWORD` | Senha SMTP |
-| `SMTP_FROM` | E-mail remetente |
-| `SMTP_FROM_NAME` | Nome exibido como remetente |
-| `SMTP_USE_TLS` | Usa TLS no envio |
-| `SMTP_USE_SSL` | Usa SSL no envio |
-| `CORS_ORIGINS` | Lista JSON com as origens permitidas no navegador |
+| Variável                      | Padrão                                            | Descrição |
+| ----------------------------- | ------------------------------------------------- | --------- |
+| `DATABASE_URL`                | URL do banco de dados                             |
+| `APP_NAME`                    | Nome exibido na UI                                |
+| `APP_VERSION`                 | Versão da API                                     |
+| `SECRET_KEY`                  | Chave secreta                                     |
+| `ALGORITHM`                   | Algoritmo para gerar os tokens                    |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | Tempo para o token expirar                        |
+| `REFRESH_TOKEN_EXPIRE_DAYS`   | Dias para o token de refresh expirar              |
+| `RESET_TOKEN_EXPIRE_MINUTES`  | Tempo para o link de redefinição expirar          |
+| `FRONTEND_URL`                | URL do frontend para montar o link do e-mail      |
+| `SMTP_HOST`                   | Servidor SMTP para envio dos e-mails              |
+| `SMTP_PORT`                   | Porta SMTP                                        |
+| `SMTP_USERNAME`               | Usuário SMTP                                      |
+| `SMTP_PASSWORD`               | Senha SMTP                                        |
+| `SMTP_FROM`                   | E-mail remetente                                  |
+| `SMTP_FROM_NAME`              | Nome exibido como remetente                       |
+| `SMTP_USE_TLS`                | Usa TLS no envio                                  |
+| `SMTP_USE_SSL`                | Usa SSL no envio                                  |
+| `CORS_ORIGINS`                | Lista JSON com as origens permitidas no navegador |
 
 Exemplo de `.env`:
 
@@ -154,6 +152,5 @@ pytest tests/ -v
 ```
 
 ---
-
 
 Documentação completa em `/docs` (Swagger UI) ou `/redoc`.

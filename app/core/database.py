@@ -6,7 +6,7 @@ from app.core.settings import settings
 
 engine = create_engine(
     settings.DATABASE_URL,
-    connect_args={"check_same_thread": False},  # needed for SQLite
+    connect_args={"check_same_thread": False},
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -41,8 +41,6 @@ def _ensure_user_profile_columns(conn) -> None:
         conn.execute(
             text("ALTER TABLE users ADD COLUMN education_institute_id INTEGER NULL")
         )
-    if "internship_field_id" not in column_names:
-        conn.execute(text("ALTER TABLE users ADD COLUMN internship_field_id INTEGER NULL"))
 
 
 def seed_admin():

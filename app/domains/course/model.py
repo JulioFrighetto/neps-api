@@ -5,6 +5,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
 
+from app.domains.student.model import Student
+
 
 class Course(Base):
     __tablename__ = "courses"
@@ -16,9 +18,6 @@ class Course(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), onupdate=func.now()
     )
-    students: Mapped[list["Student"]] = relationship(  # noqa: F821
+    students: Mapped[list["Student"]] = relationship(  
         "Student", back_populates="course"
-    )
-    internships: Mapped[list["Internship"]] = relationship(  # noqa: F821
-        "Internship", back_populates="course"
     )

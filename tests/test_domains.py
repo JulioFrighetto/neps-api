@@ -65,37 +65,9 @@ def test_list_education_institutes(client):
     assert len(response.json()) >= 1
 
 
-# ── InternshipField ──────────────────────────────────────────────────────────────
-
-def test_create_internship_field(client):
-    response = client.post(
-        "/api/v1/internship-field",
-        json={"name": "UBS Centro", "is_active": True},
-    )
-    assert response.status_code == 201
-    assert response.json()["name"] == "UBS Centro"
-
-
-def test_get_internship_field_not_found(client):
-    response = client.get("/api/v1/internship-field/999")
-    assert response.status_code == 404
-
-
 # ── Room ──────────────────────────────────────────────────────────────────────
 
-def test_create_room(client):
-    hc = client.post("/api/v1/internship-field", json={"name": "UBS Norte"}).json()
-    response = client.post(
-        "/api/v1/rooms",
-        json={
-            "internship_field_id": hc["id"],
-            "name": "Sala 01",
-            "room_capacity": 5,
-            "has_gurney": True,
-        },
-    )
-    assert response.status_code == 201
-    assert response.json()["has_gurney"] is True
+
 
 
 # ── Services ────────────────────────────────────────────────────────────────

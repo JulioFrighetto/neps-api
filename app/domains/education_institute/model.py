@@ -5,6 +5,9 @@ from sqlalchemy import Table, Column, Integer, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
+from app.domains.region.model import Region
+from app.domains.student.model import Student
+from app.domains.user.model import User
 
 
 class EducationInstitute(Base):
@@ -23,14 +26,12 @@ class EducationInstitute(Base):
         DateTime, server_default=func.now(), onupdate=func.now()
     )
 
-    # Relationships
-    students: Mapped[list["Student"]] = relationship(  # noqa: F821
+    students: Mapped[list["Student"]] = relationship(
         "Student", back_populates="education_institute"
     )
-    users: Mapped[list["User"]] = relationship(  # noqa: F821
+    users: Mapped[list["User"]] = relationship(
         "User", back_populates="education_institute"
     )
-    # Many-to-many with regions
     education_institute_regions = Table(
         "education_institute_regions",
         Base.metadata,
