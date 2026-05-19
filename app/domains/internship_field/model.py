@@ -18,5 +18,4 @@ class InternshipField(Base):
         DateTime, server_default=func.now(), onupdate=func.now()
     )
 
-    # Relationships
-    users: Mapped[list["User"]] = relationship("User", back_populates="internship_field")  # noqa: F821
+    

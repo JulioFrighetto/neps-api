@@ -4,7 +4,7 @@ from typing import Literal
 from pydantic import AliasChoices, BaseModel, ConfigDict, EmailStr, Field, model_validator
 
 
-UserRole = Literal["admin", "education_institute", "internship_field", "service"]
+UserRole = Literal["admin", "education_institute", "service"]
 
 
 class UserBase(BaseModel):
@@ -18,7 +18,6 @@ class UserCreate(UserBase):
     role: UserRole
     service_id: int | None = None
     education_institute_id: int | None = None
-    internship_field_id: int | None = None
 
     @model_validator(mode="after")
     def validate_profile_links(self):
@@ -26,24 +25,18 @@ class UserCreate(UserBase):
             if (
                 self.service_id is not None
                 or self.education_institute_id is not None
-                or self.internship_field_id is not None
             ):
                 raise ValueError("Admin não deve ser vinculado a instituição de ensino ou unidade")
         elif self.role == "service":
             if self.service_id is None:
                 raise ValueError("Usuário de service precisa de service vinculada")
-            if self.education_institute_id is not None or self.internship_field_id is not None:
-                raise ValueError("Usuário de service não pode ser vinculado a instituição de ensino ou unidade")
+            if self.education_institute_id is not None:
+                raise ValueError("Usuário de service não pode ser vinculado a instituição de ensino")
         elif self.role == "education_institute":
             if self.education_institute_id is None:
                 raise ValueError("Usuário de entidade de ensino precisa de instituição vinculada")
-            if self.service_id is not None or self.internship_field_id is not None:
+            if self.service_id is not None:
                 raise ValueError("Usuário de entidade de ensino não pode ser vinculado a unidade")
-        elif self.role == "internship_field":
-            if self.internship_field_id is None:
-                raise ValueError("Usuário de unidade precisa de unidade vinculada")
-            if self.service_id is not None or self.education_institute_id is not None:
-                raise ValueError("Usuário de unidade não pode ser vinculado a instituição de ensino")
         return self
 
 
@@ -65,7 +58,6 @@ class UserResponse(UserBase):
     role: str
     service_id: int | None = None
     education_institute_id: int | None = None
-    internship_field_id: int | None = None
     created_at: datetime
     updated_at: datetime
 

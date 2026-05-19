@@ -48,7 +48,6 @@ def create(db: Session, data: UserCreate) -> User:
         role=data.role,
         service_id=data.service_id,
         education_institute_id=data.education_institute_id,
-        internship_field_id=data.internship_field_id,
         is_active=data.is_active,
     )
     db.add(user)

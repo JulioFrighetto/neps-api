@@ -14,7 +14,6 @@ from app.domains.service_schedule.schemas import (
 from app.domains.student.repository import get_by_id as get_student_by_id
 
 router = APIRouter(prefix="/service-schedules", tags=["Service Schedules"])
-legacy_router = APIRouter(prefix="/service-agendas", tags=["Service Schedules (legacy)"])
 
 
 @router.get("/", response_model=Page[ServiceScheduleResponse])
@@ -68,11 +67,6 @@ def create_service_schedule(data: ServiceScheduleCreate, db: Session = Depends(g
             detail="Já existe agenda para esta sala, dia e turno",
         )
     return repository.create(db, data)
-
-
-@legacy_router.post("/", response_model=ServiceScheduleResponse, status_code=status.HTTP_201_CREATED)
-def create_service_agenda(data: ServiceScheduleCreate, db: Session = Depends(get_db)):
-    return create_service_schedule(data, db)
 
 
 @router.patch("/{service_schedule_id}", response_model=ServiceScheduleResponse)

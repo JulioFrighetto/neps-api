@@ -14,8 +14,7 @@ from app.domains.education_institute.schemas import (
     EducationInstituteUpdate,
 )
 
-router = APIRouter(prefix="/education-institutes", tags=["Education Institutes"])
-legacy_router = APIRouter(prefix="/cadastros/institutions", tags=["Education Institutes (legacy)"])
+router = APIRouter(prefix="/cadastros/institutions", tags=["Education Institutes"])
 
 
 @router.get("/", response_model=Page[EducationInstituteResponse])
@@ -41,17 +40,6 @@ def list_institutes(
     return Page(items=items, total=total, skip=skip, limit=limit, has_next=skip + limit < total)
 
 
-@legacy_router.get("/", response_model=Page[EducationInstituteResponse])
-def legacy_list_institutes(
-    skip: int = 0,
-    limit: int = 100,
-    is_active: bool | None = None,
-    db: Session = Depends(get_db),
-    current_user=Depends(get_current_user),
-):
-    return list_institutes(skip=skip, limit=limit, is_active=is_active, db=db, current_user=current_user)
-
-
 @router.get("/{institute_id}", response_model=EducationInstituteResponse)
 def get_institute(institute_id: int, db: Session = Depends(get_db)):
     institute = repository.get_by_id(db, institute_id)
@@ -60,34 +48,22 @@ def get_institute(institute_id: int, db: Session = Depends(get_db)):
     return institute
 
 
-@legacy_router.get("/{institute_id}", response_model=EducationInstituteResponse)
-def legacy_get_institute(institute_id: int, db: Session = Depends(get_db)):
-    return get_institute(institute_id=institute_id, db=db)
-
-
 @router.post("/", response_model=EducationInstituteResponse, status_code=status.HTTP_201_CREATED)
 def create_institute(data: EducationInstituteCreate, db: Session = Depends(get_db)):
     institute = repository.create(db, data)
     target_email = data.user_email or data.email
-    
-    # Send welcome email if user was created
+
     if target_email:
         reset_token = create_reset_token(target_email)
         reset_link = f"{settings.FRONTEND_URL.rstrip('/')}/reset-password?token={reset_token}"
         body = build_welcome_body(reset_link, data.user_name or institute.name)
-        
+
         try:
             send_email(target_email, "Bem-vindo ao NEPS", body)
         except EmailDeliveryError:
-            # Email delivery failure doesn't prevent institute creation in dev/test
             pass
-    
+
     return institute
-
-
-@legacy_router.post("/", response_model=EducationInstituteResponse, status_code=status.HTTP_201_CREATED)
-def legacy_create_institute(data: EducationInstituteCreate, db: Session = Depends(get_db)):
-    return create_institute(data=data, db=db)
 
 
 @router.patch("/{institute_id}", response_model=EducationInstituteResponse)
@@ -102,20 +78,6 @@ def update_institute(
 
 @router.put("/{institute_id}", response_model=EducationInstituteResponse)
 def replace_institute(
-    institute_id: int, data: EducationInstituteUpdate, db: Session = Depends(get_db)
-):
-    return update_institute(institute_id=institute_id, data=data, db=db)
-
-
-@legacy_router.patch("/{institute_id}", response_model=EducationInstituteResponse)
-def legacy_update_institute(
-    institute_id: int, data: EducationInstituteUpdate, db: Session = Depends(get_db)
-):
-    return update_institute(institute_id=institute_id, data=data, db=db)
-
-
-@legacy_router.put("/{institute_id}", response_model=EducationInstituteResponse)
-def legacy_replace_institute(
     institute_id: int, data: EducationInstituteUpdate, db: Session = Depends(get_db)
 ):
     return update_institute(institute_id=institute_id, data=data, db=db)

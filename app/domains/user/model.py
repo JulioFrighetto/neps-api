@@ -18,9 +18,6 @@ class User(Base):
     education_institute_id: Mapped[int | None] = mapped_column(
         ForeignKey("education_institutes.id"), nullable=True
     )
-    internship_field_id: Mapped[int | None] = mapped_column(
-        ForeignKey("internship_field.id"), nullable=True
-    )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
@@ -29,4 +26,3 @@ class User(Base):
 
     service = relationship("Service", back_populates="user")
     education_institute = relationship("EducationInstitute", back_populates="users")
-    internship_field = relationship("InternshipField", back_populates="users")

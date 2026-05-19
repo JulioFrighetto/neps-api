@@ -18,9 +18,6 @@ class Region(Base):
     )
 
     # Relationships
-    internship_field: Mapped[list["InternshipField"]] = relationship(
-        "InternshipField", foreign_keys="InternshipField.region_id"
-    )
     # Backref to education institutes (many-to-many)
     education_institutes: Mapped[list["EducationInstitute"]] = relationship(
         "EducationInstitute", secondary="education_institute_regions", back_populates="regions"

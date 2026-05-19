@@ -8,7 +8,6 @@ from app.core.jwt import create_reset_token
 from app.core.schemas import Page
 from app.core.settings import settings
 from app.domains.education_institute.repository import get_by_id as get_institute_by_id
-from app.domains.internship_field.repository import get_by_id as get_field_by_id
 from app.domains.user import repository
 from app.domains.user.schemas import (
     UserChangePassword,
@@ -57,22 +56,15 @@ def create_user(
 ):
     if repository.get_by_email(db, data.email):
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Já existe um usuário com este e-mail",
-        )
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Já existe um usuário com este e-mail",
+            )
     if data.role == "education_institute":
         institute = get_institute_by_id(db, data.education_institute_id)
         if not institute:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Instituição de ensino não encontrada",
-            )
-    elif data.role == "internship_field":
-        field = get_field_by_id(db, data.internship_field_id)
-        if not field:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Unidade não encontrada",
             )
 
     user = repository.create(db, data)
@@ -127,13 +119,6 @@ def replace_user(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Instituição de ensino não encontrada",
             )
-    elif data.role == "internship_field":
-        field = get_field_by_id(db, data.internship_field_id)
-        if not field:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Unidade não encontrada",
-            )
 
     # ensure email uniqueness
     existing = repository.get_by_email(db, data.email)
@@ -148,7 +133,6 @@ def replace_user(
     user.role = data.role
     user.service_id = data.service_id
     user.education_institute_id = data.education_institute_id
-    user.internship_field_id = data.internship_field_id
     user.is_active = data.is_active
 
     db.commit()
