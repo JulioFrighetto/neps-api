@@ -7,9 +7,12 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.3
+<<<<<<< HEAD
       - key: DATABASE_URL
         value: sqlite:////var/data/neps.db
     disk:
       name: neps-api-data
       mountPath: /var/data
       sizeGB: 1
+=======
+>>>>>>> main
