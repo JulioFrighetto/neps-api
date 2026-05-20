@@ -1,20 +1,33 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, EmailStr
 
 
 class EducationInstituteBase(BaseModel):
     name: str
     is_active: bool = True
+    cnpj: str | None = None
+    address: str | None = None
+    phone: str | None = None
+    email: str | None = None
+    priority: int = Field(0, ge=0, le=1, description="0 = prioritário, 1 = não prioritário")
 
 
 class EducationInstituteCreate(EducationInstituteBase):
-    pass
+    user_name: str | None = None
+    user_email: EmailStr | None = None
+    region_ids: list[int] | None = None
 
 
 class EducationInstituteUpdate(BaseModel):
     name: str | None = None
     is_active: bool | None = None
+    cnpj: str | None = None
+    address: str | None = None
+    phone: str | None = None
+    email: str | None = None
+    priority: int | None = Field(None, ge=0, le=1, description="0 = prioritário, 1 = não prioritário")
+    region_ids: list[int] | None = None
 
 
 class EducationInstituteResponse(EducationInstituteBase):
@@ -23,3 +36,26 @@ class EducationInstituteResponse(EducationInstituteBase):
     id: int
     created_at: datetime
     updated_at: datetime
+
+    class StudentSummary(BaseModel):
+        model_config = ConfigDict(from_attributes=True)
+        id: int
+        course_id: int
+        status: str
+
+    class UserSummary(BaseModel):
+        model_config = ConfigDict(from_attributes=True)
+        id: int
+        name: str
+        email: str
+        role: str
+        is_active: bool
+
+    students: list[StudentSummary] = []
+    users: list[UserSummary] = []
+    class RegionSummary(BaseModel):
+        model_config = ConfigDict(from_attributes=True)
+        id: int
+        name: str
+
+    regions: list[RegionSummary] = []

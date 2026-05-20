@@ -6,8 +6,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 
 
-class Room(Base):
-    __tablename__ = "rooms"
+class ServiceRoom(Base):
+    __tablename__ = "service_rooms"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     service_id: Mapped[int] = mapped_column(ForeignKey("services.id"), nullable=False)
@@ -20,9 +20,9 @@ class Room(Base):
         DateTime, server_default=func.now(), onupdate=func.now()
     )
 
-    service: Mapped["Service"] = relationship("Service", back_populates="rooms")  # noqa: F821
-
-
-    schedules: Mapped[list["RoomSchedule"]] = relationship(  # noqa: F821
-        "RoomSchedule", back_populates="room"
+    service: Mapped["Service"] = relationship(  # noqa: F821
+        "Service", back_populates="service_rooms"
+    )
+    service_schedules: Mapped[list["ServiceSchedule"]] = relationship(  # noqa: F821
+        "ServiceSchedule", back_populates="service_room", cascade="all, delete-orphan"
     )

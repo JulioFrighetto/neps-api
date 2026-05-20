@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.schemas import Page
 from app.domains.region import repository
 from app.domains.region.schemas import (
     RegionCreate,
@@ -12,9 +13,10 @@ from app.domains.region.schemas import (
 router = APIRouter(tags=["Region"])
 
 
-@router.get("/regions", response_model=list[RegionResponse])
+@router.get("/regions", response_model=Page[RegionResponse])
 def list_regions(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    return repository.get_all_regions(db, skip=skip, limit=limit)
+    items, total = repository.get_all_regions(db, skip=skip, limit=limit)
+    return Page(items=items, total=total, skip=skip, limit=limit, has_next=skip + limit < total)
 
 
 @router.get("/regions/{region_id}", response_model=RegionResponse)
@@ -36,10 +38,3 @@ def update_region(region_id: int, data: RegionUpdate, db: Session = Depends(get_
     if not region:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Região não encontrada")
     return region
-
-
-@router.delete("/regions/{region_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_region(region_id: int, db: Session = Depends(get_db)):
-    deleted = repository.delete_region(db, region_id)
-    if not deleted:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Região não encontrada")

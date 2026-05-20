@@ -29,3 +29,6 @@ class Student(Base):
         "EducationInstitute", back_populates="students"
     )
     course: Mapped["Course"] = relationship("Course", back_populates="students")  # noqa: F821
+    service_schedules: Mapped[list["ServiceSchedule"]] = relationship(  # noqa: F821
+        "ServiceSchedule", back_populates="student"
+    )

@@ -5,14 +5,11 @@ from pydantic import BaseModel, ConfigDict
 
 class RegionCreate(BaseModel):
     name: str
-    priority_education_institute: int | None = None
     is_active: bool = True
-    pass
 
 
 class RegionUpdate(BaseModel):
     name: str | None = None
-    priority_education_institute: int | None = None
     is_active: bool | None = None
 
 
@@ -21,5 +18,4 @@ class RegionResponse(BaseModel):
 
     id: int
     name: str
-    priority_education_institute: int | None = None
-    is_active: bool = True
+    is_active: bool

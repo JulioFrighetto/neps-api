@@ -1,9 +1,13 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, String, func
+from sqlalchemy import Boolean, DateTime, String, Integer, func
+from sqlalchemy import Table, Column, Integer, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
+from app.domains.region.model import Region
+from app.domains.student.model import Student
+from app.domains.user.model import User
 
 
 class EducationInstitute(Base):
@@ -12,16 +16,28 @@ class EducationInstitute(Base):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String(20), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    cnpj: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    address: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    phone: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    email: Mapped[str | None] = mapped_column(String(150), nullable=True)
+    priority: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), onupdate=func.now()
     )
 
-    # Relationships
-    courses: Mapped[list["Course"]] = relationship(  # noqa: F821
-        "Course", back_populates="education_institute"
-    )
-    students: Mapped[list["Student"]] = relationship(  # noqa: F821
+    students: Mapped[list["Student"]] = relationship(
         "Student", back_populates="education_institute"
     )
-    # users relationship will be added when the User domain is implemented
+    users: Mapped[list["User"]] = relationship(
+        "User", back_populates="education_institute"
+    )
+    education_institute_regions = Table(
+        "education_institute_regions",
+        Base.metadata,
+        Column("education_institute_id", Integer, ForeignKey("education_institutes.id")),
+        Column("region_id", Integer, ForeignKey("regions.id")),
+    )
+    regions: Mapped[list["Region"]] = relationship(
+        "Region", secondary="education_institute_regions", back_populates="education_institutes"
+    )

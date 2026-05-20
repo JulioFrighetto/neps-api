@@ -3,23 +3,26 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict
 
 
-class InternshipFieldBase(BaseModel):
+class ServiceRoomBase(BaseModel):
+    service_id: int
     name: str
-    region_id: int | None = None
+    room_capacity: int
+    has_gurney: bool = False
     is_active: bool = True
 
 
-class InternshipFieldCreate(InternshipFieldBase):
+class ServiceRoomCreate(ServiceRoomBase):
     pass
 
 
-class InternshipFieldUpdate(BaseModel):
+class ServiceRoomUpdate(BaseModel):
     name: str | None = None
-    region_id: int | None = None
+    room_capacity: int | None = None
+    has_gurney: bool | None = None
     is_active: bool | None = None
 
 
-class InternshipFieldResponse(InternshipFieldBase):
+class ServiceRoomResponse(ServiceRoomBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int

@@ -1,27 +1,53 @@
+import secrets
+
 from sqlalchemy.orm import Session
 
 from app.core.security import hash_password, verify_password
 from app.domains.user.model import User
 from app.domains.user.schemas import UserCreate, UserUpdate
+from sqlalchemy.orm import selectinload
 
 
-def get_all(db: Session, skip: int = 0, limit: int = 100) -> list[User]:
-    return db.query(User).offset(skip).limit(limit).all()
+def get_all(db: Session, skip: int = 0, limit: int = 100) -> tuple[list[User], int]:
+    query = db.query(User)
+    total = query.count()
+    items = query.offset(skip).limit(limit).all()
+    return items, total
 
 
 def get_by_id(db: Session, user_id: int) -> User | None:
-    return db.query(User).filter(User.id == user_id).first()
+    return (
+        db.query(User)
+        .options(
+            selectinload(User.service),
+            selectinload(User.education_institute),
+        )
+        .filter(User.id == user_id)
+        .first()
+    )
 
 
 def get_by_email(db: Session, email: str) -> User | None:
-    return db.query(User).filter(User.email == email).first()
+    return (
+        db.query(User)
+        .options(
+            selectinload(User.service),
+            selectinload(User.education_institute),
+        )
+        .filter(User.email == email)
+        .first()
+    )
 
 
 def create(db: Session, data: UserCreate) -> User:
+    password = data.password or secrets.token_urlsafe(16)
     user = User(
         name=data.name,
         email=data.email,
-        password=hash_password(data.password),
+        password=hash_password(password),
+        role=data.role,
+        service_id=data.service_id,
+        education_institute_id=data.education_institute_id,
         is_active=data.is_active,
     )
     db.add(user)
