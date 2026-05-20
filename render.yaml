@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: neps-api
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.3
+      - key: DATABASE_URL
+        value: sqlite:////var/data/neps.db
+    disk:
+      name: neps-api-data
+      mountPath: /var/data
+      sizeGB: 1

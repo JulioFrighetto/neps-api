@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.core.database import Base, engine, seed_admin
+from app.core.database import init_db
 from app.core.models import *  # noqa: F401, F403 — registers all models with Base.metadata
 from app.core.settings import settings
 from app.domains.course.router import router as course_router
@@ -16,17 +16,17 @@ from app.domains.user.auth_router import router as auth_router
 from app.domains.user.router import router as user_router
 from app.domains.period.router import router as period_router
 
-# Create all tables on startup (SQLite dev mode)
-Base.metadata.create_all(bind=engine)
-
-seed_admin()
-
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
     docs_url="/docs",
     redoc_url="/redoc",
 )
+
+
+@app.on_event("startup")
+def on_startup() -> None:
+    init_db()
 
 app.add_middleware(
     CORSMiddleware,

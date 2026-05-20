@@ -43,6 +43,11 @@ def _ensure_user_profile_columns(conn) -> None:
         )
 
 
+def init_db() -> None:
+    Base.metadata.create_all(bind=engine)
+    seed_admin()
+
+
 def seed_admin():
     password = hash_password("secret123")
 
@@ -50,12 +55,7 @@ def seed_admin():
         """
         INSERT INTO users (name, email, password, role, is_active, created_at, updated_at)
         VALUES (:name, :email, :password, :role, :is_active, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-        ON CONFLICT(email) DO UPDATE SET
-            name = excluded.name,
-            password = excluded.password,
-            role = excluded.role,
-            is_active = excluded.is_active,
-            updated_at = CURRENT_TIMESTAMP
+        ON CONFLICT(email) DO NOTHING
         """
     )
 
