@@ -41,7 +41,7 @@ def create(db: Session, data: ServiceCreate) -> Service:
     if data.user_email:
         temp_password = secrets.token_urlsafe(16)
         user = User(
-            name=data.user_name,
+            name=data.user_name or data.name,
             email=data.user_email,
             password=hash_password(temp_password),
             role="service",

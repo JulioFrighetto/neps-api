@@ -55,23 +55,24 @@ def create_service(data: ServiceCreate, db: Session = Depends(get_db)):
             status_code=status.HTTP_409_CONFLICT,
             detail="Já existe um serviço com este nome",
         )
-    if get_user_by_email(db, data.user_email):
+    if data.user_email and get_user_by_email(db, data.user_email):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Já existe um usuário com este e-mail",
         )
 
     service = repository.create(db, data)
-    reset_token = create_reset_token(data.user_email)
-    reset_link = f"{settings.FRONTEND_URL.rstrip('/')}/reset-password?token={reset_token}"
-    body = build_welcome_body(reset_link, data.user_name)
+    if data.user_email:
+        reset_token = create_reset_token(data.user_email)
+        reset_link = f"{settings.FRONTEND_URL.rstrip('/')}/reset-password?token={reset_token}"
+        body = build_welcome_body(reset_link, data.user_name or data.name)
 
-    try:
-        send_email(data.user_email, "Bem-vindo ao NEPS", body)
-    except EmailDeliveryError:
-        # Falha no envio de e-mail não deve impedir criação do serviço em ambiente de teste/dev.
-        # Log no módulo de e-mail já ocorreu; aqui tratamos como tentativa "best-effort".
-        pass
+        try:
+            send_email(data.user_email, "Bem-vindo ao NEPS", body)
+        except EmailDeliveryError:
+            # Falha no envio de e-mail não deve impedir criação do serviço em ambiente de teste/dev.
+            # Log no módulo de e-mail já ocorreu; aqui tratamos como tentativa "best-effort".
+            pass
 
     return service
 

@@ -1,4 +1,6 @@
 from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.exc import IntegrityError
+from fastapi import HTTPException, status
 
 from app.domains.education_institute.model import EducationInstitute
 from app.domains.education_institute.schemas import (
@@ -66,7 +68,15 @@ def create(db: Session, data: EducationInstituteCreate) -> EducationInstitute:
         )
         db.add(user)
     
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        # Assume unique constraint on users.email or institutes.email
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email já cadastrado",
+        ) from exc
     return get_by_id(db, institute.id)
 
 

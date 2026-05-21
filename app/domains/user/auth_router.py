@@ -98,6 +98,7 @@ def request_password_reset(
     data: PasswordResetRequest,
     db: Session = Depends(get_db),
 ):
+    print(f"Password reset requested for email: {data.email}")
     user = repository.get_by_email(db, data.email)
     if not user or not user.is_active:
         raise HTTPException(
@@ -119,6 +120,7 @@ def request_password_reset(
         )
 
 
+@router.post("/reset-password-confirm", status_code=status.HTTP_204_NO_CONTENT)
 @router.post("/reset-password/confirm", status_code=status.HTTP_204_NO_CONTENT)
 def confirm_password_reset(data: PasswordResetConfirmRequest, db: Session = Depends(get_db)):
     try:
