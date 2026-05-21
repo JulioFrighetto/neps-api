@@ -1,7 +1,7 @@
-import logging
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import logging
+import traceback
 
 from app.core.database import Base, engine, seed_admin
 from app.core.models import *  # noqa: F401, F403 — registers all models with Base.metadata
@@ -22,9 +22,19 @@ from app.domains.period.router import router as period_router
 logging.basicConfig(level=logging.INFO)
 
 # Create all tables on startup (SQLite dev mode)
-Base.metadata.create_all(bind=engine)
-
-seed_admin()
+# Wrap startup actions to capture and log any exception so Render logs show the stacktrace
+try:
+    Base.metadata.create_all(bind=engine)
+    seed_admin()
+except Exception:
+    logging.exception("Application startup failed")
+    # also write to a file to make the stacktrace easy to find in case Render truncates logs
+    try:
+        with open("/tmp/neps_startup_error.log", "w") as fh:
+            fh.write(traceback.format_exc())
+    except Exception:
+        logging.exception("Failed to write startup error file")
+    raise
 
 app = FastAPI(
     title=settings.APP_NAME,
