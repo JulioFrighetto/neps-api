@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -15,6 +17,9 @@ from app.domains.student.router import router as student_router
 from app.domains.user.auth_router import router as auth_router
 from app.domains.user.router import router as user_router
 from app.domains.period.router import router as period_router
+
+
+logging.basicConfig(level=logging.INFO)
 
 # Create all tables on startup (SQLite dev mode)
 Base.metadata.create_all(bind=engine)

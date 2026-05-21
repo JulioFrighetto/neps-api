@@ -16,6 +16,12 @@ class EmailDeliveryError(RuntimeError):
 
 def send_email(to_email: str, subject: str, body: str) -> None:
     if not settings.SMTP_HOST:
+        if settings.DEBUG:
+            logger.warning(
+                "SMTP não configurado; e-mail não enviado",
+                extra={"to_email": to_email, "subject": subject},
+            )
+            return
         raise EmailDeliveryError("SMTP_HOST não configurado")
 
     message = EmailMessage()
