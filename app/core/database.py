@@ -79,6 +79,16 @@ def seed_admin():
             if "is_active" not in column_names:
                 conn.execute(text("ALTER TABLE education_institutes ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT 1"))
 
+        def _ensure_course_columns(conn) -> None:
+            columns = conn.execute(text("PRAGMA table_info(courses)")).fetchall()
+            column_names = {column[1] for column in columns}
+            if "code" not in column_names:
+                conn.execute(text("ALTER TABLE courses ADD COLUMN code VARCHAR(20) NULL"))
+            if "region_id" not in column_names:
+                conn.execute(text("ALTER TABLE courses ADD COLUMN region_id INTEGER NULL"))
+
+        _ensure_course_columns(conn)
+
         _ensure_education_institute_columns(conn)
         conn.execute(
             sql,

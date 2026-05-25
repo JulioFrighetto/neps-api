@@ -1,8 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+import math
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.schemas import Page
+from app.core.schemas import FilterInfo, Page, PaginationInfo
 from app.domains.region import repository
 from app.domains.region.schemas import (
     RegionCreate,
@@ -12,11 +14,29 @@ from app.domains.region.schemas import (
 
 router = APIRouter(tags=["Region"])
 
+AVAILABLE_FILTERS = ["name_like", "is_active"]
+
 
 @router.get("/regions", response_model=Page[RegionResponse])
-def list_regions(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    items, total = repository.get_all_regions(db, skip=skip, limit=limit)
-    return Page(items=items, total=total, skip=skip, limit=limit, has_next=skip + limit < total)
+def list_regions(
+    page: int = Query(1, ge=1),
+    per_page: int = Query(10, ge=1, le=100),
+    name_like: str | None = Query(None),
+    is_active: bool | None = Query(None),
+    db: Session = Depends(get_db),
+):
+    filters = {k: v for k, v in {"name_like": name_like, "is_active": is_active}.items() if v is not None}
+    items, total = repository.get_all_regions(db, page=page, per_page=per_page, filters=filters)
+    return Page(
+        items=items,
+        pagination=PaginationInfo(
+            page=page,
+            per_page=per_page,
+            total=total,
+            total_pages=max(1, math.ceil(total / per_page)) if total > 0 else 0,
+        ),
+        filters=FilterInfo(applied=list(filters.keys()), available=AVAILABLE_FILTERS),
+    )
 
 
 @router.get("/regions/{region_id}", response_model=RegionResponse)

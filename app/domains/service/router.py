@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+import math
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -10,7 +12,7 @@ from app.core.email import (
     send_email,
 )
 from app.core.jwt import create_reset_token
-from app.core.schemas import Page
+from app.core.schemas import FilterInfo, Page, PaginationInfo
 from app.core.settings import settings
 from app.domains.service import repository
 from app.domains.service.schemas import ServiceCreate, ServiceResponse, ServiceUpdate
@@ -21,23 +23,39 @@ import secrets
 
 router = APIRouter(prefix="/services", tags=["Services"])
 
+AVAILABLE_FILTERS = ["name_like", "region_id", "is_active"]
+
 
 @router.get("/", response_model=Page[ServiceResponse])
 def list_services(
-    skip: int = 0,
-    limit: int = 100,
+    page: int = Query(1, ge=1),
+    per_page: int = Query(10, ge=1, le=100),
+    name_like: str | None = Query(None),
+    region_id: int | None = Query(None),
+    is_active: bool | None = Query(None),
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
+    filters = {k: v for k, v in {"name_like": name_like, "region_id": region_id, "is_active": is_active}.items() if v is not None}
+
     if current_user.role == "admin":
-        items, total = repository.get_all(db, skip=skip, limit=limit)
+        items, total = repository.get_all(db, page=page, per_page=per_page, filters=filters)
     elif current_user.role == "service" and current_user.service_id is not None:
         service = repository.get_by_id(db, current_user.service_id)
         items = [service] if service else []
         total = 1 if service else 0
     else:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
-    return Page(items=items, total=total, skip=skip, limit=limit, has_next=skip + limit < total)
+    return Page(
+        items=items,
+        pagination=PaginationInfo(
+            page=page,
+            per_page=per_page,
+            total=total,
+            total_pages=max(1, math.ceil(total / per_page)) if total > 0 else 0,
+        ),
+        filters=FilterInfo(applied=list(filters.keys()), available=AVAILABLE_FILTERS),
+    )
 
 
 @router.get("/{service_id}", response_model=ServiceResponse)
