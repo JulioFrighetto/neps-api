@@ -12,6 +12,11 @@ def create_schedule_for_room(db: Session, room_id: int) -> list[RoomSchedule]:
     room = db.query(Room).filter(Room.id == room_id).first()
     if not room:
         return []
+    # If schedules already exist for this room, return them (prevent duplicates)
+    existing = db.query(RoomSchedule).filter(RoomSchedule.room_id == room_id).all()
+    if existing:
+        return existing
+
     schedules = []
     for day in WEEK_DAYS:
         for shift in SHIFTS:

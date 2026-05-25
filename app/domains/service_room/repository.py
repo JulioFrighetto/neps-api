@@ -4,10 +4,10 @@ from app.domains.service_room.model import ServiceRoom
 from app.domains.service_room.schemas import ServiceRoomCreate, ServiceRoomUpdate
 
 
-def get_all(db: Session, skip: int = 0, limit: int = 100) -> tuple[list[ServiceRoom], int]:
+def get_all(db: Session, page: int = 1, per_page: int = 10) -> tuple[list[ServiceRoom], int]:
     query = db.query(ServiceRoom)
     total = query.count()
-    items = query.offset(skip).limit(limit).all()
+    items = query.offset((page - 1) * per_page).limit(per_page).all()
     return items, total
 
 
@@ -15,10 +15,10 @@ def get_by_id(db: Session, service_room_id: int) -> ServiceRoom | None:
     return db.query(ServiceRoom).filter(ServiceRoom.id == service_room_id).first()
 
 
-def get_by_service(db: Session, service_id: int, skip: int = 0, limit: int = 100) -> tuple[list[ServiceRoom], int]:
+def get_by_service(db: Session, service_id: int, page: int = 1, per_page: int = 10) -> tuple[list[ServiceRoom], int]:
     query = db.query(ServiceRoom).filter(ServiceRoom.service_id == service_id)
     total = query.count()
-    items = query.offset(skip).limit(limit).all()
+    items = query.offset((page - 1) * per_page).limit(per_page).all()
     return items, total
 
 

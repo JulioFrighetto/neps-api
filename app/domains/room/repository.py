@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 
+from app.core.filters import apply_filters
 from app.domains.room.model import Room
 from app.domains.room.schemas import (
     RoomCreate,
@@ -7,10 +8,12 @@ from app.domains.room.schemas import (
 )
 
 
-def get_all(db: Session, skip: int = 0, limit: int = 100) -> tuple[list[Room], int]:
+def get_all(db: Session, page: int = 1, per_page: int = 10, filters: dict | None = None) -> tuple[list[Room], int]:
     query = db.query(Room)
+    if filters:
+        query, _ = apply_filters(query, Room, filters)
     total = query.count()
-    items = query.offset(skip).limit(limit).all()
+    items = query.offset((page - 1) * per_page).limit(per_page).all()
     return items, total
 
 
@@ -18,15 +21,17 @@ def get_by_id(db: Session, room_id: int) -> Room | None:
     return db.query(Room).filter(Room.id == room_id).first()
 
 
-def get_by_service(db: Session, service_id: int, skip: int = 0, limit: int = 100) -> tuple[list[Room], int]:
+def get_by_service(db: Session, service_id: int, page: int = 1, per_page: int = 10, filters: dict | None = None) -> tuple[list[Room], int]:
     query = db.query(Room).filter(Room.service_id == service_id)
+    if filters:
+        query, _ = apply_filters(query, Room, filters)
     total = query.count()
-    items = query.offset(skip).limit(limit).all()
+    items = query.offset((page - 1) * per_page).limit(per_page).all()
     return items, total
 
 
 def create(db: Session, data: RoomCreate) -> Room:
-    from app.domains.room_schedule import repository as schedule_repository  # noqa: F401
+    from app.domains.room_schedule import repository_nested as schedule_repository
 
     room = Room(**data.model_dump())
     db.add(room)

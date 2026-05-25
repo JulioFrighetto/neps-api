@@ -49,7 +49,7 @@ def client(db):
 
 def test_create_education_institute(client):
     response = client.post(
-        "/api/v1/education-institutes",
+        "/api/v1/cadastros/institutions/",
         json={"name": "UNISINOS", "is_active": True},
     )
     assert response.status_code == 201
@@ -58,16 +58,41 @@ def test_create_education_institute(client):
     assert data["id"] is not None
 
 
-def test_list_education_institutes(client):
-    client.post("/api/v1/education-institutes", json={"name": "UNISINOS"})
-    response = client.get("/api/v1/education-institutes")
+def _make_admin_token(client):
+    """Seed an admin user and return a valid access token."""
+    import secrets
+    from app.core.security import hash_password
+    from app.domains.user.model import User
+
+    db = next(app.dependency_overrides[get_db]())
+    admin = User(
+        name="Admin",
+        email="admin@test.com",
+        password=hash_password("secret123"),
+        role="admin",
+        is_active=True,
+    )
+    db.add(admin)
+    db.commit()
+    db.refresh(admin)
+
+    resp = client.post("/api/v1/auth/login", json={"email": "admin@test.com", "password": "secret123"})
+    assert resp.status_code == 200
+    return resp.json()["access_token"]
+
+
+def test_list_education_institutes_pagination(client):
+    token = _make_admin_token(client)
+    headers = {"Authorization": f"Bearer {token}"}
+    client.post("/api/v1/cadastros/institutions/", json={"name": "UNISINOS"}, headers=headers)
+    response = client.get("/api/v1/cadastros/institutions/", headers=headers)
     assert response.status_code == 200
-    assert len(response.json()) >= 1
-
-
-# ── Room ──────────────────────────────────────────────────────────────────────
-
-
+    body = response.json()
+    assert "items" in body
+    assert "pagination" in body
+    assert body["pagination"]["total"] >= 1
+    assert body["pagination"]["page"] == 1
+    assert body["pagination"]["per_page"] == 10
 
 
 # ── Services ────────────────────────────────────────────────────────────────
@@ -134,10 +159,10 @@ def test_create_service_schedule(client):
             "has_gurney": False,
         },
     ).json()
-    institute = client.post("/api/v1/education-institutes", json={"name": "FEEVALE"}).json()
+    institute = client.post("/api/v1/cadastros/institutions/", json={"name": "FEEVALE"}).json()
     course = client.post(
         "/api/v1/courses",
-        json={"edu_institute_id": institute["id"], "name": "Enfermagem", "requires_gurney": False},
+        json={"name": "Enfermagem", "requires_gurney": False},
     ).json()
     student = client.post(
         "/api/v1/students",
@@ -145,7 +170,7 @@ def test_create_service_schedule(client):
     ).json()
 
     response = client.post(
-        "/api/v1/service-agendas",
+        "/api/v1/service-schedules/",
         json={
             "service_room_id": room["id"],
             "week_day": "SEG",
@@ -161,11 +186,9 @@ def test_create_service_schedule(client):
 # ── Course ────────────────────────────────────────────────────────────────────
 
 def test_create_course(client):
-    inst = client.post("/api/v1/education-institutes", json={"name": "PUCRS"}).json()
     response = client.post(
         "/api/v1/courses",
         json={
-            "edu_institute_id": inst["id"],
             "name": "Enfermagem",
             "requires_gurney": True,
         },
@@ -177,10 +200,10 @@ def test_create_course(client):
 # ── Student ───────────────────────────────────────────────────────────────────
 
 def test_create_student(client):
-    inst = client.post("/api/v1/education-institutes", json={"name": "FEEVALE"}).json()
+    inst = client.post("/api/v1/cadastros/institutions/", json={"name": "FEEVALE"}).json()
     course = client.post(
         "/api/v1/courses",
-        json={"edu_institute_id": inst["id"], "name": "Fisioterapia", "requires_gurney": False},
+        json={"name": "Fisioterapia", "requires_gurney": False},
     ).json()
     response = client.post(
         "/api/v1/students",
@@ -188,3 +211,102 @@ def test_create_student(client):
     )
     assert response.status_code == 201
     assert response.json()["status"] == "PENDING"
+
+
+# ── Filter Tests ─────────────────────────────────────────────────────────────
+
+def test_courses_filter_name_like(client):
+    client.post("/api/v1/courses", json={"name": "Enfermagem", "requires_gurney": True})
+    client.post("/api/v1/courses", json={"name": "Fisioterapia", "requires_gurney": False})
+    client.post("/api/v1/courses", json={"name": "Medicina", "requires_gurney": False})
+
+    response = client.get("/api/v1/courses?name_like=enfer")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["pagination"]["total"] == 1
+    assert body["items"][0]["name"] == "Enfermagem"
+    assert "name_like" in body["filters"]["applied"]
+
+
+def test_courses_pagination_page_per_page(client):
+    for i in range(5):
+        client.post("/api/v1/courses", json={"name": f"Curso {i}", "requires_gurney": False})
+
+    response = client.get("/api/v1/courses?page=1&per_page=2")
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body["items"]) == 2
+    assert body["pagination"]["page"] == 1
+    assert body["pagination"]["per_page"] == 2
+    assert body["pagination"]["total"] == 5
+    assert body["pagination"]["total_pages"] == 3
+
+
+def test_regions_filter_is_active(client):
+    client.post("/api/v1/regions", json={"name": "Norte", "is_active": True})
+    client.post("/api/v1/regions", json={"name": "Sul", "is_active": False})
+
+    response = client.get("/api/v1/regions?is_active=true")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["pagination"]["total"] == 1
+    assert body["items"][0]["name"] == "Norte"
+
+    response = client.get("/api/v1/regions?is_active=false")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["pagination"]["total"] == 1
+    assert body["items"][0]["name"] == "Sul"
+
+
+def test_regions_filter_name_like(client):
+    client.post("/api/v1/regions", json={"name": "Norte", "is_active": True})
+    client.post("/api/v1/regions", json={"name": "Nordeste", "is_active": True})
+    client.post("/api/v1/regions", json={"name": "Sul", "is_active": True})
+
+    response = client.get("/api/v1/regions?name_like=no")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["pagination"]["total"] == 2
+
+
+def test_periods_filter_date_range(client):
+    client.post("/api/v1/periods", json={
+        "name": "2025.1",
+        "priority_start_date": "2025-01-01",
+        "priority_end_date": "2025-01-15",
+        "start_date": "2025-02-01",
+        "end_date": "2025-06-30",
+        "is_active": True,
+    })
+    client.post("/api/v1/periods", json={
+        "name": "2025.2",
+        "priority_start_date": "2025-07-01",
+        "priority_end_date": "2025-07-15",
+        "start_date": "2025-08-01",
+        "end_date": "2025-12-31",
+        "is_active": True,
+    })
+
+    response = client.get("/api/v1/periods?start_date_from=2025-01-01&start_date_to=2025-06-30")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["pagination"]["total"] == 1
+    assert "start_date_from" in body["filters"]["applied"]
+    assert "start_date_to" in body["filters"]["applied"]
+
+    response = client.get("/api/v1/periods?name_like=2025.2")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["pagination"]["total"] == 1
+
+
+def test_users_roles_endpoint(client):
+    response = client.get("/api/v1/users/roles")
+    assert response.status_code == 200
+    body = response.json()
+    assert "items" in body
+    roles = {item["value"] for item in body["items"]}
+    assert "admin" in roles
+    assert "education_institute" in roles
+    assert "service" in roles

@@ -23,7 +23,7 @@ class RoomSchedule(Base):
         DateTime, server_default=func.now(), onupdate=func.now()
     )
 
-    room: Mapped["Room"] = relationship("Room", back_populates="schedules")  # noqa: F821
+    # room relationship is deferred to avoid circular import
     students: Mapped[list["RoomScheduleStudent"]] = relationship(  # noqa: F821
         "RoomScheduleStudent", back_populates="schedule"
     )
@@ -39,4 +39,3 @@ class RoomScheduleStudent(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     schedule: Mapped["RoomSchedule"] = relationship("RoomSchedule", back_populates="students")  # noqa: F821
-    student: Mapped["Student"] = relationship("Student")  # noqa: F821

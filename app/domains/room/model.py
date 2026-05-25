@@ -21,8 +21,3 @@ class Room(Base):
     )
 
     service: Mapped["Service"] = relationship("Service", back_populates="rooms")  # noqa: F821
-
-
-    schedules: Mapped[list["RoomSchedule"]] = relationship(  # noqa: F821
-        "RoomSchedule", back_populates="room"
-    )

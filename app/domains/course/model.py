@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, String, func
+from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -13,6 +14,8 @@ class Course(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String(20), nullable=False)
+    code: Mapped[str | None] = mapped_column(String(20), nullable=True, index=True)
+    region_id: Mapped[int | None] = mapped_column(ForeignKey("regions.id"), nullable=True)
     requires_gurney: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
@@ -21,3 +24,4 @@ class Course(Base):
     students: Mapped[list["Student"]] = relationship(  
         "Student", back_populates="course"
     )
+    region: Mapped["Region | None"] = relationship("Region")  # noqa: F821

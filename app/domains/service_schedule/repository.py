@@ -5,21 +5,21 @@ from app.domains.service_schedule.model import ServiceSchedule
 from app.domains.service_schedule.schemas import ServiceScheduleCreate, ServiceScheduleUpdate
 
 
-def get_all(db: Session, skip: int = 0, limit: int = 100) -> tuple[list[ServiceSchedule], int]:
+def get_all(db: Session, page: int = 1, per_page: int = 10) -> tuple[list[ServiceSchedule], int]:
     query = db.query(ServiceSchedule)
     total = query.count()
-    items = query.offset(skip).limit(limit).all()
+    items = query.offset((page - 1) * per_page).limit(per_page).all()
     return items, total
 
 
-def get_by_service(db: Session, service_id: int, skip: int = 0, limit: int = 100) -> tuple[list[ServiceSchedule], int]:
+def get_by_service(db: Session, service_id: int, page: int = 1, per_page: int = 10) -> tuple[list[ServiceSchedule], int]:
     query = (
         db.query(ServiceSchedule)
         .join(ServiceRoom, ServiceSchedule.service_room_id == ServiceRoom.id)
         .filter(ServiceRoom.service_id == service_id)
     )
     total = query.count()
-    items = query.offset(skip).limit(limit).all()
+    items = query.offset((page - 1) * per_page).limit(per_page).all()
     return items, total
 
 

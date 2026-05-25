@@ -13,15 +13,16 @@ from app.core.security import hash_password
 import secrets
 
 
-def get_all(db: Session, skip: int = 0, limit: int = 100, is_active: bool | None = None) -> tuple[list[EducationInstitute], int]:
+def get_all(db: Session, page: int = 1, per_page: int = 10, filters: dict | None = None) -> tuple[list[EducationInstitute], int]:
     query = db.query(EducationInstitute).options(
         selectinload(EducationInstitute.users),
         selectinload(EducationInstitute.regions),
     )
-    if is_active is not None:
-        query = query.filter(EducationInstitute.is_active == is_active)
+    if filters:
+        from app.core.filters import apply_filters
+        query, _ = apply_filters(query, EducationInstitute, filters)
     total = query.count()
-    items = query.offset(skip).limit(limit).all()
+    items = query.offset((page - 1) * per_page).limit(per_page).all()
     return items, total
 
 

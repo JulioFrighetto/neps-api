@@ -1,11 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+import math
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.email import EmailDeliveryError, build_welcome_body, send_email
 from app.core.deps import get_current_admin_user, get_current_user
 from app.core.jwt import create_reset_token
-from app.core.schemas import Page
+from app.core.schemas import FilterInfo, Page, PaginationInfo
 from app.core.settings import settings
 from app.domains.education_institute.repository import get_by_id as get_institute_by_id
 from app.domains.user import repository
@@ -16,8 +18,20 @@ from app.domains.user.schemas import (
     UserUpdate,
 )
 from app.core.security import hash_password
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/users", tags=["Users"])
+
+
+class RoleItem(BaseModel):
+    label: str
+    value: str
+
+
+class RolesResponse(BaseModel):
+    items: list[RoleItem]
+
+AVAILABLE_FILTERS = ["name_like", "email_like", "role", "role_in", "is_active"]
 
 
 @router.get("/me", response_model=UserResponse)
@@ -27,13 +41,44 @@ def me(current_user=Depends(get_current_user)):
 
 @router.get("/", response_model=Page[UserResponse])
 def list_users(
-    skip: int = 0,
-    limit: int = 100,
+    page: int = Query(1, ge=1),
+    per_page: int = Query(10, ge=1, le=100),
+    name: str | None = Query(None),
+    name_like: str | None = Query(None),
+    email_like: str | None = Query(None),
+    role: str | None = Query(None),
+    role_in: str | None = Query(None),
+    is_active: bool | None = Query(None),
     db: Session = Depends(get_db),
     current_user=Depends(get_current_admin_user),
 ):
-    items, total = repository.get_all(db, skip=skip, limit=limit)
-    return Page(items=items, total=total, skip=skip, limit=limit, has_next=skip + limit < total)
+    filters = {k: v for k, v in {
+        "name_like": name if name is not None else name_like,
+        "email_like": email_like,
+        "role": role,
+        "role_in": role_in,
+        "is_active": is_active,
+    }.items() if v is not None}
+    items, total = repository.get_all(db, page=page, per_page=per_page, filters=filters)
+    return Page(
+        items=items,
+        pagination=PaginationInfo(
+            page=page,
+            per_page=per_page,
+            total=total,
+            total_pages=max(1, math.ceil(total / per_page)) if total > 0 else 0,
+        ),
+        filters=FilterInfo(applied=list(filters.keys()), available=AVAILABLE_FILTERS),
+    )
+
+
+@router.get("/roles", response_model=RolesResponse)
+def list_roles():
+    return RolesResponse(items=[
+        RoleItem(label="Administrador", value="admin"),
+        RoleItem(label="Instituição de Ensino", value="education_institute"),
+        RoleItem(label="Unidade de Saúde", value="service"),
+    ])
 
 
 @router.get("/{user_id}", response_model=UserResponse)
@@ -125,11 +170,9 @@ def replace_user(
     if existing and existing.id != user_id:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Já existe um usuário com este e-mail")
 
-    # apply changes
+    # apply changes (password is NOT updated here — use /change-password endpoint)
     user.name = data.name
     user.email = data.email
-    if data.password is not None:
-        user.password = hash_password(data.password)
     user.role = data.role
     user.service_id = data.service_id
     user.education_institute_id = data.education_institute_id

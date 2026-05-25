@@ -1,13 +1,16 @@
 from sqlalchemy.orm import Session
 
+from app.core.filters import apply_filters
 from app.domains.student.model import Student
 from app.domains.student.schemas import StudentCreate, StudentUpdate
 
 
-def get_all(db: Session, skip: int = 0, limit: int = 100) -> tuple[list[Student], int]:
+def get_all(db: Session, page: int = 1, per_page: int = 10, filters: dict | None = None) -> tuple[list[Student], int]:
     query = db.query(Student)
+    if filters:
+        query, _ = apply_filters(query, Student, filters)
     total = query.count()
-    items = query.offset(skip).limit(limit).all()
+    items = query.offset((page - 1) * per_page).limit(per_page).all()
     return items, total
 
 
@@ -15,17 +18,21 @@ def get_by_id(db: Session, student_id: int) -> Student | None:
     return db.query(Student).filter(Student.id == student_id).first()
 
 
-def get_by_course(db: Session, course_id: int, skip: int = 0, limit: int = 100) -> tuple[list[Student], int]:
+def get_by_course(db: Session, course_id: int, page: int = 1, per_page: int = 10, filters: dict | None = None) -> tuple[list[Student], int]:
     query = db.query(Student).filter(Student.course_id == course_id)
+    if filters:
+        query, _ = apply_filters(query, Student, filters)
     total = query.count()
-    items = query.offset(skip).limit(limit).all()
+    items = query.offset((page - 1) * per_page).limit(per_page).all()
     return items, total
 
 
-def get_by_institute(db: Session, institute_id: int, skip: int = 0, limit: int = 100) -> tuple[list[Student], int]:
+def get_by_institute(db: Session, institute_id: int, page: int = 1, per_page: int = 10, filters: dict | None = None) -> tuple[list[Student], int]:
     query = db.query(Student).filter(Student.edu_institute_id == institute_id)
+    if filters:
+        query, _ = apply_filters(query, Student, filters)
     total = query.count()
-    items = query.offset(skip).limit(limit).all()
+    items = query.offset((page - 1) * per_page).limit(per_page).all()
     return items, total
 
 
