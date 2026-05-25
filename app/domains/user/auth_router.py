@@ -44,6 +44,7 @@ def _build_access_token_extra(user) -> dict[str, int | str | None]:
 
 @router.post("/login", response_model=TokenResponse)
 def login(data: LoginRequest, db: Session = Depends(get_db)):
+    print(f"Login attempt for email: {data.email}")
     # Reject login early if the account exists but is inactive
     existing = repository.get_by_email(db, data.email)
     if existing and not existing.is_active:
