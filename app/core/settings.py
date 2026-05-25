@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     RESET_TOKEN_EXPIRE_MINUTES: int = 30
 
-    # SMTP
+    # SMTP / Email
     SMTP_HOST: str | None = None
     SMTP_PORT: int = 587
     SMTP_USERNAME: str | None = None
@@ -35,6 +35,15 @@ class Settings(BaseSettings):
     SMTP_FROM_NAME: str = "NEPS API"
     SMTP_USE_TLS: bool = True
     SMTP_USE_SSL: bool = False
+    
+    # MailerSend
+    MAILERSEND_API_TOKEN: str | None = None
+    MAILERSEND_FROM_EMAIL: str | None = None
+    MAILERSEND_FROM_NAME: str = "NEPS API"
+    # SendGrid (fallback when SMTP fails)
+    SENDGRID_API_KEY: str | None = None
+    SENDGRID_FROM_EMAIL: str | None = None
+    SENDGRID_FROM_NAME: str = "NEPS API"
 
     class Config:
         env_file = ".env"

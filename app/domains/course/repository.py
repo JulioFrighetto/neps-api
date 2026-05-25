@@ -1,18 +1,21 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
+from app.core.filters import apply_filters
 from app.domains.course.model import Course
 from app.domains.course.schemas import CourseCreate, CourseUpdate
 
 
-def get_all(db: Session, skip: int = 0, limit: int = 100) -> tuple[list[Course], int]:
-    query = db.query(Course)
+def get_all(db: Session, page: int = 1, per_page: int = 10, filters: dict | None = None) -> tuple[list[Course], int]:
+    query = db.query(Course).options(selectinload(Course.region))
+    if filters:
+        query, _ = apply_filters(query, Course, filters)
     total = query.count()
-    items = query.offset(skip).limit(limit).all()
+    items = query.offset((page - 1) * per_page).limit(per_page).all()
     return items, total
 
 
 def get_by_id(db: Session, course_id: int) -> Course | None:
-    return db.query(Course).filter(Course.id == course_id).first()
+    return db.query(Course).options(selectinload(Course.region)).filter(Course.id == course_id).first()
 
 
 def create(db: Session, data: CourseCreate) -> Course:

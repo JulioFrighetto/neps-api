@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from jose import JWTError
 from sqlalchemy.orm import Session
@@ -25,6 +27,7 @@ from app.domains.user.schemas import (
 )
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
+logger = logging.getLogger(__name__)
 
 
 def _build_access_token_extra(user) -> dict[str, int | str | None]:
@@ -99,8 +102,10 @@ def request_password_reset(
     data: PasswordResetRequest,
     db: Session = Depends(get_db),
 ):
+    logger.info("Password reset requested", extra={"email": data.email})
     user = repository.get_by_email(db, data.email)
     if not user or not user.is_active:
+        logger.warning("Password reset rejected: user not found or inactive", extra={"email": data.email})
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Usuário não encontrado ou inativo",
@@ -114,12 +119,14 @@ def request_password_reset(
     try:
         send_email(user.email, subject, body)
     except EmailDeliveryError as exc:
+        logger.exception("Password reset email delivery failed", extra={"email": user.email})
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=str(exc),
         )
 
 
+@router.post("/reset-password-confirm", status_code=status.HTTP_204_NO_CONTENT)
 @router.post("/reset-password/confirm", status_code=status.HTTP_204_NO_CONTENT)
 def confirm_password_reset(data: PasswordResetConfirmRequest, db: Session = Depends(get_db)):
     try:

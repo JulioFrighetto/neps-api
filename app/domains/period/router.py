@@ -1,22 +1,49 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+import math
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.schemas import Page
+from app.core.schemas import FilterInfo, Page, PaginationInfo
 from app.domains.period import repository
 from app.domains.period.schemas import PeriodCreate, PeriodResponse, PeriodUpdate
 
 router = APIRouter(prefix="/periods", tags=["Periods"])
 
+AVAILABLE_FILTERS = ["name_like", "is_active", "start_date_from", "start_date_to", "end_date_from", "end_date_to"]
+
 
 @router.get("/", response_model=Page[PeriodResponse])
 def list_periods(
-    skip: int = 0,
-    limit: int = 100,
+    page: int = Query(1, ge=1),
+    per_page: int = Query(10, ge=1, le=100),
+    name_like: str | None = Query(None),
+    is_active: bool | None = Query(None),
+    start_date_from: str | None = Query(None),
+    start_date_to: str | None = Query(None),
+    end_date_from: str | None = Query(None),
+    end_date_to: str | None = Query(None),
     db: Session = Depends(get_db),
 ):
-    items, total = repository.get_all(db, skip=skip, limit=limit)
-    return Page(items=items, total=total, skip=skip, limit=limit, has_next=skip + limit < total)
+    filters = {k: v for k, v in {
+        "name_like": name_like,
+        "is_active": is_active,
+        "start_date_from": start_date_from,
+        "start_date_to": start_date_to,
+        "end_date_from": end_date_from,
+        "end_date_to": end_date_to,
+    }.items() if v is not None}
+    items, total = repository.get_all(db, page=page, per_page=per_page, filters=filters)
+    return Page(
+        items=items,
+        pagination=PaginationInfo(
+            page=page,
+            per_page=per_page,
+            total=total,
+            total_pages=max(1, math.ceil(total / per_page)) if total > 0 else 0,
+        ),
+        filters=FilterInfo(applied=list(filters.keys()), available=AVAILABLE_FILTERS),
+    )
 
 
 @router.get("/{period_id}", response_model=PeriodResponse)

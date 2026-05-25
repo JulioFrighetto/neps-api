@@ -1,16 +1,20 @@
 from sqlalchemy.orm import Session
 
+from app.core.filters import apply_filters
 from app.domains.region.model import Region
 from app.domains.region.schemas import (
     RegionCreate,
     RegionUpdate,
 )
 
+
 # Region
-def get_all_regions(db: Session, skip: int = 0, limit: int = 100) -> tuple[list[Region], int]:
+def get_all_regions(db: Session, page: int = 1, per_page: int = 10, filters: dict | None = None) -> tuple[list[Region], int]:
     query = db.query(Region)
+    if filters:
+        query, _ = apply_filters(query, Region, filters)
     total = query.count()
-    items = query.offset(skip).limit(limit).all()
+    items = query.offset((page - 1) * per_page).limit(per_page).all()
     return items, total
 
 

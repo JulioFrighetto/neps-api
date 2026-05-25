@@ -8,10 +8,13 @@ from app.domains.user.schemas import UserCreate, UserUpdate
 from sqlalchemy.orm import selectinload
 
 
-def get_all(db: Session, skip: int = 0, limit: int = 100) -> tuple[list[User], int]:
+def get_all(db: Session, page: int = 1, per_page: int = 10, filters: dict | None = None) -> tuple[list[User], int]:
     query = db.query(User)
+    if filters:
+        from app.core.filters import apply_filters
+        query, _ = apply_filters(query, User, filters)
     total = query.count()
-    items = query.offset(skip).limit(limit).all()
+    items = query.offset((page - 1) * per_page).limit(per_page).all()
     return items, total
 
 

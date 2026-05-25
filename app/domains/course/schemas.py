@@ -6,6 +6,8 @@ from pydantic import BaseModel, ConfigDict
 class CourseBase(BaseModel):
     name: str
     requires_gurney: bool = False
+    code: str | None = None
+    region_id: int | None = None
 
 
 class CourseCreate(CourseBase):
@@ -15,6 +17,8 @@ class CourseCreate(CourseBase):
 class CourseUpdate(BaseModel):
     name: str | None = None
     requires_gurney: bool | None = None
+    code: str | None = None
+    region_id: int | None = None
 
 
 class CourseResponse(CourseBase):

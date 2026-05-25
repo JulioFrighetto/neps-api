@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+import math
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -10,7 +12,7 @@ from app.core.email import (
     send_email,
 )
 from app.core.jwt import create_reset_token
-from app.core.schemas import Page
+from app.core.schemas import FilterInfo, Page, PaginationInfo
 from app.core.settings import settings
 from app.domains.service import repository
 from app.domains.service.schemas import ServiceCreate, ServiceResponse, ServiceUpdate
@@ -21,23 +23,39 @@ import secrets
 
 router = APIRouter(prefix="/services", tags=["Services"])
 
+AVAILABLE_FILTERS = ["name_like", "region_id", "is_active"]
+
 
 @router.get("/", response_model=Page[ServiceResponse])
 def list_services(
-    skip: int = 0,
-    limit: int = 100,
+    page: int = Query(1, ge=1),
+    per_page: int = Query(10, ge=1, le=100),
+    name_like: str | None = Query(None),
+    region_id: int | None = Query(None),
+    is_active: bool | None = Query(None),
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
+    filters = {k: v for k, v in {"name_like": name_like, "region_id": region_id, "is_active": is_active}.items() if v is not None}
+
     if current_user.role == "admin":
-        items, total = repository.get_all(db, skip=skip, limit=limit)
+        items, total = repository.get_all(db, page=page, per_page=per_page, filters=filters)
     elif current_user.role == "service" and current_user.service_id is not None:
         service = repository.get_by_id(db, current_user.service_id)
         items = [service] if service else []
         total = 1 if service else 0
     else:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
-    return Page(items=items, total=total, skip=skip, limit=limit, has_next=skip + limit < total)
+    return Page(
+        items=items,
+        pagination=PaginationInfo(
+            page=page,
+            per_page=per_page,
+            total=total,
+            total_pages=max(1, math.ceil(total / per_page)) if total > 0 else 0,
+        ),
+        filters=FilterInfo(applied=list(filters.keys()), available=AVAILABLE_FILTERS),
+    )
 
 
 @router.get("/{service_id}", response_model=ServiceResponse)
@@ -55,23 +73,24 @@ def create_service(data: ServiceCreate, db: Session = Depends(get_db)):
             status_code=status.HTTP_409_CONFLICT,
             detail="Já existe um serviço com este nome",
         )
-    if get_user_by_email(db, data.user_email):
+    if data.user_email and get_user_by_email(db, data.user_email):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Já existe um usuário com este e-mail",
         )
 
     service = repository.create(db, data)
-    reset_token = create_reset_token(data.user_email)
-    reset_link = f"{settings.FRONTEND_URL.rstrip('/')}/reset-password?token={reset_token}"
-    body = build_welcome_body(reset_link, data.user_name)
+    if data.user_email:
+        reset_token = create_reset_token(data.user_email)
+        reset_link = f"{settings.FRONTEND_URL.rstrip('/')}/reset-password?token={reset_token}"
+        body = build_welcome_body(reset_link, data.user_name or data.name)
 
-    try:
-        send_email(data.user_email, "Bem-vindo ao NEPS", body)
-    except EmailDeliveryError:
-        # Falha no envio de e-mail não deve impedir criação do serviço em ambiente de teste/dev.
-        # Log no módulo de e-mail já ocorreu; aqui tratamos como tentativa "best-effort".
-        pass
+        try:
+            send_email(data.user_email, "Bem-vindo ao NEPS", body)
+        except EmailDeliveryError:
+            # Falha no envio de e-mail não deve impedir criação do serviço em ambiente de teste/dev.
+            # Log no módulo de e-mail já ocorreu; aqui tratamos como tentativa "best-effort".
+            pass
 
     return service
 
