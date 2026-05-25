@@ -31,7 +31,7 @@ def get_by_service(db: Session, service_id: int, page: int = 1, per_page: int = 
 
 
 def create(db: Session, data: RoomCreate) -> Room:
-    from app.domains.room_schedule import repository as schedule_repository  # noqa: F401
+    from app.domains.room_schedule import repository_nested as schedule_repository
 
     room = Room(**data.model_dump())
     db.add(room)

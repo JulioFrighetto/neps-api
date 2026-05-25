@@ -52,7 +52,37 @@ def get_service_schedule(service_schedule_id: int, db: Session = Depends(get_db)
 
 @router.get("/by-room/{service_room_id}", response_model=list[ServiceScheduleResponse])
 def list_service_schedules_by_room(service_room_id: int, db: Session = Depends(get_db)):
-    return repository.get_by_room(db, service_room_id)
+    # First, check if it's a ServiceRoom ID
+    service_schedules = repository.get_by_room(db, service_room_id)
+    if service_schedules:
+        return service_schedules
+    
+    # If not found, check if it's a Room ID
+    from app.domains.room_schedule import repository as room_schedule_repository
+    room_schedules = room_schedule_repository.get_by_room(db, service_room_id)
+    if room_schedules:
+        # Map RoomSchedule to ServiceScheduleResponse format
+        # Convert day and shift from lowercase to uppercase
+        day_map = {"seg": "SEG", "ter": "TER", "qua": "QUA", "qui": "QUI", "sex": "SEX", "sab": "SAB", "dom": "DOM"}
+        shift_map = {"manhã": "MAN", "tarde": "TRD", "noite": "VSP"}
+        
+        from app.domains.service_schedule.schemas import ServiceScheduleResponse
+        result = []
+        for rs in room_schedules:
+            result.append(
+                ServiceScheduleResponse(
+                    id=rs.id,
+                    service_room_id=rs.room_id,
+                    week_day=day_map.get(rs.week_day, rs.week_day),
+                    shift=shift_map.get(rs.shift, rs.shift),
+                    is_active=rs.is_active,
+                    created_at=rs.created_at,
+                    updated_at=rs.updated_at,
+                )
+            )
+        return result
+    
+    return []
 
 
 @router.get("/by-room/{service_room_id}/by-day/{week_day}", response_model=list[ServiceScheduleResponse])

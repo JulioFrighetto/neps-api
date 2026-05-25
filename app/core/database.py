@@ -90,6 +90,22 @@ def seed_admin():
         _ensure_course_columns(conn)
 
         _ensure_education_institute_columns(conn)
+
+        def _ensure_student_columns(conn) -> None:
+            columns = conn.execute(text("PRAGMA table_info(students)")).fetchall()
+            column_names = {column[1] for column in columns}
+            if "name" not in column_names:
+                conn.execute(text("ALTER TABLE students ADD COLUMN name VARCHAR(100) NULL"))
+            if "cpf" not in column_names:
+                conn.execute(text("ALTER TABLE students ADD COLUMN cpf VARCHAR(20) NULL"))
+            if "email" not in column_names:
+                conn.execute(text("ALTER TABLE students ADD COLUMN email VARCHAR(150) NULL"))
+            if "phone" not in column_names:
+                conn.execute(text("ALTER TABLE students ADD COLUMN phone VARCHAR(20) NULL"))
+            if "semester" not in column_names:
+                conn.execute(text("ALTER TABLE students ADD COLUMN semester INTEGER NULL"))
+
+        _ensure_student_columns(conn)
         conn.execute(
             sql,
             {
