@@ -20,6 +20,7 @@ Este documento descreve os endpoints relacionados às agendas de sala (schedules
 Descrição: Retorna a agenda (estrutura aninhada) da sala.
 
 Parâmetros:
+
 - `room_id` (path): id da sala
 
 Resposta (200):
@@ -50,6 +51,7 @@ Resposta (200):
 ```
 
 Erros comuns:
+
 - `404 Sala não encontrada` — sala com `room_id` inexistente.
 - `404 Agenda não encontrada` — se por algum motivo a agenda vinculada não existir.
 
@@ -60,6 +62,7 @@ Erros comuns:
 Descrição: Adiciona um aluno ao período especificado da sala.
 
 Parâmetros:
+
 - `room_id` (path): id da sala
 - `day_of_week` (path): um dos valores do enum `dayOfWeek`
 - `period` (path): um dos valores do enum `period`
@@ -84,6 +87,7 @@ Resposta (200): o período atualizado:
 ```
 
 Erros e códigos de resposta:
+
 - `404 Sala não encontrada` — sala inválida.
 - `404 Período ou aluno não encontrado` — se a combinação `room/day/period` ou o `student_id` não existirem.
 - `409 Conflito` — usado quando a operação falha por regra de negócio, por exemplo:
@@ -120,6 +124,7 @@ curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer <toke
 ---
 
 Se quiser, eu adiciono testes básicos que validam:
+
 - a criação automática da `Schedule` ao criar uma `Room`;
 - que `GET /rooms/{id}/schedule` retorna 7 dias × 3 períodos;
 - que `POST` respeita `room_capacity` e evita duplicatas.
