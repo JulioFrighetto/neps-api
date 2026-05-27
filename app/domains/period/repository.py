@@ -1,3 +1,6 @@
+from datetime import date
+
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
 from app.core.filters import apply_filters
@@ -5,17 +8,22 @@ from app.domains.period.model import Period
 from app.domains.period.schemas import PeriodCreate, PeriodUpdate
 
 
-def get_all(db: Session, page: int = 1, per_page: int = 10, filters: dict | None = None) -> tuple[list[Period], int]:
+def get_all(db: Session, skip: int = 0, limit: int = 100) -> tuple[list[Period], int]:
     query = db.query(Period)
-    if filters:
-        query, _ = apply_filters(query, Period, filters)
     total = query.count()
     items = query.offset((page - 1) * per_page).limit(per_page).all()
     return items, total
 
 
-def get_by_id(db: Session, period_id: int) -> Period | None:
-    return db.query(Period).filter(Period.id == period_id).first()
+def get_by_id(
+    db: Session,
+    period_id: int,
+    institute_priority: int | None = None,
+    today: date | None = None,
+) -> Period | None:
+    query = db.query(Period).filter(Period.id == period_id)
+    query = _apply_visibility_filter(query, institute_priority=institute_priority, today=today)
+    return query.first()
 
 
 def create(db: Session, data: PeriodCreate) -> Period:

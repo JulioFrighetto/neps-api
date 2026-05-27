@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.deps import get_current_user
 from app.core.schemas import FilterInfo, Page, PaginationInfo
 from app.domains.period import repository
 from app.domains.period.schemas import PeriodCreate, PeriodResponse, PeriodUpdate
@@ -24,6 +25,7 @@ def list_periods(
     end_date_from: str | None = Query(None),
     end_date_to: str | None = Query(None),
     db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
 ):
     filters = {k: v for k, v in {
         "name_like": name_like,
@@ -33,7 +35,22 @@ def list_periods(
         "end_date_from": end_date_from,
         "end_date_to": end_date_to,
     }.items() if v is not None}
-    items, total = repository.get_all(db, page=page, per_page=per_page, filters=filters)
+
+    institute_priority = None
+    if current_user.role == "education_institute":
+        if current_user.education_institute_id is None or current_user.education_institute is None:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
+        institute_priority = current_user.education_institute.priority
+    elif current_user.role != "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
+
+    items, total = repository.get_all(
+        db,
+        page=page,
+        per_page=per_page,
+        filters=filters,
+        institute_priority=institute_priority,
+    )
     return Page(
         items=items,
         pagination=PaginationInfo(
@@ -47,8 +64,16 @@ def list_periods(
 
 
 @router.get("/{period_id}", response_model=PeriodResponse)
-def get_period(period_id: int, db: Session = Depends(get_db)):
-    period = repository.get_by_id(db, period_id)
+def get_period(period_id: int, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    institute_priority = None
+    if current_user.role == "education_institute":
+        if current_user.education_institute_id is None or current_user.education_institute is None:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
+        institute_priority = current_user.education_institute.priority
+    elif current_user.role != "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
+
+    period = repository.get_by_id(db, period_id, institute_priority=institute_priority)
     if not period:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Período não encontrado")
     return period
