@@ -1,15 +1,47 @@
 from datetime import date
 
 from sqlalchemy import and_, or_
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, Query
 
 from app.core.filters import apply_filters
 from app.domains.period.model import Period
 from app.domains.period.schemas import PeriodCreate, PeriodUpdate
 
 
-def get_all(db: Session, skip: int = 0, limit: int = 100) -> tuple[list[Period], int]:
+def _apply_visibility_filter(query: Query, institute_priority: int | None = None, today: date | None = None) -> Query:
+    if today is None:
+        today = date.today()
+
+    # Admins (institute_priority is None) see all active periods
+    if institute_priority is None:
+        return query.filter(Period.is_active.is_(True))
+
+    open_period = and_(Period.start_date <= today, Period.end_date >= today)
+    priority_period = and_(Period.priority_start_date <= today, Period.priority_end_date >= today)
+
+    # institute_priority == 0 => prioritized institute: see priority window OR open window
+    if institute_priority == 0:
+        return query.filter(Period.is_active.is_(True)).filter(or_(open_period, priority_period))
+
+    # non-priority institutes see only open window
+    return query.filter(Period.is_active.is_(True)).filter(open_period)
+
+
+def get_all(
+    db: Session,
+    page: int = 1,
+    per_page: int = 100,
+    filters: dict | None = None,
+    institute_priority: int | None = None,
+    today: date | None = None,
+) -> tuple[list[Period], int]:
     query = db.query(Period)
+
+    if filters:
+        query, _applied = apply_filters(query, Period, filters)
+
+    query = _apply_visibility_filter(query, institute_priority=institute_priority, today=today)
+
     total = query.count()
     items = query.offset((page - 1) * per_page).limit(per_page).all()
     return items, total
