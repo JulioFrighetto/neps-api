@@ -1,7 +1,7 @@
 from datetime import date
 
 from sqlalchemy import and_, or_
-from sqlalchemy.orm import Session, Query
+from sqlalchemy.orm import Session, Query, selectinload
 
 from app.core.filters import apply_filters
 from app.domains.period.model import Period
@@ -56,6 +56,38 @@ def get_by_id(
     query = db.query(Period).filter(Period.id == period_id)
     query = _apply_visibility_filter(query, institute_priority=institute_priority, today=today)
     return query.first()
+
+
+def get_by_id_with_students(
+    db: Session,
+    period_id: int,
+    institute_priority: int | None = None,
+    today: date | None = None,
+) -> Period | None:
+    query = db.query(Period).options(selectinload(Period.students)).filter(Period.id == period_id)
+    query = _apply_visibility_filter(query, institute_priority=institute_priority, today=today)
+    return query.first()
+
+
+def link_student(db: Session, period_id: int, student) -> None:
+    # `student` should be a Student instance
+    period = db.query(Period).filter(Period.id == period_id).first()
+    if not period:
+        raise ValueError("Period not found")
+    if any(s.id == student.id for s in period.students):
+        raise ValueError("Student already linked")
+    period.students.append(student)
+    db.commit()
+
+
+def unlink_student(db: Session, period_id: int, student) -> None:
+    period = db.query(Period).filter(Period.id == period_id).first()
+    if not period:
+        raise ValueError("Period not found")
+    if not any(s.id == student.id for s in period.students):
+        raise ValueError("Student not linked")
+    period.students.remove(student)
+    db.commit()
 
 
 def create(db: Session, data: PeriodCreate) -> Period:

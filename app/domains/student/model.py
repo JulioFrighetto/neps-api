@@ -37,3 +37,9 @@ class Student(Base):
     service_schedules: Mapped[list["ServiceSchedule"]] = relationship(  # noqa: F821
         "ServiceSchedule", back_populates="student"
     )
+
+    periods: Mapped[list["Period"]] = relationship(
+        "Period",
+        secondary="period_students",
+        back_populates="students",
+    )
