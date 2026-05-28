@@ -41,6 +41,7 @@ class StudentListResponse(BaseModel):
     institution_id: int
     status: str
     is_active: bool
+    document_url: str
     course: CourseSummary | None = None
     institution: InstitutionSummary | None = None
 
@@ -59,6 +60,7 @@ def _to_response(student: Student, include: set[str] | None = None) -> StudentLi
         institution_id=student.edu_institute_id,
         status=student.status,
         is_active=student.is_active,
+        document_url=student.document_url,
         course=(
             StudentListResponse.CourseSummary(id=student.course.id, name=student.course.name)
             if "course" in include and student.course
