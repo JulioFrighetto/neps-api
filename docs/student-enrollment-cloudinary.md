@@ -10,6 +10,7 @@ Para criar um aluno, é necessário enviar um documento PDF (máximo 5MB) que se
 ## Passo 1: Upload do PDF para Cloudinary (Frontend)
 
 ### Credenciais do Cloudinary
+
 - **Cloud Name**: `dpsxz0o9k` (extraído da URL)
 - **Upload Preset**: (será fornecido pelo backend em um endpoint)
 - **API Key**: `574Ug7upPLPuuP0ZpQueViQeTRA`
@@ -20,7 +21,8 @@ Para criar um aluno, é necessário enviar um documento PDF (máximo 5MB) que se
 async function uploadPdfToCloudinary(file) {
   // Validações
   if (!file) throw new Error("Nenhum arquivo selecionado");
-  if (file.type !== "application/pdf") throw new Error("Apenas PDFs são aceitos");
+  if (file.type !== "application/pdf")
+    throw new Error("Apenas PDFs são aceitos");
   if (file.size > 5 * 1024 * 1024) throw new Error("Arquivo maior que 5MB");
 
   const formData = new FormData();
@@ -33,11 +35,11 @@ async function uploadPdfToCloudinary(file) {
     {
       method: "POST",
       body: formData,
-    }
+    },
   );
 
   const data = await response.json();
-  
+
   if (!response.ok) {
     throw new Error(data.error?.message || "Erro ao fazer upload");
   }
@@ -57,10 +59,11 @@ async function uploadPdfWithSignature(file) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ timestamp: Math.floor(Date.now() / 1000) }),
-    }
+    },
   );
 
-  const { signature, timestamp, upload_preset } = await signatureResponse.json();
+  const { signature, timestamp, upload_preset } =
+    await signatureResponse.json();
 
   // 2. Fazer upload com a assinatura
   const formData = new FormData();
@@ -75,7 +78,7 @@ async function uploadPdfWithSignature(file) {
     {
       method: "POST",
       body: formData,
-    }
+    },
   );
 
   const data = await response.json();
@@ -90,6 +93,7 @@ async function uploadPdfWithSignature(file) {
 Após obter a URL do PDF do Cloudinary, envie para o backend:
 
 ### Request
+
 ```http
 POST http://localhost:8000/api/v1/students/
 Content-Type: application/json
@@ -107,6 +111,7 @@ Content-Type: application/json
 ```
 
 ### Response (201 Created)
+
 ```json
 {
   "id": 1,
@@ -128,17 +133,17 @@ Content-Type: application/json
 ## Exemplo Completo (React)
 
 ```javascript
-import { useState } from 'react';
-import axios from 'axios';
+import { useState } from "react";
+import axios from "axios";
 
 export function EnrollmentForm() {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
-    cpf: '',
-    email: '',
-    phone: '',
+    name: "",
+    cpf: "",
+    email: "",
+    phone: "",
     course_id: 1,
     semester: 1,
     institution_id: 3,
@@ -148,11 +153,11 @@ export function EnrollmentForm() {
     const selectedFile = e.target.files[0];
     if (selectedFile) {
       if (selectedFile.size > 5 * 1024 * 1024) {
-        alert('Arquivo deve ter no máximo 5MB');
+        alert("Arquivo deve ter no máximo 5MB");
         return;
       }
-      if (selectedFile.type !== 'application/pdf') {
-        alert('Apenas arquivos PDF são aceitos');
+      if (selectedFile.type !== "application/pdf") {
+        alert("Apenas arquivos PDF são aceitos");
         return;
       }
       setFile(selectedFile);
@@ -161,14 +166,14 @@ export function EnrollmentForm() {
 
   const uploadPdfToCloudinary = async (pdfFile) => {
     const formData = new FormData();
-    formData.append('file', pdfFile);
-    formData.append('upload_preset', 'student_documents'); // Configure isso no Cloudinary
-    formData.append('resource_type', 'auto');
+    formData.append("file", pdfFile);
+    formData.append("upload_preset", "student_documents"); // Configure isso no Cloudinary
+    formData.append("resource_type", "auto");
 
     try {
       const response = await axios.post(
-        'https://api.cloudinary.com/v1_1/dpsxz0o9k/image/upload',
-        formData
+        "https://api.cloudinary.com/v1_1/dpsxz0o9k/image/upload",
+        formData,
       );
       return response.data.secure_url;
     } catch (error) {
@@ -178,9 +183,9 @@ export function EnrollmentForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!file) {
-      alert('Por favor, selecione um arquivo PDF');
+      alert("Por favor, selecione um arquivo PDF");
       return;
     }
 
@@ -191,29 +196,29 @@ export function EnrollmentForm() {
 
       // 2. Criar aluno no backend
       const response = await axios.post(
-        'http://localhost:8000/api/v1/students/',
+        "http://localhost:8000/api/v1/students/",
         {
           ...formData,
           document_url: documentUrl,
-        }
+        },
       );
 
-      console.log('Aluno criado com sucesso:', response.data);
-      alert('Aluno cadastrado com sucesso!');
-      
+      console.log("Aluno criado com sucesso:", response.data);
+      alert("Aluno cadastrado com sucesso!");
+
       // Limpar formulário
       setFile(null);
       setFormData({
-        name: '',
-        cpf: '',
-        email: '',
-        phone: '',
+        name: "",
+        cpf: "",
+        email: "",
+        phone: "",
         course_id: 1,
         semester: 1,
         institution_id: 3,
       });
     } catch (error) {
-      console.error('Erro:', error);
+      console.error("Erro:", error);
       alert(`Erro ao cadastrar aluno: ${error.message}`);
     } finally {
       setLoading(false);
@@ -229,7 +234,7 @@ export function EnrollmentForm() {
         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
         required
       />
-      
+
       <input
         type="text"
         placeholder="CPF"
@@ -258,7 +263,9 @@ export function EnrollmentForm() {
         type="number"
         placeholder="Semestre"
         value={formData.semester}
-        onChange={(e) => setFormData({ ...formData, semester: parseInt(e.target.value) })}
+        onChange={(e) =>
+          setFormData({ ...formData, semester: parseInt(e.target.value) })
+        }
         required
       />
 
@@ -272,11 +279,15 @@ export function EnrollmentForm() {
             required
           />
         </label>
-        {file && <p>Arquivo: {file.name} ({(file.size / 1024 / 1024).toFixed(2)}MB)</p>}
+        {file && (
+          <p>
+            Arquivo: {file.name} ({(file.size / 1024 / 1024).toFixed(2)}MB)
+          </p>
+        )}
       </div>
 
       <button type="submit" disabled={loading}>
-        {loading ? 'Cadastrando...' : 'Cadastrar Aluno'}
+        {loading ? "Cadastrando..." : "Cadastrar Aluno"}
       </button>
     </form>
   );
@@ -314,6 +325,7 @@ def generate_cloudinary_signature(timestamp):
 ## Validações no Backend (FastAPI)
 
 Já implementadas em `StudentCreate`:
+
 - ✅ `document_url` é obrigatório (string não-vazia)
 - ✅ CPF, email, telefone são opcionais
 - ✅ `institution_id` mapeado para `edu_institute_id`
@@ -330,6 +342,7 @@ Já implementadas em `StudentCreate`:
 ## Comandos Úteis (Backend)
 
 ### Criar migração para adicionar coluna
+
 ```bash
 # Com Alembic (se configurado)
 alembic revision --autogenerate -m "Add document_url to students"
@@ -337,6 +350,7 @@ alembic upgrade head
 ```
 
 ### Testar endpoint POST
+
 ```bash
 curl -X POST http://localhost:8000/api/v1/students/ \
   -H "Content-Type: application/json" \
