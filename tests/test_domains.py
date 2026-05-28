@@ -106,8 +106,8 @@ def _make_institute_token(client, db, *, priority: int = 0, email: str = "inst@t
 def test_list_education_institutes_pagination(client):
     token = _make_admin_token(client)
     headers = {"Authorization": f"Bearer {token}"}
-    client.post("/api/v1/cadastros/institutions/", json={"name": "UNISINOS"}, headers=headers)
-    response = client.get("/api/v1/cadastros/institutions/", headers=headers)
+client.post("/api/v1/education-institutes/", json={"name": "UNISINOS"}, headers=headers)
+response = client.get("/api/v1/education-institutes/", headers=headers)
     assert response.status_code == 200
     assert len(response.json()) >= 1
 
