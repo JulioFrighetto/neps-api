@@ -15,7 +15,6 @@ from app.domains.room_schedule.router import router as room_schedule_router
 from app.domains.student.router import router as student_router
 from app.domains.user.auth_router import router as auth_router
 from app.domains.user.router import router as user_router
-from app.domains.gestao.router import router as gestao_router
 from app.domains.period.router import router as period_router
 
 app = FastAPI(
@@ -46,13 +45,12 @@ app.include_router(user_router, prefix=API_PREFIX)
 app.include_router(edu_institute_router, prefix=API_PREFIX)
 app.include_router(course_router, prefix=API_PREFIX)
 app.include_router(region_router, prefix=API_PREFIX)
-app.include_router(room_router, prefix=API_PREFIX)
 app.include_router(room_schedule_router, prefix=API_PREFIX)
+app.include_router(room_router, prefix=API_PREFIX)
 app.include_router(service_router, prefix=API_PREFIX)
 app.include_router(service_room_router, prefix=API_PREFIX)
 app.include_router(service_schedule_router, prefix=API_PREFIX)
 app.include_router(student_router, prefix=API_PREFIX)
-app.include_router(gestao_router, prefix=API_PREFIX)
 app.include_router(period_router, prefix=API_PREFIX)
 
 

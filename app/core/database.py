@@ -104,6 +104,8 @@ def seed_admin():
                 conn.execute(text("ALTER TABLE students ADD COLUMN phone VARCHAR(20) NULL"))
             if "semester" not in column_names:
                 conn.execute(text("ALTER TABLE students ADD COLUMN semester INTEGER NULL"))
+            if "document_url" not in column_names:
+                conn.execute(text("ALTER TABLE students ADD COLUMN document_url VARCHAR(500) NOT NULL DEFAULT ''"))
 
         _ensure_student_columns(conn)
         conn.execute(

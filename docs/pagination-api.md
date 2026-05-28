@@ -34,7 +34,7 @@ Parâmetros de query:
 | GET    | `/api/v1/service-rooms/by-service/{service_id}` | `Page[ServiceRoomResponse]`        |
 | GET    | `/api/v1/service-schedules/`                    | `Page[ServiceScheduleResponse]`    |
 | GET    | `/api/v1/education-institutes/`                 | `Page[EducationInstituteResponse]` |
-| GET    | `/api/v1/cadastros/institutions/`               | `Page[EducationInstituteResponse]` |
+
 | GET    | `/api/v1/regions`                               | `Page[RegionResponse]`             |
 | GET    | `/api/v1/rooms/`                                | `Page[RoomResponse]`               |
 | GET    | `/api/v1/courses/`                              | `Page[CourseResponse]`             |
