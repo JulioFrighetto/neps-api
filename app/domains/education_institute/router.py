@@ -16,7 +16,7 @@ from app.domains.education_institute.schemas import (
     EducationInstituteUpdate,
 )
 
-router = APIRouter(prefix="/cadastros/institutions", tags=["Education Institutes"])
+router = APIRouter(prefix="/education-institutes", tags=["Education Institutes"])
 
 AVAILABLE_FILTERS = ["name_like", "cnpj", "is_active", "priority"]
 

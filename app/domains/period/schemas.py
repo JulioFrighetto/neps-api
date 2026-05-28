@@ -31,3 +31,43 @@ class PeriodResponse(PeriodBase):
     id: int
     created_at: datetime
     updated_at: datetime
+
+
+class StudentSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str | None
+    cpf: str | None
+    semester: int | None = None
+    has_slot: bool = False
+    
+    class Course(BaseModel):
+        model_config = ConfigDict(from_attributes=True)
+        id: int
+        name: str
+
+    class Institution(BaseModel):
+        model_config = ConfigDict(from_attributes=True)
+        id: int
+        name: str
+    
+    class Slot(BaseModel):
+        model_config = ConfigDict(from_attributes=True)
+        room_id: int
+        room_name: str | None = None
+        day_of_week: str
+        period: str
+
+    course: Course | None = None
+    institution: Institution | None = None
+    slot: Slot | None = None
+
+
+class PeriodDetailResponse(PeriodResponse):
+    students: list[StudentSummary] = []
+    student_ids: list[int] = []
+
+
+class StudentLinkRequest(BaseModel):
+    student_id: int

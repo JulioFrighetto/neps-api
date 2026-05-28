@@ -112,4 +112,10 @@ def authenticate(db: Session, email: str, password: str) -> User | None:
         return None
     if not verify_password(password, user.password):
         return None
+    # If user is linked to a service or education_institute, ensure those entities are active
+    if getattr(user, "service", None) is not None and not getattr(user.service, "is_active", True):
+        return None
+    if getattr(user, "education_institute", None) is not None and not getattr(user.education_institute, "is_active", True):
+        return None
+
     return user

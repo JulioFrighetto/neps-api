@@ -2,14 +2,14 @@ import math
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, ConfigDict
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.core.database import get_db
 from app.core.filters import apply_filters
 from app.core.schemas import FilterInfo, Page, PaginationInfo
 from app.domains.student.model import Student
 
-router = APIRouter(prefix="/gestao", tags=["Gestão"])
+router = APIRouter(prefix="/", tags=["Gestão"])
 
 
 class GestaoStudentCreate(BaseModel):
@@ -35,6 +35,18 @@ class GestaoStudentUpdate(BaseModel):
 class GestaoStudentResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
+    class CourseSummary(BaseModel):
+        model_config = ConfigDict(from_attributes=True)
+
+        id: int
+        name: str
+
+    class InstitutionSummary(BaseModel):
+        model_config = ConfigDict(from_attributes=True)
+
+        id: int
+        name: str
+
     id: int
     name: str | None
     cpf: str | None
@@ -43,12 +55,16 @@ class GestaoStudentResponse(BaseModel):
     course_id: int
     semester: int | None
     institution_id: int
+    course: CourseSummary | None = None
+    institution: InstitutionSummary | None = None
 
 
 AVAILABLE_FILTERS = ["name_like", "cpf", "email", "course_id", "institution_id", "semester"]
 
 
-def _to_response(student: Student) -> GestaoStudentResponse:
+def _to_response(student: Student, include: set[str] | None = None) -> GestaoStudentResponse:
+    include = include or set()
+
     return GestaoStudentResponse(
         id=student.id,
         name=student.name,
@@ -58,6 +74,19 @@ def _to_response(student: Student) -> GestaoStudentResponse:
         course_id=student.course_id,
         semester=student.semester,
         institution_id=student.edu_institute_id,
+        course=(
+            GestaoStudentResponse.CourseSummary(id=student.course.id, name=student.course.name)
+            if "course" in include and student.course
+            else None
+        ),
+        institution=(
+            GestaoStudentResponse.InstitutionSummary(
+                id=student.education_institute.id,
+                name=student.education_institute.name,
+            )
+            if "institution" in include and student.education_institute
+            else None
+        ),
     )
 
 
@@ -71,6 +100,7 @@ def list_students(
     course_id: int | None = Query(None),
     institution_id: int | None = Query(None),
     semester: int | None = Query(None),
+    include: str | None = Query(None, description="Relacionamentos a incluir: course,institution"),
     db: Session = Depends(get_db),
 ):
     filters = {}
@@ -87,14 +117,21 @@ def list_students(
     if semester is not None:
         filters["semester"] = semester
 
+    include_set = {item.strip().lower() for item in include.split(",")} if include else set()
+
     query = db.query(Student)
+    if "course" in include_set:
+        query = query.options(selectinload(Student.course))
+    if "institution" in include_set:
+        query = query.options(selectinload(Student.education_institute))
+
     if filters:
         query, _ = apply_filters(query, Student, filters)
     total = query.count()
     items = query.offset((page - 1) * per_page).limit(per_page).all()
 
     return Page(
-        items=[_to_response(s) for s in items],
+        items=[_to_response(s, include_set) for s in items],
         pagination=PaginationInfo(
             page=page,
             per_page=per_page,
@@ -106,11 +143,23 @@ def list_students(
 
 
 @router.get("/students/{student_id}", response_model=GestaoStudentResponse)
-def get_student(student_id: int, db: Session = Depends(get_db)):
-    student = db.query(Student).filter(Student.id == student_id).first()
+def get_student(
+    student_id: int,
+    include: str | None = Query(None, description="Relacionamentos a incluir: course,institution"),
+    db: Session = Depends(get_db),
+):
+    include_set = {item.strip().lower() for item in include.split(",")} if include else set()
+
+    query = db.query(Student)
+    if "course" in include_set:
+        query = query.options(selectinload(Student.course))
+    if "institution" in include_set:
+        query = query.options(selectinload(Student.education_institute))
+
+    student = query.filter(Student.id == student_id).first()
     if not student:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Aluno não encontrado")
-    return _to_response(student)
+    return _to_response(student, include_set)
 
 
 @router.post("/students", response_model=GestaoStudentResponse, status_code=status.HTTP_201_CREATED)
