@@ -216,26 +216,37 @@ def unlink_student_from_period(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    if current_user.role != "education_institute":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
-    if current_user.education_institute_id is None:
+    institute_priority = None
+    if current_user.role == "education_institute":
+        if current_user.education_institute_id is None or current_user.education_institute is None:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
+        institute_priority = current_user.education_institute.priority
+    elif current_user.role != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
 
-    period = repository.get_by_id_with_students(db, period_id, institute_priority=current_user.education_institute.priority)
+    period = repository.get_by_id_with_students(db, period_id, institute_priority=institute_priority)
     if not period:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Período não encontrado ou não visível")
 
     student = student_repository.get_by_id(db, data.student_id)
     if not student:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Aluno não encontrado")
+    if (
+        current_user.role == "education_institute"
+        and student.edu_institute_id != current_user.education_institute_id
+    ):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Aluno não pertence à instituição")
 
-    if not any(s.id == student.id for s in getattr(period, "students", [])):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Aluno não vinculado ao período")
+    is_linked_to_period = any(s.id == student.id for s in getattr(period, "students", []))
+    if is_linked_to_period:
+        try:
+            repository.unlink_student(db, period_id, student)
+        except ValueError as exc:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
 
-    try:
-        repository.unlink_student(db, period_id, student)
-    except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+    from app.domains.room_schedule import repository_nested as schedule_repository
+
+    schedule_repository.remove_student_from_all_periods(db, student.id)
 
     return {"message": "Aluno desvinculado com sucesso"}
 

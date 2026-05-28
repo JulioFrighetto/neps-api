@@ -157,6 +157,16 @@ def remove_student_from_period(
     return get_period_for_room(db, room_id, day_of_week, period_name)
 
 
+def remove_student_from_all_periods(db: Session, student_id: int) -> int:
+    result = db.execute(
+        schedule_period_students.delete().where(
+            schedule_period_students.c.student_id == student_id
+        )
+    )
+    db.commit()
+    return result.rowcount or 0
+
+
 def get_available_slots_for_student(db: Session, student_id: int, room_id: int | None = None) -> list[dict]:
     """Return list of available slots for a student across rooms (or single room if room_id provided).
 
