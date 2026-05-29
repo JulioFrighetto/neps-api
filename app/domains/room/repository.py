@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sqlalchemy.orm import Session
 
 from app.core.filters import apply_filters
@@ -34,6 +36,9 @@ def create(db: Session, data: RoomCreate) -> Room:
     from app.domains.room_schedule import repository_nested as schedule_repository
 
     room = Room(**data.model_dump())
+    now = datetime.now()
+    room.created_at = now
+    room.updated_at = now
     db.add(room)
     db.commit()
     db.refresh(room)

@@ -32,3 +32,4 @@ class Period(Base):
     students: Mapped[list["Student"]] = relationship(
         "Student", secondary=period_students, back_populates="periods"
     )
+    histories: Mapped[list["History"]] = relationship("History", back_populates="period")  # noqa: F821
