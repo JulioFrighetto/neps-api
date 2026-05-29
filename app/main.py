@@ -12,6 +12,7 @@ from app.domains.service_room.router import router as service_room_router
 from app.domains.service_schedule.router import router as service_schedule_router
 from app.domains.room.router import router as room_router
 from app.domains.room_schedule.router import router as room_schedule_router
+from app.domains.history.router import router as history_router
 from app.domains.student.router import router as student_router
 from app.domains.user.auth_router import router as auth_router
 from app.domains.user.router import router as user_router
@@ -50,6 +51,7 @@ app.include_router(room_router, prefix=API_PREFIX)
 app.include_router(service_router, prefix=API_PREFIX)
 app.include_router(service_room_router, prefix=API_PREFIX)
 app.include_router(service_schedule_router, prefix=API_PREFIX)
+app.include_router(history_router, prefix=API_PREFIX)
 app.include_router(student_router, prefix=API_PREFIX)
 app.include_router(period_router, prefix=API_PREFIX)
 

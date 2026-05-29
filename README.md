@@ -154,3 +154,5 @@ pytest tests/ -v
 ---
 
 Documentação completa em `/docs` (Swagger UI) ou `/redoc`.
+
+Para a tela de histórico do período, consulte [docs/history-period.md](docs/history-period.md).

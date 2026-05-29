@@ -62,7 +62,12 @@ def _create_institute_course_student(client, institute_name="Inst X"):
     ).json()
     student = client.post(
         "/api/v1/students",
-        json={"edu_institute_id": inst["id"], "course_id": course["id"], "status": "PENDING"},
+        json={
+            "edu_institute_id": inst["id"],
+            "course_id": course["id"],
+            "status": "PENDING",
+            "document_url": "https://example.com/document.pdf",
+        },
     ).json()
     return inst, course, student
 
@@ -135,10 +140,24 @@ def test_link_and_unlink_student_to_period(client, db):
     assert "students" in body
     assert any(s["id"] == student["id"] for s in body["students"])
 
+    resp_histories = client.get(f"/api/v1/histories/by-period/{period['id']}", headers=headers)
+    assert resp_histories.status_code == 200
+    histories_body = resp_histories.json()
+    assert histories_body["pagination"]["total"] == 1
+    assert histories_body["items"][0]["student_id"] == student["id"]
+    assert histories_body["items"][0]["period_id"] == period["id"]
+    assert histories_body["items"][0]["end_date"] is None
+
     # unlink student
     resp_unlink = client.request("DELETE", f"/api/v1/periods/{period['id']}/students", json={"student_id": student["id"]}, headers=headers)
     assert resp_unlink.status_code == 200
     assert resp_unlink.json()["message"] == "Aluno desvinculado com sucesso"
+
+    resp_histories_after_unlink = client.get(f"/api/v1/histories/by-period/{period['id']}", headers=headers)
+    assert resp_histories_after_unlink.status_code == 200
+    histories_after_unlink = resp_histories_after_unlink.json()
+    assert histories_after_unlink["pagination"]["total"] == 1
+    assert histories_after_unlink["items"][0]["end_date"] is not None
 
     # unlink again is idempotent
     resp_unlink2 = client.request("DELETE", f"/api/v1/periods/{period['id']}/students", json={"student_id": student["id"]}, headers=headers)
@@ -225,6 +244,7 @@ def test_period_unlink_removes_student_from_schedule_slot(db):
         edu_institute_id=institute.id,
         course_id=course.id,
         status="PENDING",
+        document_url="https://example.com/document.pdf",
         is_active=True,
     )
     period = Period(
@@ -267,3 +287,123 @@ def test_period_unlink_removes_student_from_schedule_slot(db):
     assert response["message"] == "Aluno desvinculado com sucesso"
     assert updated_period is not None
     assert all(existing.id != student.id for existing in updated_period.students)
+
+
+def test_list_histories_by_room(client, db):
+    today = date.today()
+    institute = EducationInstitute(name="Inst X", priority=0, is_active=True)
+    service = Service(name="Service X", is_active=True)
+    db.add_all([institute, service])
+    db.commit()
+    db.refresh(institute)
+    db.refresh(service)
+
+    course = Course(name="Enfermagem", requires_gurney=False)
+    room = Room(service_id=service.id, name="Sala 1", room_capacity=2, has_gurney=False, is_active=True)
+    db.add_all([course, room])
+    db.commit()
+    db.refresh(course)
+    db.refresh(room)
+    schedule_repository.create_schedule_for_room(db, room.id)
+
+    student = Student(
+        edu_institute_id=institute.id,
+        course_id=course.id,
+        status="PENDING",
+        document_url="https://example.com/document.pdf",
+        is_active=True,
+    )
+    period = Period(
+        name="2026.1",
+        priority_start_date=today - timedelta(days=1),
+        priority_end_date=today + timedelta(days=1),
+        start_date=today + timedelta(days=2),
+        end_date=today + timedelta(days=30),
+        is_active=True,
+    )
+    db.add_all([student, period])
+    db.commit()
+    db.refresh(student)
+    db.refresh(period)
+
+    assigned_period = schedule_repository.assign_student_to_period(
+        db=db,
+        room_id=room.id,
+        day_of_week="MONDAY",
+        period_name="EVENING",
+        student_id=student.id,
+    )
+    assert assigned_period is not None
+
+    from app.domains.period import repository as period_repository
+
+    period_repository.link_student(db, period.id, student)
+
+    admin_headers = _make_role_headers(client, db, "admin", "admin-room@test.com")
+    response = client.get(f"/api/v1/histories/by-room/{room.id}", headers=admin_headers)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["pagination"]["total"] == 1
+    assert body["items"][0]["room_id"] == room.id
+    assert body["items"][0]["student_id"] == student.id
+
+
+def test_list_histories_by_schedule(client, db):
+    today = date.today()
+    institute = EducationInstitute(name="Inst X", priority=0, is_active=True)
+    service = Service(name="Service X", is_active=True)
+    db.add_all([institute, service])
+    db.commit()
+    db.refresh(institute)
+    db.refresh(service)
+
+    course = Course(name="Enfermagem", requires_gurney=False)
+    room = Room(service_id=service.id, name="Sala 1", room_capacity=2, has_gurney=False, is_active=True)
+    db.add_all([course, room])
+    db.commit()
+    db.refresh(course)
+    db.refresh(room)
+    schedule_repository.create_schedule_for_room(db, room.id)
+    schedule = schedule_repository.get_schedule_by_room(db, room.id)
+    assert schedule is not None
+
+    student = Student(
+        edu_institute_id=institute.id,
+        course_id=course.id,
+        status="PENDING",
+        document_url="https://example.com/document.pdf",
+        is_active=True,
+    )
+    period = Period(
+        name="2026.1",
+        priority_start_date=today - timedelta(days=1),
+        priority_end_date=today + timedelta(days=1),
+        start_date=today + timedelta(days=2),
+        end_date=today + timedelta(days=30),
+        is_active=True,
+    )
+    db.add_all([student, period])
+    db.commit()
+    db.refresh(student)
+    db.refresh(period)
+
+    assigned_period = schedule_repository.assign_student_to_period(
+        db=db,
+        room_id=room.id,
+        day_of_week="MONDAY",
+        period_name="EVENING",
+        student_id=student.id,
+    )
+    assert assigned_period is not None
+
+    from app.domains.period import repository as period_repository
+
+    period_repository.link_student(db, period.id, student)
+
+    admin_headers = _make_role_headers(client, db, "admin", "admin-schedule@test.com")
+    response = client.get(f"/api/v1/histories/by-schedule/{schedule.id}", headers=admin_headers)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["pagination"]["total"] == 1
+    assert body["items"][0]["schedule_id"] == schedule.id
+    assert body["items"][0]["room_id"] == room.id

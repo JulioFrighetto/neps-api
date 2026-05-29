@@ -43,8 +43,104 @@ def _ensure_user_profile_columns(conn) -> None:
         )
 
 
+def _ensure_room_columns(conn) -> None:
+    columns = conn.execute(text("PRAGMA table_info(rooms)")).fetchall()
+    column_names = {column[1] for column in columns}
+
+    if "service_id" not in column_names:
+        conn.execute(text("ALTER TABLE rooms ADD COLUMN service_id INTEGER NULL"))
+
+
+def _ensure_room_timestamps(conn) -> None:
+    columns = conn.execute(text("PRAGMA table_info(rooms)")).fetchall()
+    column_names = {column[1] for column in columns}
+
+    if "created_at" in column_names:
+        conn.execute(text("UPDATE rooms SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL"))
+    if "updated_at" in column_names:
+        conn.execute(text("UPDATE rooms SET updated_at = CURRENT_TIMESTAMP WHERE updated_at IS NULL"))
+
+
+def _rebuild_rooms_table_without_internship_field(conn) -> None:
+    columns = conn.execute(text("PRAGMA table_info(rooms)")).fetchall()
+    column_names = [column[1] for column in columns]
+
+    if "internship_field_id" not in column_names:
+        return
+
+    conn.execute(text("PRAGMA foreign_keys=off"))
+    conn.execute(text("ALTER TABLE rooms RENAME TO rooms_legacy"))
+    conn.execute(
+        text(
+            """
+            CREATE TABLE rooms (
+                id INTEGER NOT NULL PRIMARY KEY,
+                service_id INTEGER NOT NULL,
+                name VARCHAR(20) NOT NULL,
+                room_capacity INTEGER NOT NULL,
+                has_gurney BOOLEAN NOT NULL,
+                is_active BOOLEAN NOT NULL,
+                created_at DATETIME,
+                updated_at DATETIME,
+                FOREIGN KEY(service_id) REFERENCES services(id)
+            )
+            """
+        )
+    )
+    conn.execute(
+        text(
+            """
+            INSERT INTO rooms (id, service_id, name, room_capacity, has_gurney, is_active, created_at, updated_at)
+            SELECT id, service_id, name, room_capacity, has_gurney, is_active, created_at, updated_at
+            FROM rooms_legacy
+            """
+        )
+    )
+    conn.execute(text("DROP TABLE rooms_legacy"))
+    conn.execute(text("PRAGMA foreign_keys=on"))
+
+
+def _ensure_history_columns(conn) -> None:
+    columns = conn.execute(text("PRAGMA table_info(histories)")).fetchall()
+    column_names = {column[1] for column in columns}
+
+    if not column_names:
+        return
+
+    if "schedule_id" not in column_names:
+        conn.execute(text("ALTER TABLE histories ADD COLUMN schedule_id INTEGER NULL"))
+
+    if "room_id" not in column_names:
+        conn.execute(text("ALTER TABLE histories ADD COLUMN room_id INTEGER NULL"))
+
+    conn.execute(
+        text(
+            """
+            UPDATE histories
+            SET schedule_id = (
+                SELECT schedules.id
+                FROM schedules
+                WHERE schedules.room_id = histories.room_id
+                LIMIT 1
+            )
+            WHERE schedule_id IS NULL AND room_id IS NOT NULL
+            """
+        )
+    )
+
+    if "created_at" in column_names:
+        conn.execute(text("UPDATE histories SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL"))
+    if "updated_at" in column_names:
+        conn.execute(text("UPDATE histories SET updated_at = CURRENT_TIMESTAMP WHERE updated_at IS NULL"))
+
+
 def init_db() -> None:
     Base.metadata.create_all(bind=engine)
+    with engine.begin() as conn:
+        _ensure_room_columns(conn)
+        _rebuild_rooms_table_without_internship_field(conn)
+        _ensure_room_timestamps(conn)
+        _ensure_history_columns(conn)
     seed_admin()
 
 

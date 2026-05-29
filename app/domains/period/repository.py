@@ -4,6 +4,7 @@ from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session, Query, selectinload
 
 from app.core.filters import apply_filters
+from app.domains.history import repository as history_repository
 from app.domains.period.model import Period
 from app.domains.period.schemas import PeriodCreate, PeriodUpdate
 
@@ -77,6 +78,15 @@ def link_student(db: Session, period_id: int, student) -> None:
     if any(s.id == student.id for s in period.students):
         raise ValueError("Student already linked")
     period.students.append(student)
+    schedule_id = history_repository.resolve_schedule_id_for_student(db, student.id)
+    room_id = history_repository.resolve_room_id_for_student(db, student.id)
+    history_repository.create_link_history(
+        db,
+        period_id,
+        student.id,
+        schedule_id=schedule_id,
+        room_id=room_id,
+    )
     db.commit()
 
 
@@ -87,6 +97,7 @@ def unlink_student(db: Session, period_id: int, student) -> None:
     if not any(s.id == student.id for s in period.students):
         raise ValueError("Student not linked")
     period.students.remove(student)
+    history_repository.close_active_history(db, period_id, student.id)
     db.commit()
 
 
