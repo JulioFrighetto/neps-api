@@ -80,7 +80,7 @@ def link_student(db: Session, period_id: int, student) -> None:
     period.students.append(student)
     schedule_id = history_repository.resolve_schedule_id_for_student(db, student.id)
     room_id = history_repository.resolve_room_id_for_student(db, student.id)
-    history_repository.create_link_history(
+    history_repository.create_or_update_link_history(
         db,
         period_id,
         student.id,

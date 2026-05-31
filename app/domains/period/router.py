@@ -150,19 +150,20 @@ def get_period(
                 .filter(schedule_period_students.c.student_id == s.id)
                 .first()
             )
-            
             slot_obj = None
             has_slot = False
             if slot_query:
-                has_slot = True
                 schedule_period, schedule_day, schedule = slot_query
-                room = db.query(Room).filter(Room.id == schedule.room_id).first() if schedule else None
-                slot_obj = {
-                    "room_id": schedule.room_id,
-                    "room_name": room.name if room else None,
-                    "day_of_week": schedule_day.day_of_week,
-                    "period": schedule_period.period,
-                }
+                # only consider a slot if a schedule (and its room) exists
+                if schedule is not None:
+                    has_slot = True
+                    room = db.query(Room).filter(Room.id == schedule.room_id).first()
+                    slot_obj = {
+                        "room_id": schedule.room_id,
+                        "room_name": room.name if room else None,
+                        "day_of_week": schedule_day.day_of_week,
+                        "period": schedule_period.period,
+                    }
             
             students_list.append(
                 {

@@ -1,4 +1,5 @@
 import math
+from datetime import date
 
 from fastapi import APIRouter, Body, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict
@@ -42,6 +43,9 @@ class StudentListResponse(BaseModel):
     status: str
     is_active: bool
     document_url: str
+    director_signed_pdf: bytes | None = None
+    internship_start_date: date | None = None
+    internship_expected_end_date: date | None = None
     course: CourseSummary | None = None
     institution: InstitutionSummary | None = None
 
@@ -82,6 +86,9 @@ def _to_response(student: Student, include: set[str] | None = None) -> StudentLi
         status=student.status,
         is_active=student.is_active,
         document_url=student.document_url,
+        director_signed_pdf=student.director_signed_pdf,
+        internship_start_date=student.internship_start_date,
+        internship_expected_end_date=student.internship_expected_end_date,
         course=(
             StudentListResponse.CourseSummary(id=student.course.id, name=student.course.name)
             if "course" in include and student.course

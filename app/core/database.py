@@ -259,6 +259,16 @@ def seed_admin():
                 conn.execute(text("ALTER TABLE students ADD COLUMN semester INTEGER NULL"))
             if "document_url" not in column_names:
                 conn.execute(text("ALTER TABLE students ADD COLUMN document_url VARCHAR(500) NOT NULL DEFAULT ''"))
+            if "director_signed_pdf" not in column_names:
+                conn.execute(text("ALTER TABLE students ADD COLUMN director_signed_pdf BLOB NULL"))
+            if "internship_start_date" not in column_names:
+                conn.execute(text("ALTER TABLE students ADD COLUMN internship_start_date DATE NULL"))
+            if "internship_expected_end_date" not in column_names:
+                conn.execute(text("ALTER TABLE students ADD COLUMN internship_expected_end_date DATE NULL"))
+            if "internship_start_date" not in column_names:
+                conn.execute(text("ALTER TABLE students ADD COLUMN internship_start_date DATE NULL"))
+            if "internship_expected_end_date" not in column_names:
+                conn.execute(text("ALTER TABLE students ADD COLUMN internship_expected_end_date DATE NULL"))
 
         _ensure_student_columns(conn)
         conn.execute(

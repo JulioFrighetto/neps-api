@@ -1,7 +1,7 @@
-from datetime import datetime
+from datetime import datetime, date
 from typing import Literal
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, func
+from sqlalchemy import Boolean, DateTime, Date, ForeignKey, Integer, String, func, LargeBinary
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -23,6 +23,9 @@ class Student(Base):
     phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
     semester: Mapped[int | None] = mapped_column(Integer, nullable=True)
     document_url: Mapped[str] = mapped_column(String(500), nullable=False)
+    director_signed_pdf: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
+    internship_start_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    internship_expected_end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     status: Mapped[str] = mapped_column(String(20), default="PENDING", nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
