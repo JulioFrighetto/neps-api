@@ -1,10 +1,11 @@
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.domains.period import repository as period_repository
 from app.domains.room.repository import get_by_id as get_room_by_id
 from app.domains.room_schedule import repository_nested as schedule_repository
 
@@ -15,16 +16,29 @@ PeriodName = Literal["MORNING", "AFTERNOON", "EVENING"]
 
 
 class AssignStudentToPeriodRequest(BaseModel):
+    room_id: int
+    day_of_week: DayOfWeek
+    period: PeriodName
+    period_id: int
     student_id: int
 
 
-@router.get("/{room_id}/schedule", response_model=dict)
-def get_room_schedule(room_id: int, db: Session = Depends(get_db)):
-    room = get_room_by_id(db, room_id)
+class GetRoomScheduleRequest(BaseModel):
+    room_id: int
+
+
+class AvailableSlotsRequest(BaseModel):
+    student_id: int
+    room_id: int | None = None
+
+
+@router.post("/schedule", response_model=dict)
+def get_room_schedule(payload: GetRoomScheduleRequest, db: Session = Depends(get_db)):
+    room = get_room_by_id(db, payload.room_id)
     if not room:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sala não encontrada")
 
-    schedule = schedule_repository.create_schedule_for_room(db, room_id)
+    schedule = schedule_repository.create_schedule_for_room(db, payload.room_id)
 
     result_days = []
     for day in schedule.days:
@@ -44,29 +58,31 @@ def get_room_schedule(room_id: int, db: Session = Depends(get_db)):
         )
 
     return {
-        "roomId": room_id,
+        "roomId": payload.room_id,
         "days": result_days,
     }
 
 
-@router.post("/{room_id}/schedule/{day_of_week}/{period}/student", response_model=dict, status_code=status.HTTP_200_OK)
+@router.post("/schedule/student", response_model=dict, status_code=status.HTTP_200_OK)
 def assign_student_to_period(
-    room_id: int,
-    day_of_week: DayOfWeek,
-    period: PeriodName,
     payload: AssignStudentToPeriodRequest,
     db: Session = Depends(get_db),
 ):
-    room = get_room_by_id(db, room_id)
+    room = get_room_by_id(db, payload.room_id)
     if not room:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sala não encontrada")
+
+    period_model = period_repository.get_by_id(db, payload.period_id)
+    if not period_model:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Período não encontrado")
 
     try:
         updated_period = schedule_repository.assign_student_to_period(
             db=db,
-            room_id=room_id,
-            day_of_week=day_of_week,
-            period_name=period,
+            room_id=payload.room_id,
+            day_of_week=payload.day_of_week,
+            period_name=payload.period,
+            period_id=payload.period_id,
             student_id=payload.student_id,
         )
     except ValueError as exc:
@@ -76,30 +92,32 @@ def assign_student_to_period(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Período ou aluno não encontrado")
 
     return {
-        "roomId": room_id,
-        "dayOfWeek": day_of_week,
-        "period": period,
+        "roomId": payload.room_id,
+        "dayOfWeek": payload.day_of_week,
+        "period": payload.period,
         "studentIds": [student.id for student in updated_period.students],
     }
 
 
-@router.delete("/{room_id}/schedule/{day_of_week}/{period}/student", status_code=status.HTTP_200_OK)
+@router.delete("/schedule/student", status_code=status.HTTP_200_OK)
 def remove_student_from_period(
-    room_id: int,
-    day_of_week: DayOfWeek,
-    period: PeriodName,
     payload: AssignStudentToPeriodRequest,
     db: Session = Depends(get_db),
 ):
-    room = get_room_by_id(db, room_id)
+    room = get_room_by_id(db, payload.room_id)
     if not room:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sala não encontrada")
 
+    period_model = period_repository.get_by_id(db, payload.period_id)
+    if not period_model:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Período não encontrado")
+
     updated_period = schedule_repository.remove_student_from_period(
         db=db,
-        room_id=room_id,
-        day_of_week=day_of_week,
-        period_name=period,
+        room_id=payload.room_id,
+        day_of_week=payload.day_of_week,
+        period_name=payload.period,
+        period_id=payload.period_id,
         student_id=payload.student_id,
     )
 
@@ -107,16 +125,19 @@ def remove_student_from_period(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Aluno não encontrado neste horário")
 
     return {
-        "roomId": room_id,
-        "dayOfWeek": day_of_week,
-        "period": period,
+        "roomId": payload.room_id,
+        "dayOfWeek": payload.day_of_week,
+        "period": payload.period,
         "studentIds": [student.id for student in updated_period.students],
     }
 
 
-
-@router.get("/available-slots", response_model=list[dict])
-def available_slots_for_student(student_id: int, room_id: int | None = None, db: Session = Depends(get_db)):
+@router.post("/available-slots", response_model=list[dict])
+def available_slots_for_student(payload: AvailableSlotsRequest, db: Session = Depends(get_db)):
     """Return available slots for a given student across rooms (or single room if `room_id` provided)."""
-    slots = schedule_repository.get_available_slots_for_student(db, student_id, room_id=room_id)
+    slots = schedule_repository.get_available_slots_for_student(
+        db,
+        payload.student_id,
+        room_id=payload.room_id,
+    )
     return slots

@@ -24,14 +24,12 @@ class Service(Base):
         "ServiceRoom", back_populates="service", cascade="all, delete-orphan"
     )
     rooms: Mapped[list["Room"]] = relationship("Room", back_populates="service")  # noqa: F821
-    user: Mapped["User | None"] = relationship(  # noqa: F821
-        "User", back_populates="service", uselist=False
-    )
+    users: Mapped[list["User"]] = relationship("User", back_populates="service")  # noqa: F821
 
     @property
     def user_id(self) -> int | None:
-        return self.user.id if self.user else None
+        return self.users[0].id if self.users else None
 
     @property
     def email(self) -> str | None:
-        return self.user.email if self.user else None
+        return self.users[0].email if self.users else None

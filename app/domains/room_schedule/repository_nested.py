@@ -1,5 +1,8 @@
+from datetime import date
+
 from sqlalchemy.orm import Session, selectinload
 
+from app.domains.history import repository as history_repository
 from app.domains.room.model import Room
 from app.domains.room.repository import get_by_id as get_room_by_id
 from app.domains.room_schedule.models_nested import Schedule, ScheduleDay, SchedulePeriod, schedule_period_students
@@ -99,6 +102,7 @@ def assign_student_to_period(
     day_of_week: str,
     period_name: str,
     student_id: int,
+    period_id: int,
 ) -> SchedulePeriod | None:
     room: Room | None = get_room_by_id(db, room_id)
     if not room:
@@ -108,6 +112,7 @@ def assign_student_to_period(
     if not period:
         return None
 
+    schedule = get_schedule_by_room(db, room_id)
     student = db.query(Student).filter(Student.id == student_id).first()
     if not student:
         return None
@@ -128,6 +133,14 @@ def assign_student_to_period(
         raise ValueError("Período lotado")
 
     period.students.append(student)
+    history_repository.create_or_update_link_history(
+        db,
+        period_id,
+        student.id,
+        schedule_id=schedule.id if schedule else None,
+        room_id=room.id,
+        start_date=date.today(),
+    )
     db.commit()
     db.refresh(period)
     return get_period_for_room(db, room_id, day_of_week, period_name)
@@ -139,6 +152,7 @@ def remove_student_from_period(
     day_of_week: str,
     period_name: str,
     student_id: int,
+    period_id: int,
 ) -> SchedulePeriod | None:
     period = get_period_for_room(db, room_id, day_of_week, period_name)
     if not period:
@@ -152,6 +166,7 @@ def remove_student_from_period(
         return None
 
     period.students.remove(student)
+    history_repository.close_active_history(db, period_id, student.id, end_date=date.today())
     db.commit()
     db.refresh(period)
     return get_period_for_room(db, room_id, day_of_week, period_name)

@@ -1,6 +1,7 @@
 import math
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Body, status
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -21,14 +22,22 @@ router = APIRouter(prefix="/education-institutes", tags=["Education Institutes"]
 AVAILABLE_FILTERS = ["name_like", "cnpj", "is_active", "priority"]
 
 
+class InstituteGetRequest(BaseModel):
+    institute_id: int
+
+
+class InstituteUpdateRequest(EducationInstituteUpdate):
+    institute_id: int
+
+
 @router.get("/", response_model=Page[EducationInstituteResponse])
 def list_institutes(
-    page: int = Query(1, ge=1),
-    per_page: int = Query(10, ge=1, le=100),
-    name_like: str | None = Query(None),
-    cnpj: str | None = Query(None),
-    is_active: bool | None = Query(None),
-    priority: int | None = Query(None),
+    page: int = Body(1, ge=1),
+    per_page: int = Body(10, ge=1, le=100),
+    name_like: str | None = Body(None),
+    cnpj: str | None = Body(None),
+    is_active: bool | None = Body(None),
+    priority: int | None = Body(None),
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
@@ -58,9 +67,9 @@ def list_institutes(
     )
 
 
-@router.get("/{institute_id}", response_model=EducationInstituteResponse)
-def get_institute(institute_id: int, db: Session = Depends(get_db)):
-    institute = repository.get_by_id(db, institute_id)
+@router.post("/detail", response_model=EducationInstituteResponse)
+def get_institute(data: InstituteGetRequest, db: Session = Depends(get_db)):
+    institute = repository.get_by_id(db, data.institute_id)
     if not institute:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Instituição não encontrada")
     return institute
@@ -84,18 +93,14 @@ def create_institute(data: EducationInstituteCreate, db: Session = Depends(get_d
     return institute
 
 
-@router.patch("/{institute_id}", response_model=EducationInstituteResponse)
-def update_institute(
-    institute_id: int, data: EducationInstituteUpdate, db: Session = Depends(get_db)
-):
-    institute = repository.update(db, institute_id, data)
+@router.patch("/", response_model=EducationInstituteResponse)
+def update_institute(data: InstituteUpdateRequest, db: Session = Depends(get_db)):
+    institute = repository.update(db, data.institute_id, data)
     if not institute:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Instituição não encontrada")
     return institute
 
 
-@router.put("/{institute_id}", response_model=EducationInstituteResponse)
-def replace_institute(
-    institute_id: int, data: EducationInstituteUpdate, db: Session = Depends(get_db)
-):
-    return update_institute(institute_id=institute_id, data=data, db=db)
+@router.put("/", response_model=EducationInstituteResponse)
+def replace_institute(data: InstituteUpdateRequest, db: Session = Depends(get_db)):
+    return update_institute(data=data, db=db)

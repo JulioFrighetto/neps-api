@@ -1,6 +1,6 @@
 import math
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 
@@ -46,6 +46,27 @@ class StudentListResponse(BaseModel):
     institution: InstitutionSummary | None = None
 
 
+class StudentGetRequest(BaseModel):
+    student_id: int
+    include: str | None = None
+
+
+class StudentsByCourseRequest(BaseModel):
+    course_id: int
+    page: int = 1
+    per_page: int = 10
+
+
+class StudentsByInstituteRequest(BaseModel):
+    institute_id: int
+    page: int = 1
+    per_page: int = 10
+
+
+class StudentUpdateRequest(StudentUpdate):
+    student_id: int
+
+
 def _to_response(student: Student, include: set[str] | None = None) -> StudentListResponse:
     include = include or set()
 
@@ -79,16 +100,16 @@ def _to_response(student: Student, include: set[str] | None = None) -> StudentLi
 
 @router.get("/", response_model=Page[StudentListResponse])
 def list_students(
-    page: int = Query(1, ge=1),
-    per_page: int = Query(10, ge=1, le=100),
-    name_like: str | None = Query(None),
-    cpf: str | None = Query(None),
-    email_like: str | None = Query(None),
-    course_id: int | None = Query(None),
-    institution_id: int | None = Query(None),
-    semester: int | None = Query(None),
-    status: str | None = Query(None),
-    include: str | None = Query(None, description="Relacionamentos a incluir: course,institution"),
+    page: int = Body(1, ge=1),
+    per_page: int = Body(10, ge=1, le=100),
+    name_like: str | None = Body(None),
+    cpf: str | None = Body(None),
+    email_like: str | None = Body(None),
+    course_id: int | None = Body(None),
+    institution_id: int | None = Body(None),
+    semester: int | None = Body(None),
+    status: str | None = Body(None),
+    include: str | None = Body(None, description="Relacionamentos a incluir: course,institution"),
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
@@ -129,43 +150,41 @@ def list_students(
     )
 
 
-@router.get("/{student_id}", response_model=StudentListResponse)
-def get_student(
-    student_id: int,
-    include: str | None = Query(None, description="Relacionamentos a incluir: course,institution"),
-    db: Session = Depends(get_db),
-):
-    include_set = {item.strip().lower() for item in include.split(",")} if include else set()
-    student = repository.get_by_id(db, student_id)
+@router.post("/detail", response_model=StudentListResponse)
+def get_student(data: StudentGetRequest, db: Session = Depends(get_db)):
+    include_set = {"course", "institution"}
+    if data.include:
+        include_set = {item.strip().lower() for item in data.include.split(",") if item.strip()}
+    student = repository.get_by_id(db, data.student_id)
     if not student:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Aluno não encontrado")
     return _to_response(student, include_set)
 
 
-@router.get("/by-course/{course_id}", response_model=Page[StudentListResponse])
-def list_students_by_course(course_id: int, page: int = Query(1, ge=1), per_page: int = Query(10, ge=1, le=100), db: Session = Depends(get_db)):
-    items, total = repository.get_by_course(db, course_id, page=page, per_page=per_page)
+@router.post("/by-course", response_model=Page[StudentListResponse])
+def list_students_by_course(data: StudentsByCourseRequest, db: Session = Depends(get_db)):
+    items, total = repository.get_by_course(db, data.course_id, page=data.page, per_page=data.per_page)
     return Page(
         items=[_to_response(item) for item in items],
         pagination=PaginationInfo(
-            page=page,
-            per_page=per_page,
+            page=data.page,
+            per_page=data.per_page,
             total=total,
-            total_pages=max(1, math.ceil(total / per_page)) if total > 0 else 0,
+            total_pages=max(1, math.ceil(total / data.per_page)) if total > 0 else 0,
         ),
     )
 
 
-@router.get("/by-institute/{institute_id}", response_model=Page[StudentListResponse])
-def list_students_by_institute(institute_id: int, page: int = Query(1, ge=1), per_page: int = Query(10, ge=1, le=100), db: Session = Depends(get_db)):
-    items, total = repository.get_by_institute(db, institute_id, page=page, per_page=per_page)
+@router.post("/by-institute", response_model=Page[StudentListResponse])
+def list_students_by_institute(data: StudentsByInstituteRequest, db: Session = Depends(get_db)):
+    items, total = repository.get_by_institute(db, data.institute_id, page=data.page, per_page=data.per_page)
     return Page(
         items=[_to_response(item) for item in items],
         pagination=PaginationInfo(
-            page=page,
-            per_page=per_page,
+            page=data.page,
+            per_page=data.per_page,
             total=total,
-            total_pages=max(1, math.ceil(total / per_page)) if total > 0 else 0,
+            total_pages=max(1, math.ceil(total / data.per_page)) if total > 0 else 0,
         ),
     )
 
@@ -176,9 +195,9 @@ def create_student(data: StudentCreate, db: Session = Depends(get_db)):
     return _to_response(student)
 
 
-@router.patch("/{student_id}", response_model=StudentListResponse)
-def update_student(student_id: int, data: StudentUpdate, db: Session = Depends(get_db)):
-    student = repository.update(db, student_id, data)
+@router.patch("/", response_model=StudentListResponse)
+def update_student(data: StudentUpdateRequest, db: Session = Depends(get_db)):
+    student = repository.update(db, data.student_id, data)
     if not student:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Aluno não encontrado")
     return _to_response(student)

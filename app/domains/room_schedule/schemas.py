@@ -28,3 +28,11 @@ class RoomScheduleResponse(RoomScheduleBase):
     id: int
     created_at: datetime
     updated_at: datetime
+
+
+class RoomScheduleQuery(BaseModel):
+    room_id: int
+    day_of_week: str
+    period: str
+    period_id: int
+    student_id: int

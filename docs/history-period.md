@@ -109,6 +109,80 @@ O frontend pode usar os seguintes dados para montar a lista ou timeline do hist�
 
 ---
 
+## Histórico por aluno
+
+### Listar histórico de um aluno
+
+```
+GET /api/v1/histories/by-student/{student_id}
+```
+
+**Descrição:**
+
+Retorna a lista paginada de vínculos históricos de um aluno específico, incluindo dados básicos do aluno e do período.
+
+**Permissões:**
+
+- `admin` pode consultar qualquer aluno;
+- `education_institute` pode consultar apenas alunos da própria instituição.
+
+**Path Parameters:**
+
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `student_id` | int | ID do aluno |
+
+**Query Parameters:**
+
+| Parâmetro | Tipo | Padrão | Descrição |
+|-----------|------|--------|-----------|
+| `page` | int | 1 | Página atual |
+| `per_page` | int | 10 | Quantidade de itens por página |
+
+**Resposta `200 OK`:**
+
+```json
+{
+  "items": [
+    {
+      "id": 1,
+      "period_id": 12,
+      "student_id": 42,
+      "schedule_id": 33,
+      "room_id": 7,
+      "start_date": "2026-05-20",
+      "end_date": null,
+      "created_at": "2026-05-20T10:30:00",
+      "updated_at": "2026-05-20T10:30:00",
+      "student": {
+        "id": 42,
+        "name": "Maria Silva",
+        "cpf": "123.456.789-00"
+      },
+      "period": {
+        "id": 12,
+        "name": "2026.1",
+        "start_date": "2026-02-01",
+        "end_date": "2026-06-30"
+      }
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "per_page": 10,
+    "total": 1,
+    "total_pages": 1
+  },
+  "filters": null
+}
+```
+
+**Observação:**
+
+Esse endpoint é o mais útil para a tela de detalhe do aluno quando o frontend precisa montar a linha do tempo completa do histórico de vínculo.
+
+---
+
 ## Exemplo de consumo
 
 ```javascript

@@ -1,3 +1,5 @@
+from datetime import date
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -5,6 +7,10 @@ from sqlalchemy.orm import sessionmaker
 
 from app.core.database import Base, get_db
 from app.main import app
+from app.domains.history.model import History
+from app.domains.period.model import Period, period_students
+from app.domains.room_schedule import repository_nested as schedule_repository
+from app.domains.student.model import Student
 
 TEST_DATABASE_URL = "sqlite:///./test_room_schedule_student_rules.db"
 engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
@@ -55,6 +61,7 @@ def _create_basic_entities(client, *, requires_gurney: bool = False, has_gurney:
             "edu_institute_id": institute["id"],
             "course_id": course["id"],
             "status": "PENDING",
+            "document_url": "https://example.com/document.pdf",
         },
     ).json()
     room = client.post(
@@ -69,8 +76,25 @@ def _create_basic_entities(client, *, requires_gurney: bool = False, has_gurney:
     return service, institute, course, student, room
 
 
-def test_prevents_student_conflict_in_other_room(client):
-    service, institute, course, student, room1 = _create_basic_entities(client)
+def _create_period(db):
+    today = date.today()
+    period = Period(
+        name="2026.1",
+        priority_start_date=today,
+        priority_end_date=today,
+        start_date=today,
+        end_date=today,
+        is_active=True,
+    )
+    db.add(period)
+    db.commit()
+    db.refresh(period)
+    return period
+
+
+def test_prevents_student_conflict_in_other_room(client, db):
+    service, _institute, _course, student, room1 = _create_basic_entities(client)
+    period = _create_period(db)
     room2 = client.post(
         "/api/v1/rooms",
         json={
@@ -82,25 +106,140 @@ def test_prevents_student_conflict_in_other_room(client):
     ).json()
 
     resp_ok = client.post(
-        f"/api/v1/rooms/{room1['id']}/schedule/MONDAY/MORNING/student",
-        json={"student_id": student["id"]},
+        "/api/v1/rooms/schedule/student",
+        json={
+            "room_id": room1["id"],
+            "day_of_week": "MONDAY",
+            "period": "MORNING",
+            "period_id": period.id,
+            "student_id": student["id"],
+        },
     )
     assert resp_ok.status_code == 200
 
     resp_conflict = client.post(
-        f"/api/v1/rooms/{room2['id']}/schedule/MONDAY/MORNING/student",
-        json={"student_id": student["id"]},
+        "/api/v1/rooms/schedule/student",
+        json={
+            "room_id": room2["id"],
+            "day_of_week": "MONDAY",
+            "period": "MORNING",
+            "period_id": period.id,
+            "student_id": student["id"],
+        },
     )
     assert resp_conflict.status_code == 409
     assert "outra sala" in resp_conflict.json()["detail"].lower()
 
 
-def test_requires_gurney_when_course_needs_it(client):
-    _, _, _, student, room = _create_basic_entities(client, requires_gurney=True, has_gurney=False)
+def test_requires_gurney_when_course_needs_it(client, db):
+    _, _institute, _course, student, room = _create_basic_entities(client, requires_gurney=True, has_gurney=False)
+    period = _create_period(db)
 
     resp = client.post(
-        f"/api/v1/rooms/{room['id']}/schedule/MONDAY/MORNING/student",
-        json={"student_id": student["id"]},
+        "/api/v1/rooms/schedule/student",
+        json={
+            "room_id": room["id"],
+            "day_of_week": "MONDAY",
+            "period": "MORNING",
+            "period_id": period.id,
+            "student_id": student["id"],
+        },
     )
     assert resp.status_code == 409
     assert "maca" in resp.json()["detail"].lower()
+
+
+def test_room_schedule_link_updates_history_and_unlink_closes_it(client, db):
+    _service, _institute, _course, student, room = _create_basic_entities(client)
+
+    schedule_repository.create_schedule_for_room(db, room["id"])
+
+    period = _create_period(db)
+    student_model = db.query(Student).filter(Student.id == student["id"]).first()
+    assert student_model is not None
+
+    db.execute(period_students.insert().values(period_id=period.id, student_id=student_model.id))
+    db.commit()
+
+    history_before = db.query(History).filter(
+        History.period_id == period.id,
+        History.student_id == student_model.id,
+    ).all()
+    assert len(history_before) == 0
+
+    response_link = client.post(
+        "/api/v1/rooms/schedule/student",
+        json={
+            "room_id": room["id"],
+            "day_of_week": "MONDAY",
+            "period": "MORNING",
+            "period_id": period.id,
+            "student_id": student_model.id,
+        },
+    )
+    assert response_link.status_code == 200
+
+    schedule_model = schedule_repository.get_schedule_by_room(db, room["id"])
+    assert schedule_model is not None
+
+    history_after_link = db.query(History).filter(
+        History.period_id == period.id,
+        History.student_id == student_model.id,
+    ).all()
+    assert len(history_after_link) == 1
+    assert history_after_link[0].room_id == room["id"]
+    assert history_after_link[0].schedule_id == schedule_model.id
+    assert history_after_link[0].start_date == date.today()
+    assert history_after_link[0].end_date is None
+
+    response_unlink = client.request(
+        "DELETE",
+        "/api/v1/rooms/schedule/student",
+        json={
+            "room_id": room["id"],
+            "day_of_week": "MONDAY",
+            "period": "MORNING",
+            "period_id": period.id,
+            "student_id": student_model.id,
+        },
+    )
+    assert response_unlink.status_code == 200
+
+    history_after_unlink = db.query(History).filter(
+        History.period_id == period.id,
+        History.student_id == student_model.id,
+    ).all()
+    assert len(history_after_unlink) == 1
+    assert history_after_unlink[0].end_date == date.today()
+
+
+def test_get_room_schedule_receives_room_id_in_body(client):
+    _service, _institute, _course, _student, room = _create_basic_entities(client)
+
+    response = client.post(
+        "/api/v1/rooms/schedule",
+        json={"room_id": room["id"]},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["roomId"] == room["id"]
+    assert len(body["days"]) == 7
+
+
+def test_available_slots_receives_filters_in_body(client):
+    _service, _institute, _course, student, room = _create_basic_entities(client)
+
+    response = client.post(
+        "/api/v1/rooms/available-slots",
+        json={
+            "student_id": student["id"],
+            "room_id": room["id"],
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert isinstance(body, list)
+    assert len(body) > 0
+    assert body[0]["room_id"] == room["id"]

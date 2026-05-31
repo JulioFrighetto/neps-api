@@ -204,8 +204,8 @@ def test_change_password(client):
     me = client.get("/api/v1/auth/me", headers=headers).json()
 
     resp = client.post(
-        f"/api/v1/users/{me['id']}/change-password",
-        json={"current_password": "oldpass", "new_password": "newpass"},
+        "/api/v1/users/change-password",
+        json={"user_id": me["id"], "current_password": "oldpass", "new_password": "newpass"},
         headers=headers,
     )
     assert resp.status_code == 204
@@ -219,6 +219,6 @@ def test_update_other_user_forbidden(client):
     tokens2 = _seed_and_login(client, email="user2@test.com", password="pass2")
     headers2 = {"Authorization": f"Bearer {tokens2['access_token']}"}
 
-    user1 = client.get("/api/v1/users/1").json()
-    resp = client.patch(f"/api/v1/users/{user1['id']}", json={"name": "Hacked"}, headers=headers2)
+    user1 = client.post("/api/v1/users/detail", json={"user_id": 1}).json()
+    resp = client.patch("/api/v1/users/", json={"user_id": user1["id"], "name": "Hacked"}, headers=headers2)
     assert resp.status_code == 403

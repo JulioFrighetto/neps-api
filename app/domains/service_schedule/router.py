@@ -1,6 +1,7 @@
 import math
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Body, Depends, HTTPException, status
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -15,13 +16,30 @@ from app.domains.service_schedule.schemas import (
 )
 from app.domains.student.repository import get_by_id as get_student_by_id
 
-router = APIRouter(prefix="/service-schedules", tags=["Service Schedules"])
+router = APIRouter(prefix="/service-schedules", tags=["Agendas do Campo de Estágio"])
+
+
+class ServiceScheduleGetRequest(BaseModel):
+    service_schedule_id: int
+
+
+class ServiceSchedulesByRoomRequest(BaseModel):
+    service_room_id: int
+
+
+class ServiceSchedulesByRoomDayRequest(BaseModel):
+    service_room_id: int
+    week_day: str
+
+
+class ServiceScheduleUpdateRequest(ServiceScheduleUpdate):
+    service_schedule_id: int
 
 
 @router.get("/", response_model=Page[ServiceScheduleResponse])
 def list_service_schedules(
-    page: int = Query(1, ge=1),
-    per_page: int = Query(10, ge=1, le=100),
+    page: int = Body(1, ge=1),
+    per_page: int = Body(10, ge=1, le=100),
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
@@ -42,24 +60,24 @@ def list_service_schedules(
     )
 
 
-@router.get("/{service_schedule_id}", response_model=ServiceScheduleResponse)
-def get_service_schedule(service_schedule_id: int, db: Session = Depends(get_db)):
-    schedule = repository.get_by_id(db, service_schedule_id)
+@router.post("/detail", response_model=ServiceScheduleResponse)
+def get_service_schedule(data: ServiceScheduleGetRequest, db: Session = Depends(get_db)):
+    schedule = repository.get_by_id(db, data.service_schedule_id)
     if not schedule:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agenda não encontrada")
     return schedule
 
 
-@router.get("/by-room/{service_room_id}", response_model=list[ServiceScheduleResponse])
-def list_service_schedules_by_room(service_room_id: int, db: Session = Depends(get_db)):
+@router.post("/by-room", response_model=list[ServiceScheduleResponse])
+def list_service_schedules_by_room(data: ServiceSchedulesByRoomRequest, db: Session = Depends(get_db)):
     # First, check if it's a ServiceRoom ID
-    service_schedules = repository.get_by_room(db, service_room_id)
+    service_schedules = repository.get_by_room(db, data.service_room_id)
     if service_schedules:
         return service_schedules
     
     # If not found, check if it's a Room ID
     from app.domains.room_schedule import repository as room_schedule_repository
-    room_schedules = room_schedule_repository.get_by_room(db, service_room_id)
+    room_schedules = room_schedule_repository.get_by_room(db, data.service_room_id)
     if room_schedules:
         # Map RoomSchedule to ServiceScheduleResponse format
         # Convert day and shift from lowercase to uppercase
@@ -85,11 +103,11 @@ def list_service_schedules_by_room(service_room_id: int, db: Session = Depends(g
     return []
 
 
-@router.get("/by-room/{service_room_id}/by-day/{week_day}", response_model=list[ServiceScheduleResponse])
+@router.post("/by-room/by-day", response_model=list[ServiceScheduleResponse])
 def list_service_schedules_by_room_and_day(
-    service_room_id: int, week_day: str, db: Session = Depends(get_db)
+    data: ServiceSchedulesByRoomDayRequest, db: Session = Depends(get_db)
 ):
-    return repository.get_by_room_and_day(db, service_room_id, week_day)
+    return repository.get_by_room_and_day(db, data.service_room_id, data.week_day)
 
 
 @router.post("/", response_model=ServiceScheduleResponse, status_code=status.HTTP_201_CREATED)
@@ -109,11 +127,11 @@ def create_service_schedule(data: ServiceScheduleCreate, db: Session = Depends(g
     return repository.create(db, data)
 
 
-@router.patch("/{service_schedule_id}", response_model=ServiceScheduleResponse)
+@router.patch("/", response_model=ServiceScheduleResponse)
 def update_service_schedule(
-    service_schedule_id: int, data: ServiceScheduleUpdate, db: Session = Depends(get_db)
+    data: ServiceScheduleUpdateRequest, db: Session = Depends(get_db)
 ):
-    schedule = repository.get_by_id(db, service_schedule_id)
+    schedule = repository.get_by_id(db, data.service_schedule_id)
     if not schedule:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agenda não encontrada")
 
@@ -134,7 +152,7 @@ def update_service_schedule(
             detail="Já existe agenda para esta sala, dia e turno",
         )
 
-    updated = repository.update(db, service_schedule_id, data)
+    updated = repository.update(db, data.service_schedule_id, data)
     if not updated:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agenda não encontrada")
     return updated

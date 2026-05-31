@@ -1,6 +1,6 @@
 import math
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -20,19 +20,32 @@ from app.domains.user.model import User
 from app.domains.user.repository import get_by_email as get_user_by_email
 from app.core.security import hash_password
 import secrets
+from pydantic import BaseModel
 
-router = APIRouter(prefix="/services", tags=["Services"])
+router = APIRouter(prefix="/services", tags=["Campos de Estágio"])
 
 AVAILABLE_FILTERS = ["name_like", "region_id", "is_active"]
 
 
+class ServiceGetRequest(BaseModel):
+    service_id: int
+
+
+class ServiceUpdateRequest(ServiceUpdate):
+    service_id: int
+
+
+class ServiceReplaceRequest(ServiceCreate):
+    service_id: int
+
+
 @router.get("/", response_model=Page[ServiceResponse])
 def list_services(
-    page: int = Query(1, ge=1),
-    per_page: int = Query(10, ge=1, le=100),
-    name_like: str | None = Query(None),
-    region_id: int | None = Query(None),
-    is_active: bool | None = Query(None),
+    page: int = Body(1, ge=1),
+    per_page: int = Body(10, ge=1, le=100),
+    name_like: str | None = Body(None),
+    region_id: int | None = Body(None),
+    is_active: bool | None = Body(None),
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
@@ -58,11 +71,11 @@ def list_services(
     )
 
 
-@router.get("/{service_id}", response_model=ServiceResponse)
-def get_service(service_id: int, db: Session = Depends(get_db)):
-    service = repository.get_by_id(db, service_id)
+@router.post("/detail", response_model=ServiceResponse)
+def get_service(data: ServiceGetRequest, db: Session = Depends(get_db)):
+    service = repository.get_by_id(db, data.service_id)
     if not service:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Serviço não encontrado")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Campo de estágio não encontrado")
     return service
 
 
@@ -71,7 +84,7 @@ def create_service(data: ServiceCreate, db: Session = Depends(get_db)):
     if repository.get_by_name(db, data.name):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Já existe um serviço com este nome",
+            detail="Já existe um campo de estágio com este nome",
         )
     if data.user_email and get_user_by_email(db, data.user_email):
         raise HTTPException(
@@ -95,33 +108,25 @@ def create_service(data: ServiceCreate, db: Session = Depends(get_db)):
     return service
 
 
-@router.patch("/{service_id}", response_model=ServiceResponse)
-def update_service(service_id: int, data: ServiceUpdate, db: Session = Depends(get_db)):
-    service = repository.get_by_id(db, service_id)
+@router.patch("/", response_model=ServiceResponse)
+def update_service(data: ServiceUpdateRequest, db: Session = Depends(get_db)):
+    service = repository.get_by_id(db, data.service_id)
     if not service:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Serviço não encontrado")
-
-    had_user = service.user is not None
-    previous_email = service.email
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Campo de estágio não encontrado")
 
     if data.user_email:
         existing_user = db.query(User).filter(User.email == data.user_email).first()
-        if existing_user and existing_user.id != service.user_id:
+        if existing_user:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="Já existe um usuário com este e-mail",
             )
 
-    service = repository.update(db, service_id, data)
+    service = repository.update(db, data.service_id, data)
     if not service:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Serviço não encontrado")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Campo de estágio não encontrado")
 
-    should_send_reset = (
-        data.user_email is not None and (
-            not had_user or previous_email != data.user_email
-        )
-    )
-    if should_send_reset:
+    if data.user_email:
         reset_token = create_reset_token(data.user_email)
         reset_link = f"{settings.FRONTEND_URL.rstrip('/')}/reset-password?token={reset_token}"
         body = build_password_reset_body(reset_link)
@@ -136,18 +141,15 @@ def update_service(service_id: int, data: ServiceUpdate, db: Session = Depends(g
     return service
 
 
-@router.put("/{service_id}", response_model=ServiceResponse)
-def replace_service(service_id: int, data: ServiceCreate, db: Session = Depends(get_db)):
-    service = repository.get_by_id(db, service_id)
+@router.put("/", response_model=ServiceResponse)
+def replace_service(data: ServiceReplaceRequest, db: Session = Depends(get_db)):
+    service = repository.get_by_id(db, data.service_id)
     if not service:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Serviço não encontrado")
-
-    had_user = service.user is not None
-    previous_email = service.email
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Campo de estágio não encontrado")
 
     if data.user_email and get_user_by_email(db, data.user_email):
         existing_user = db.query(User).filter(User.email == data.user_email).first()
-        if existing_user and existing_user.id != service.user_id:
+        if existing_user:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="Já existe um usuário com este e-mail",
@@ -156,7 +158,7 @@ def replace_service(service_id: int, data: ServiceCreate, db: Session = Depends(
     service.region_id = data.region_id
     service.is_active = data.is_active
 
-    if data.user_email and not service.user:
+    if data.user_email:
         temp_password = secrets.token_urlsafe(16)
         user = User(
             name=data.user_name or data.name,
@@ -167,22 +169,10 @@ def replace_service(service_id: int, data: ServiceCreate, db: Session = Depends(
             is_active=True,
         )
         db.add(user)
-        service.user = user
-    elif service.user:
-        if data.user_name is not None:
-            service.user.name = data.user_name
-        if data.user_email is not None:
-            service.user.email = data.user_email
 
     db.commit()
-    db.refresh(service)
 
-    should_send_reset = (
-        data.user_email is not None and (
-            not had_user or previous_email != data.user_email
-        )
-    )
-    if should_send_reset:
+    if data.user_email:
         reset_token = create_reset_token(data.user_email)
         reset_link = f"{settings.FRONTEND_URL.rstrip('/')}/reset-password?token={reset_token}"
         body = build_password_reset_body(reset_link)
@@ -194,4 +184,4 @@ def replace_service(service_id: int, data: ServiceCreate, db: Session = Depends(
                 detail=str(exc),
             )
 
-    return service
+    return repository.get_by_id(db, data.service_id) or service

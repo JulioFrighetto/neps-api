@@ -38,9 +38,64 @@ def _ensure_user_profile_columns(conn) -> None:
     if "service_id" not in column_names:
         conn.execute(text("ALTER TABLE users ADD COLUMN service_id INTEGER NULL"))
     if "education_institute_id" not in column_names:
-        conn.execute(
-            text("ALTER TABLE users ADD COLUMN education_institute_id INTEGER NULL")
+        conn.execute(text("ALTER TABLE users ADD COLUMN education_institute_id INTEGER NULL"))
+
+
+def _rebuild_users_table_without_unique_service_id(conn) -> None:
+    indexes = conn.execute(text("PRAGMA index_list(users)")).fetchall()
+    unique_service_index_exists = False
+
+    for index in indexes:
+        if not index[2]:
+            continue
+        index_name = index[1]
+        columns = conn.execute(text(f"PRAGMA index_info('{index_name}')")).fetchall()
+        column_names = [column[2] for column in columns]
+        if column_names == ["service_id"]:
+            unique_service_index_exists = True
+            break
+
+    if not unique_service_index_exists:
+        return
+
+    conn.execute(text("PRAGMA foreign_keys=off"))
+    conn.execute(text("ALTER TABLE users RENAME TO users_legacy"))
+    conn.execute(
+        text(
+            """
+            CREATE TABLE users (
+                id INTEGER NOT NULL PRIMARY KEY,
+                name VARCHAR(100) NOT NULL,
+                email VARCHAR(150) NOT NULL UNIQUE,
+                password VARCHAR(255),
+                role VARCHAR(20) NOT NULL DEFAULT 'user',
+                service_id INTEGER NULL,
+                education_institute_id INTEGER NULL,
+                is_active BOOLEAN NOT NULL DEFAULT 1,
+                created_at DATETIME,
+                updated_at DATETIME,
+                FOREIGN KEY(service_id) REFERENCES services(id),
+                FOREIGN KEY(education_institute_id) REFERENCES education_institutes(id)
+            )
+            """
         )
+    )
+    conn.execute(
+        text(
+            """
+            INSERT INTO users (
+                id, name, email, password, role, service_id, education_institute_id,
+                is_active, created_at, updated_at
+            )
+            SELECT
+                id, name, email, password, role, service_id, education_institute_id,
+                is_active, created_at, updated_at
+            FROM users_legacy
+            """
+        )
+    )
+    conn.execute(text("DROP TABLE users_legacy"))
+    conn.execute(text("PRAGMA foreign_keys=on"))
 
 
 def _ensure_room_columns(conn) -> None:
@@ -141,6 +196,9 @@ def init_db() -> None:
         _rebuild_rooms_table_without_internship_field(conn)
         _ensure_room_timestamps(conn)
         _ensure_history_columns(conn)
+        _ensure_user_role_column(conn)
+        _ensure_user_profile_columns(conn)
+        _rebuild_users_table_without_unique_service_id(conn)
     seed_admin()
 
 
@@ -158,7 +216,7 @@ def seed_admin():
     with engine.begin() as conn:
         _ensure_user_role_column(conn)
         _ensure_user_profile_columns(conn)
-        # Ensure education_institutes contact columns exist when model was extended
+
         def _ensure_education_institute_columns(conn) -> None:
             columns = conn.execute(text("PRAGMA table_info(education_institutes)")).fetchall()
             column_names = {column[1] for column in columns}
@@ -184,7 +242,6 @@ def seed_admin():
                 conn.execute(text("ALTER TABLE courses ADD COLUMN region_id INTEGER NULL"))
 
         _ensure_course_columns(conn)
-
         _ensure_education_institute_columns(conn)
 
         def _ensure_student_columns(conn) -> None:

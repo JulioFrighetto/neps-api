@@ -12,7 +12,7 @@ from app.domains.course.model import Course
 from app.domains.education_institute.model import EducationInstitute
 from app.domains.period.model import Period
 from app.domains.period.router import unlink_student_from_period
-from app.domains.period.schemas import StudentLinkRequest
+from app.domains.period.router import PeriodStudentLinkRequest
 from app.domains.room.model import Room
 from app.domains.room_schedule import repository_nested as schedule_repository
 from app.domains.service.model import Service
@@ -125,22 +125,22 @@ def test_link_and_unlink_student_to_period(client, db):
     headers = _make_institute_headers(client, db, inst["id"])
 
     # link student
-    resp = client.post(f"/api/v1/periods/{period['id']}/students", json={"student_id": student["id"]}, headers=headers)
+    resp = client.post("/api/v1/periods/students", json={"period_id": period["id"], "student_id": student["id"]}, headers=headers)
     assert resp.status_code == 201
     assert resp.json()["message"] == "Aluno vinculado com sucesso"
 
     # linking again should return conflict
-    resp_dup = client.post(f"/api/v1/periods/{period['id']}/students", json={"student_id": student["id"]}, headers=headers)
+    resp_dup = client.post("/api/v1/periods/students", json={"period_id": period["id"], "student_id": student["id"]}, headers=headers)
     assert resp_dup.status_code == 409
 
     # get period with students
-    resp_get = client.get(f"/api/v1/periods/{period['id']}?include=students", headers=headers)
+    resp_get = client.post("/api/v1/periods/detail", json={"period_id": period["id"], "include": "students"}, headers=headers)
     assert resp_get.status_code == 200
     body = resp_get.json()
     assert "students" in body
     assert any(s["id"] == student["id"] for s in body["students"])
 
-    resp_histories = client.get(f"/api/v1/histories/by-period/{period['id']}", headers=headers)
+    resp_histories = client.post("/api/v1/histories/by-period", json={"id": period["id"]}, headers=headers)
     assert resp_histories.status_code == 200
     histories_body = resp_histories.json()
     assert histories_body["pagination"]["total"] == 1
@@ -149,18 +149,18 @@ def test_link_and_unlink_student_to_period(client, db):
     assert histories_body["items"][0]["end_date"] is None
 
     # unlink student
-    resp_unlink = client.request("DELETE", f"/api/v1/periods/{period['id']}/students", json={"student_id": student["id"]}, headers=headers)
+    resp_unlink = client.request("DELETE", "/api/v1/periods/students", json={"period_id": period["id"], "student_id": student["id"]}, headers=headers)
     assert resp_unlink.status_code == 200
     assert resp_unlink.json()["message"] == "Aluno desvinculado com sucesso"
 
-    resp_histories_after_unlink = client.get(f"/api/v1/histories/by-period/{period['id']}", headers=headers)
+    resp_histories_after_unlink = client.post("/api/v1/histories/by-period", json={"id": period["id"]}, headers=headers)
     assert resp_histories_after_unlink.status_code == 200
     histories_after_unlink = resp_histories_after_unlink.json()
     assert histories_after_unlink["pagination"]["total"] == 1
     assert histories_after_unlink["items"][0]["end_date"] is not None
 
     # unlink again is idempotent
-    resp_unlink2 = client.request("DELETE", f"/api/v1/periods/{period['id']}/students", json={"student_id": student["id"]}, headers=headers)
+    resp_unlink2 = client.request("DELETE", "/api/v1/periods/students", json={"period_id": period["id"], "student_id": student["id"]}, headers=headers)
     assert resp_unlink2.status_code == 200
     assert resp_unlink2.json()["message"] == "Aluno desvinculado com sucesso"
 
@@ -172,16 +172,16 @@ def test_admin_can_unlink_student_from_period(client, db):
     admin_headers = _make_role_headers(client, db, "admin", "admin@test.com")
 
     resp_link = client.post(
-        f"/api/v1/periods/{period['id']}/students",
-        json={"student_id": student["id"]},
+        "/api/v1/periods/students",
+        json={"period_id": period["id"], "student_id": student["id"]},
         headers=institute_headers,
     )
     assert resp_link.status_code == 201
 
     resp_unlink = client.request(
         "DELETE",
-        f"/api/v1/periods/{period['id']}/students",
-        json={"student_id": student["id"]},
+        "/api/v1/periods/students",
+        json={"period_id": period["id"], "student_id": student["id"]},
         headers=admin_headers,
     )
     assert resp_unlink.status_code == 200
@@ -195,8 +195,8 @@ def test_service_cannot_unlink_student_from_period(client, db):
 
     resp = client.request(
         "DELETE",
-        f"/api/v1/periods/{period['id']}/students",
-        json={"student_id": student["id"]},
+        "/api/v1/periods/students",
+        json={"period_id": period["id"], "student_id": student["id"]},
         headers=service_headers,
     )
     assert resp.status_code == 403
@@ -216,8 +216,8 @@ def test_institute_cannot_unlink_student_from_other_institute(client, db):
 
     resp = client.request(
         "DELETE",
-        f"/api/v1/periods/{period['id']}/students",
-        json={"student_id": other_student["id"]},
+        "/api/v1/periods/students",
+        json={"period_id": period["id"], "student_id": other_student["id"]},
         headers=headers,
     )
     assert resp.status_code == 403
@@ -266,6 +266,7 @@ def test_period_unlink_removes_student_from_schedule_slot(db):
         day_of_week="MONDAY",
         period_name="EVENING",
         student_id=student.id,
+        period_id=period.id,
     )
     assert assigned_period is not None
     assert any(existing.id == student.id for existing in assigned_period.students)
@@ -277,8 +278,7 @@ def test_period_unlink_removes_student_from_schedule_slot(db):
         is_active=True,
     )
     response = unlink_student_from_period(
-        period_id=period.id,
-        data=StudentLinkRequest(student_id=student.id),
+        data=PeriodStudentLinkRequest(period_id=period.id, student_id=student.id),
         db=db,
         current_user=current_user,
     )
@@ -332,6 +332,7 @@ def test_list_histories_by_room(client, db):
         day_of_week="MONDAY",
         period_name="EVENING",
         student_id=student.id,
+        period_id=period.id,
     )
     assert assigned_period is not None
 
@@ -340,7 +341,7 @@ def test_list_histories_by_room(client, db):
     period_repository.link_student(db, period.id, student)
 
     admin_headers = _make_role_headers(client, db, "admin", "admin-room@test.com")
-    response = client.get(f"/api/v1/histories/by-room/{room.id}", headers=admin_headers)
+    response = client.post("/api/v1/histories/by-room", json={"id": room.id}, headers=admin_headers)
     assert response.status_code == 200
     body = response.json()
     assert body["pagination"]["total"] == 1
@@ -393,6 +394,7 @@ def test_list_histories_by_schedule(client, db):
         day_of_week="MONDAY",
         period_name="EVENING",
         student_id=student.id,
+        period_id=period.id,
     )
     assert assigned_period is not None
 
@@ -401,9 +403,67 @@ def test_list_histories_by_schedule(client, db):
     period_repository.link_student(db, period.id, student)
 
     admin_headers = _make_role_headers(client, db, "admin", "admin-schedule@test.com")
-    response = client.get(f"/api/v1/histories/by-schedule/{schedule.id}", headers=admin_headers)
+    response = client.post("/api/v1/histories/by-schedule", json={"id": schedule.id}, headers=admin_headers)
     assert response.status_code == 200
     body = response.json()
     assert body["pagination"]["total"] == 1
     assert body["items"][0]["schedule_id"] == schedule.id
     assert body["items"][0]["room_id"] == room.id
+
+
+def test_list_histories_by_student(client, db):
+    today = date.today()
+    institute = EducationInstitute(name="Inst X", priority=0, is_active=True)
+    service = Service(name="Service X", is_active=True)
+    db.add_all([institute, service])
+    db.commit()
+    db.refresh(institute)
+    db.refresh(service)
+
+    course = Course(name="Enfermagem", requires_gurney=False)
+    room = Room(service_id=service.id, name="Sala 1", room_capacity=2, has_gurney=False, is_active=True)
+    db.add_all([course, room])
+    db.commit()
+    db.refresh(course)
+    db.refresh(room)
+    schedule_repository.create_schedule_for_room(db, room.id)
+
+    student = Student(
+        edu_institute_id=institute.id,
+        course_id=course.id,
+        status="PENDING",
+        document_url="https://example.com/document.pdf",
+        is_active=True,
+    )
+    period = Period(
+        name="2026.1",
+        priority_start_date=today - timedelta(days=1),
+        priority_end_date=today + timedelta(days=1),
+        start_date=today + timedelta(days=2),
+        end_date=today + timedelta(days=30),
+        is_active=True,
+    )
+    db.add_all([student, period])
+    db.commit()
+    db.refresh(student)
+    db.refresh(period)
+
+    assigned_period = schedule_repository.assign_student_to_period(
+        db=db,
+        room_id=room.id,
+        day_of_week="MONDAY",
+        period_name="EVENING",
+        student_id=student.id,
+        period_id=period.id,
+    )
+    assert assigned_period is not None
+
+    admin_headers = _make_role_headers(client, db, "admin", "admin-student@test.com")
+    response = client.post("/api/v1/histories/by-student", json={"id": student.id}, headers=admin_headers)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["pagination"]["total"] == 1
+    assert body["items"][0]["student_id"] == student.id
+    assert body["items"][0]["period_id"] == period.id
+    assert body["items"][0]["room_id"] == room.id
+    assert body["items"][0]["schedule_id"] == assigned_period.day.schedule.id if hasattr(assigned_period, "day") and hasattr(assigned_period.day, "schedule") else schedule_repository.get_schedule_by_room(db, room.id).id

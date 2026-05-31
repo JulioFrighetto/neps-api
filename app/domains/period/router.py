@@ -1,6 +1,7 @@
 import math
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Body, Depends, HTTPException, status
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import selectinload
 
@@ -24,16 +25,29 @@ router = APIRouter(prefix="/periods", tags=["Periods"])
 AVAILABLE_FILTERS = ["name_like", "is_active", "start_date_from", "start_date_to", "end_date_from", "end_date_to"]
 
 
+class PeriodDetailRequest(BaseModel):
+    period_id: int
+    include: str | None = None
+
+
+class PeriodStudentLinkRequest(StudentLinkRequest):
+    period_id: int
+
+
+class PeriodUpdateRequest(PeriodUpdate):
+    period_id: int
+
+
 @router.get("/", response_model=Page[PeriodResponse])
 def list_periods(
-    page: int = Query(1, ge=1),
-    per_page: int = Query(10, ge=1, le=100),
-    name_like: str | None = Query(None),
-    is_active: bool | None = Query(None),
-    start_date_from: str | None = Query(None),
-    start_date_to: str | None = Query(None),
-    end_date_from: str | None = Query(None),
-    end_date_to: str | None = Query(None),
+    page: int = Body(1, ge=1),
+    per_page: int = Body(10, ge=1, le=100),
+    name_like: str | None = Body(None),
+    is_active: bool | None = Body(None),
+    start_date_from: str | None = Body(None),
+    start_date_to: str | None = Body(None),
+    end_date_from: str | None = Body(None),
+    end_date_to: str | None = Body(None),
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
@@ -73,10 +87,9 @@ def list_periods(
     )
 
 
-@router.get("/{period_id}", response_model=PeriodDetailResponse)
+@router.post("/detail", response_model=PeriodDetailResponse)
 def get_period(
-    period_id: int,
-    include: str | None = Query(None, description="Relacionamentos a incluir: students"),
+    data: PeriodDetailRequest,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
@@ -88,12 +101,12 @@ def get_period(
     elif current_user.role != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
 
-    inc = {p.strip().lower() for p in include.split(",")} if include else set()
+    inc = {p.strip().lower() for p in data.include.split(",")} if data.include else set()
 
     if "students" in inc:
-        period = repository.get_by_id_with_students(db, period_id, institute_priority=institute_priority)
+        period = repository.get_by_id_with_students(db, data.period_id, institute_priority=institute_priority)
     else:
-        period = repository.get_by_id(db, period_id, institute_priority=institute_priority)
+        period = repository.get_by_id(db, data.period_id, institute_priority=institute_priority)
 
     if not period:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Período não encontrado")
@@ -172,10 +185,9 @@ def get_period(
 
 
 
-@router.post("/{period_id}/students", status_code=status.HTTP_201_CREATED)
+@router.post("/students", status_code=status.HTTP_201_CREATED)
 def link_student_to_period(
-    period_id: int,
-    data: StudentLinkRequest,
+    data: PeriodStudentLinkRequest,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
@@ -186,7 +198,7 @@ def link_student_to_period(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
 
     # validate period visibility
-    period = repository.get_by_id(db, period_id, institute_priority=current_user.education_institute.priority)
+    period = repository.get_by_id(db, data.period_id, institute_priority=current_user.education_institute.priority)
     if not period:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Período não encontrado ou não visível")
 
@@ -202,17 +214,16 @@ def link_student_to_period(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Aluno já está vinculado ao período")
 
     try:
-        repository.link_student(db, period_id, student)
+        repository.link_student(db, data.period_id, student)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
 
     return {"message": "Aluno vinculado com sucesso"}
 
 
-@router.delete("/{period_id}/students", status_code=status.HTTP_200_OK)
+@router.delete("/students", status_code=status.HTTP_200_OK)
 def unlink_student_from_period(
-    period_id: int,
-    data: StudentLinkRequest,
+    data: PeriodStudentLinkRequest,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
@@ -224,7 +235,7 @@ def unlink_student_from_period(
     elif current_user.role != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
 
-    period = repository.get_by_id_with_students(db, period_id, institute_priority=institute_priority)
+    period = repository.get_by_id_with_students(db, data.period_id, institute_priority=institute_priority)
     if not period:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Período não encontrado ou não visível")
 
@@ -240,7 +251,7 @@ def unlink_student_from_period(
     is_linked_to_period = any(s.id == student.id for s in getattr(period, "students", []))
     if is_linked_to_period:
         try:
-            repository.unlink_student(db, period_id, student)
+            repository.unlink_student(db, data.period_id, student)
         except ValueError as exc:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
 
@@ -256,9 +267,9 @@ def create_period(data: PeriodCreate, db: Session = Depends(get_db)):
     return repository.create(db, data)
 
 
-@router.patch("/{period_id}", response_model=PeriodResponse)
-def update_period(period_id: int, data: PeriodUpdate, db: Session = Depends(get_db)):
-    period = repository.update(db, period_id, data)
+@router.patch("/", response_model=PeriodResponse)
+def update_period(data: PeriodUpdateRequest, db: Session = Depends(get_db)):
+    period = repository.update(db, data.period_id, data)
     if not period:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Período não encontrado")
     return period

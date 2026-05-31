@@ -106,8 +106,8 @@ def _make_institute_token(client, db, *, priority: int = 0, email: str = "inst@t
 def test_list_education_institutes_pagination(client):
     token = _make_admin_token(client)
     headers = {"Authorization": f"Bearer {token}"}
-client.post("/api/v1/education-institutes/", json={"name": "UNISINOS"}, headers=headers)
-response = client.get("/api/v1/education-institutes/", headers=headers)
+    client.post("/api/v1/education-institutes/", json={"name": "UNISINOS"}, headers=headers)
+    response = client.get("/api/v1/education-institutes/", headers=headers)
     assert response.status_code == 200
     assert len(response.json()) >= 1
 
@@ -235,6 +235,33 @@ def test_create_student(client):
     )
     assert response.status_code == 201
     assert response.json()["status"] == "PENDING"
+
+
+def test_get_student_returns_course_and_institution(client):
+    inst = client.post("/api/v1/education-institutes", json={"name": "FEEVALE"}).json()
+    course = client.post(
+        "/api/v1/courses",
+        json={"edu_institute_id": inst["id"], "name": "Fisioterapia", "requires_gurney": False},
+    ).json()
+    student = client.post(
+        "/api/v1/students",
+        json={
+            "edu_institute_id": inst["id"],
+            "course_id": course["id"],
+            "status": "PENDING",
+            "document_url": "https://example.com/document.pdf",
+        },
+    ).json()
+
+    response = client.post("/api/v1/students/detail", json={"student_id": student["id"]})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["course"] is not None
+    assert body["course"]["id"] == course["id"]
+    assert body["course"]["name"] == course["name"]
+    assert body["institution"] is not None
+    assert body["institution"]["id"] == inst["id"]
+    assert body["institution"]["name"] == inst["name"]
 
 
 # ── Filter Tests ─────────────────────────────────────────────────────────────

@@ -1,6 +1,6 @@
 import math
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session, selectinload
 
@@ -30,6 +30,15 @@ class GestaoStudentUpdate(BaseModel):
     course_id: int | None = None
     semester: int | None = None
     institution_id: int | None = None
+
+
+class GestaoStudentGetRequest(BaseModel):
+    student_id: int
+    include: str | None = None
+
+
+class GestaoStudentUpdateRequest(GestaoStudentUpdate):
+    student_id: int
 
 
 class GestaoStudentResponse(BaseModel):
@@ -92,15 +101,15 @@ def _to_response(student: Student, include: set[str] | None = None) -> GestaoStu
 
 @router.get("/students", response_model=Page[GestaoStudentResponse])
 def list_students(
-    page: int = Query(1, ge=1),
-    per_page: int = Query(10, ge=1, le=100),
-    name_like: str | None = Query(None),
-    cpf: str | None = Query(None),
-    email: str | None = Query(None),
-    course_id: int | None = Query(None),
-    institution_id: int | None = Query(None),
-    semester: int | None = Query(None),
-    include: str | None = Query(None, description="Relacionamentos a incluir: course,institution"),
+    page: int = Body(1, ge=1),
+    per_page: int = Body(10, ge=1, le=100),
+    name_like: str | None = Body(None),
+    cpf: str | None = Body(None),
+    email: str | None = Body(None),
+    course_id: int | None = Body(None),
+    institution_id: int | None = Body(None),
+    semester: int | None = Body(None),
+    include: str | None = Body(None, description="Relacionamentos a incluir: course,institution"),
     db: Session = Depends(get_db),
 ):
     filters = {}
@@ -142,13 +151,9 @@ def list_students(
     )
 
 
-@router.get("/students/{student_id}", response_model=GestaoStudentResponse)
-def get_student(
-    student_id: int,
-    include: str | None = Query(None, description="Relacionamentos a incluir: course,institution"),
-    db: Session = Depends(get_db),
-):
-    include_set = {item.strip().lower() for item in include.split(",")} if include else set()
+@router.post("/students/detail", response_model=GestaoStudentResponse)
+def get_student(data: GestaoStudentGetRequest, db: Session = Depends(get_db)):
+    include_set = {item.strip().lower() for item in data.include.split(",")} if data.include else set()
 
     query = db.query(Student)
     if "course" in include_set:
@@ -156,7 +161,7 @@ def get_student(
     if "institution" in include_set:
         query = query.options(selectinload(Student.education_institute))
 
-    student = query.filter(Student.id == student_id).first()
+    student = query.filter(Student.id == data.student_id).first()
     if not student:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Aluno não encontrado")
     return _to_response(student, include_set)
@@ -181,10 +186,10 @@ def create_student(data: GestaoStudentCreate, db: Session = Depends(get_db)):
     return _to_response(student)
 
 
-@router.put("/students/{student_id}", response_model=GestaoStudentResponse)
-@router.patch("/students/{student_id}", response_model=GestaoStudentResponse)
-def update_student(student_id: int, data: GestaoStudentUpdate, db: Session = Depends(get_db)):
-    student = db.query(Student).filter(Student.id == student_id).first()
+@router.put("/students", response_model=GestaoStudentResponse)
+@router.patch("/students", response_model=GestaoStudentResponse)
+def update_student(data: GestaoStudentUpdateRequest, db: Session = Depends(get_db)):
+    student = db.query(Student).filter(Student.id == data.student_id).first()
     if not student:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Aluno não encontrado")
 

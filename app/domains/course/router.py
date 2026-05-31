@@ -1,6 +1,7 @@
 import math
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Body, status
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -13,13 +14,21 @@ router = APIRouter(prefix="/courses", tags=["Courses"])
 AVAILABLE_FILTERS = ["name_like", "code_like", "region_id"]
 
 
+class CourseGetRequest(BaseModel):
+    course_id: int
+
+
+class CourseUpdateRequest(CourseUpdate):
+    course_id: int
+
+
 @router.get("/", response_model=Page[CourseResponse])
 def list_courses(
-    page: int = Query(1, ge=1),
-    per_page: int = Query(10, ge=1, le=100),
-    name_like: str | None = Query(None),
-    code_like: str | None = Query(None),
-    region_id: int | None = Query(None),
+    page: int = Body(1, ge=1),
+    per_page: int = Body(10, ge=1, le=100),
+    name_like: str | None = Body(None),
+    code_like: str | None = Body(None),
+    region_id: int | None = Body(None),
     db: Session = Depends(get_db),
 ):
     filters = {k: v for k, v in {"name_like": name_like, "code_like": code_like, "region_id": region_id}.items() if v is not None}
@@ -36,9 +45,9 @@ def list_courses(
     )
 
 
-@router.get("/{course_id}", response_model=CourseResponse)
-def get_course(course_id: int, db: Session = Depends(get_db)):
-    course = repository.get_by_id(db, course_id)
+@router.post("/detail", response_model=CourseResponse)
+def get_course(data: CourseGetRequest, db: Session = Depends(get_db)):
+    course = repository.get_by_id(db, data.course_id)
     if not course:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Curso não encontrado")
     return course
@@ -49,10 +58,10 @@ def create_course(data: CourseCreate, db: Session = Depends(get_db)):
     return repository.create(db, data)
 
 
-@router.put("/{course_id}", response_model=CourseResponse)
-@router.patch("/{course_id}", response_model=CourseResponse)
-def update_course(course_id: int, data: CourseUpdate, db: Session = Depends(get_db)):
-    course = repository.update(db, course_id, data)
+@router.put("/", response_model=CourseResponse)
+@router.patch("/", response_model=CourseResponse)
+def update_course(data: CourseUpdateRequest, db: Session = Depends(get_db)):
+    course = repository.update(db, data.course_id, data)
     if not course:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Curso não encontrado")
     return course

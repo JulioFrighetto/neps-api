@@ -1,6 +1,7 @@
 import math
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Body, Depends, HTTPException, status
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -17,12 +18,20 @@ router = APIRouter(tags=["Region"])
 AVAILABLE_FILTERS = ["name_like", "is_active"]
 
 
+class RegionGetRequest(BaseModel):
+    region_id: int
+
+
+class RegionUpdateRequest(RegionUpdate):
+    region_id: int
+
+
 @router.get("/regions", response_model=Page[RegionResponse])
 def list_regions(
-    page: int = Query(1, ge=1),
-    per_page: int = Query(10, ge=1, le=100),
-    name_like: str | None = Query(None),
-    is_active: bool | None = Query(None),
+    page: int = Body(1, ge=1),
+    per_page: int = Body(10, ge=1, le=100),
+    name_like: str | None = Body(None),
+    is_active: bool | None = Body(None),
     db: Session = Depends(get_db),
 ):
     filters = {k: v for k, v in {"name_like": name_like, "is_active": is_active}.items() if v is not None}
@@ -39,9 +48,9 @@ def list_regions(
     )
 
 
-@router.get("/regions/{region_id}", response_model=RegionResponse)
-def get_region(region_id: int, db: Session = Depends(get_db)):
-    region = repository.get_region_by_id(db, region_id)
+@router.post("/regions/detail", response_model=RegionResponse)
+def get_region(data: RegionGetRequest, db: Session = Depends(get_db)):
+    region = repository.get_region_by_id(db, data.region_id)
     if not region:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Região não encontrada")
     return region
@@ -52,9 +61,9 @@ def create_region(data: RegionCreate, db: Session = Depends(get_db)):
     return repository.create_region(db, data)
 
 
-@router.patch("/regions/{region_id}", response_model=RegionResponse)
-def update_region(region_id: int, data: RegionUpdate, db: Session = Depends(get_db)):
-    region = repository.update_region(db, region_id, data)
+@router.patch("/regions", response_model=RegionResponse)
+def update_region(data: RegionUpdateRequest, db: Session = Depends(get_db)):
+    region = repository.update_region(db, data.region_id, data)
     if not region:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Região não encontrada")
     return region

@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.core.filters import apply_filters
 from app.domains.student.model import Student
@@ -15,7 +15,15 @@ def get_all(db: Session, page: int = 1, per_page: int = 10, filters: dict | None
 
 
 def get_by_id(db: Session, student_id: int) -> Student | None:
-    return db.query(Student).filter(Student.id == student_id).first()
+    return (
+        db.query(Student)
+        .options(
+            selectinload(Student.course),
+            selectinload(Student.education_institute),
+        )
+        .filter(Student.id == student_id)
+        .first()
+    )
 
 
 def get_by_course(db: Session, course_id: int, page: int = 1, per_page: int = 10, filters: dict | None = None) -> tuple[list[Student], int]:

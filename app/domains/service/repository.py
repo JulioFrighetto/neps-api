@@ -9,7 +9,7 @@ from app.domains.user.model import User
 
 
 def get_all(db: Session, page: int = 1, per_page: int = 10, filters: dict | None = None) -> tuple[list[Service], int]:
-    query = db.query(Service).options(selectinload(Service.user))
+    query = db.query(Service).options(selectinload(Service.users))
     if filters:
         from app.core.filters import apply_filters
         query, _ = apply_filters(query, Service, filters)
@@ -21,10 +21,30 @@ def get_all(db: Session, page: int = 1, per_page: int = 10, filters: dict | None
 def get_by_id(db: Session, service_id: int) -> Service | None:
     return (
         db.query(Service)
-        .options(selectinload(Service.user))
+        .options(selectinload(Service.users))
         .filter(Service.id == service_id)
         .first()
     )
+
+
+def _create_service_user(
+    db: Session,
+    service: Service,
+    *,
+    email: str,
+    name: str,
+) -> User:
+    user = User(
+        name=name,
+        email=email,
+        password=hash_password(secrets.token_urlsafe(16)),
+        role="service",
+        service_id=service.id,
+        is_active=True,
+    )
+    db.add(user)
+    service.users.append(user)
+    return user
 
 
 def get_by_name(db: Session, name: str) -> Service | None:
@@ -40,26 +60,17 @@ def create(db: Session, data: ServiceCreate) -> Service:
     db.add(service)
     db.flush()
 
-    # Se não houver dados de usuário, apenas cria a unidade sem usuário associado.
+    # Se não houver dados de usuário, apenas cria o campo de estágio sem usuário associado.
     if data.user_email:
-        temp_password = secrets.token_urlsafe(16)
-        user = User(
-            name=data.user_name or data.name,
+        _create_service_user(
+            db,
+            service,
             email=data.user_email,
-            password=hash_password(temp_password),
-            role="service",
-            service_id=service.id,
-            is_active=True,
+            name=data.user_name or data.name,
         )
-        db.add(user)
-        db.commit()
-        db.refresh(service)
-        db.refresh(user)
-        service.user = user
-    else:
-        db.commit()
-        db.refresh(service)
-    return service
+
+    db.commit()
+    return get_by_id(db, service.id) or service
 
 
 def update(db: Session, service_id: int, data: ServiceUpdate) -> Service | None:
@@ -74,28 +85,17 @@ def update(db: Session, service_id: int, data: ServiceUpdate) -> Service | None:
         if field in payload:
             setattr(service, field, payload[field])
 
-    # Linked user fields
-    if "user_email" in payload and not service.user:
-        temp_password = secrets.token_urlsafe(16)
-        user = User(
-            name=payload.get("user_name") or service.name,
+    # Linked user fields now create additional users for the same field of internship.
+    if "user_email" in payload and payload["user_email"]:
+        _create_service_user(
+            db,
+            service,
             email=payload["user_email"],
-            password=hash_password(temp_password),
-            role="service",
-            service_id=service.id,
-            is_active=True,
+            name=payload.get("user_name") or service.name,
         )
-        db.add(user)
-        service.user = user
-    elif service.user:
-        if "user_name" in payload:
-            service.user.name = payload["user_name"]
-        if "user_email" in payload:
-            service.user.email = payload["user_email"]
 
     db.commit()
-    db.refresh(service)
-    return service
+    return get_by_id(db, service.id) or service
 
 
 def delete(db: Session, service_id: int) -> bool:
