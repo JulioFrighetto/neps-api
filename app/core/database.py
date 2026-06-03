@@ -11,10 +11,8 @@ engine = create_engine(
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-
 class Base(DeclarativeBase):
     pass
-
 
 def get_db():
     db = SessionLocal()
@@ -23,13 +21,11 @@ def get_db():
     finally:
         db.close()
 
-
 def _ensure_user_role_column(conn) -> None:
     columns = conn.execute(text("PRAGMA table_info(users)")).fetchall()
     has_role = any(column[1] == "role" for column in columns)
     if not has_role:
         conn.execute(text("ALTER TABLE users ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'user'"))
-
 
 def _ensure_user_profile_columns(conn) -> None:
     columns = conn.execute(text("PRAGMA table_info(users)")).fetchall()
@@ -40,6 +36,15 @@ def _ensure_user_profile_columns(conn) -> None:
     if "education_institute_id" not in column_names:
         conn.execute(text("ALTER TABLE users ADD COLUMN education_institute_id INTEGER NULL"))
 
+def _ensure_user_timestamps(conn) -> None:
+    """Garante que todos os usuários tenham timestamps válidos nos campos created_at e updated_at"""
+    columns = conn.execute(text("PRAGMA table_info(users)")).fetchall()
+    column_names = {column[1] for column in columns}
+
+    if "created_at" in column_names:
+        conn.execute(text("UPDATE users SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL"))
+    if "updated_at" in column_names:
+        conn.execute(text("UPDATE users SET updated_at = CURRENT_TIMESTAMP WHERE updated_at IS NULL"))
 
 def _rebuild_users_table_without_unique_service_id(conn) -> None:
     indexes = conn.execute(text("PRAGMA index_list(users)")).fetchall()
@@ -97,14 +102,12 @@ def _rebuild_users_table_without_unique_service_id(conn) -> None:
     conn.execute(text("DROP TABLE users_legacy"))
     conn.execute(text("PRAGMA foreign_keys=on"))
 
-
 def _ensure_room_columns(conn) -> None:
     columns = conn.execute(text("PRAGMA table_info(rooms)")).fetchall()
     column_names = {column[1] for column in columns}
 
     if "service_id" not in column_names:
         conn.execute(text("ALTER TABLE rooms ADD COLUMN service_id INTEGER NULL"))
-
 
 def _ensure_room_timestamps(conn) -> None:
     columns = conn.execute(text("PRAGMA table_info(rooms)")).fetchall()
@@ -114,7 +117,6 @@ def _ensure_room_timestamps(conn) -> None:
         conn.execute(text("UPDATE rooms SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL"))
     if "updated_at" in column_names:
         conn.execute(text("UPDATE rooms SET updated_at = CURRENT_TIMESTAMP WHERE updated_at IS NULL"))
-
 
 def _rebuild_rooms_table_without_internship_field(conn) -> None:
     columns = conn.execute(text("PRAGMA table_info(rooms)")).fetchall()
@@ -154,7 +156,6 @@ def _rebuild_rooms_table_without_internship_field(conn) -> None:
     conn.execute(text("DROP TABLE rooms_legacy"))
     conn.execute(text("PRAGMA foreign_keys=on"))
 
-
 def _ensure_history_columns(conn) -> None:
     columns = conn.execute(text("PRAGMA table_info(histories)")).fetchall()
     column_names = {column[1] for column in columns}
@@ -188,7 +189,6 @@ def _ensure_history_columns(conn) -> None:
     if "updated_at" in column_names:
         conn.execute(text("UPDATE histories SET updated_at = CURRENT_TIMESTAMP WHERE updated_at IS NULL"))
 
-
 def init_db() -> None:
     Base.metadata.create_all(bind=engine)
     with engine.begin() as conn:
@@ -198,9 +198,9 @@ def init_db() -> None:
         _ensure_history_columns(conn)
         _ensure_user_role_column(conn)
         _ensure_user_profile_columns(conn)
+        _ensure_user_timestamps(conn)
         _rebuild_users_table_without_unique_service_id(conn)
     seed_admin()
-
 
 def seed_admin():
     password = hash_password("secret123")
