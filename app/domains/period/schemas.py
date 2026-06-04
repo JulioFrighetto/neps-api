@@ -42,7 +42,7 @@ class StudentSummary(BaseModel):
     semester: int | None = None
     has_slot: bool = False
     
-    class Course(BaseModel):
+    class Discipline(BaseModel):
         model_config = ConfigDict(from_attributes=True)
         id: int
         name: str
@@ -59,7 +59,7 @@ class StudentSummary(BaseModel):
         day_of_week: str
         period: str
 
-    course: Course | None = None
+    discipline: Discipline | None = None
     institution: Institution | None = None
     slot: Slot | None = None
 

@@ -52,7 +52,7 @@ GET /api/v1/periods/1?include=students
         "day_of_week": "MONDAY",
         "period": "AFTERNOON"
       },
-      "course": {
+      "discipline": {
         "id": 1,
         "name": "Teste"
       },
@@ -68,7 +68,7 @@ GET /api/v1/periods/1?include=students
       "semester": 3,
       "has_slot": false,
       "slot": null,
-      "course": {
+      "discipline": {
         "id": 1,
         "name": "Teste"
       },

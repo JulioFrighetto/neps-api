@@ -33,8 +33,8 @@ logger = logging.getLogger(__name__)
 def _build_access_token_extra(user) -> dict[str, int | str | None]:
     return {
         "user_name": user.name,
-        "service_id": user.service_id,
-        "service_name": user.service.name if user.service else None,
+        "internships_id": user.internships_id,
+        "internships_name": user.internships.name if user.internships else None,
         "education_institute_id": user.education_institute_id,
         "education_institute_name": (
             user.education_institute.name if user.education_institute else None
@@ -44,8 +44,6 @@ def _build_access_token_extra(user) -> dict[str, int | str | None]:
 
 @router.post("/login", response_model=TokenResponse)
 def login(data: LoginRequest, db: Session = Depends(get_db)):
-    print(f"Login attempt for email: {data.email}")
-    # Reject login early if the account exists but is inactive
     existing = repository.get_by_email(db, data.email)
     if existing and not existing.is_active:
         raise HTTPException(

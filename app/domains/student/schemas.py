@@ -8,7 +8,7 @@ StudentStatus = Literal["PENDING", "PLACED", "COMPLETED"]
 
 class StudentBase(BaseModel):
     edu_institute_id: int
-    course_id: int
+    discipline_id: int
     status: StudentStatus = "PENDING"
     is_active: bool = True
 
@@ -17,7 +17,7 @@ class StudentCreate(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     
     edu_institute_id: int = Field(validation_alias="institution_id")
-    course_id: int
+    discipline_id: int
     status: StudentStatus = "PENDING"
     is_active: bool = True
     name: str | None = None
@@ -41,7 +41,7 @@ class StudentCreate(BaseModel):
 
 
 class StudentUpdate(BaseModel):
-    course_id: int | None = None
+    discipline_id: int | None = None
     status: StudentStatus | None = None
     is_active: bool | None = None
     director_signed_pdf: bytes | None = None

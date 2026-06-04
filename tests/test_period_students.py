@@ -8,14 +8,14 @@ from sqlalchemy.orm import sessionmaker
 from app.core.database import Base, get_db
 from app.core.security import hash_password
 from app.main import app
-from app.domains.course.model import Course
+from app.domains.discipline.model import Discipline
 from app.domains.education_institute.model import EducationInstitute
 from app.domains.period.model import Period
 from app.domains.period.router import unlink_student_from_period
 from app.domains.period.router import PeriodStudentLinkRequest
 from app.domains.room.model import Room
 from app.domains.room_schedule import repository_nested as schedule_repository
-from app.domains.service.model import Service
+from app.domains.internships.model import Internship
 from app.domains.student.model import Student
 from app.domains.user.model import User
 
@@ -54,22 +54,22 @@ def client(db):
         app.dependency_overrides.clear()
 
 
-def _create_institute_course_student(client, institute_name="Inst X"):
+def _create_institute_discipline_student(client, institute_name="Inst X"):
     inst = client.post("/api/v1/education-institutes", json={"name": institute_name}).json()
-    course = client.post(
-        "/api/v1/courses",
+    discipline = client.post(
+        "/api/v1/disciplines",
         json={"edu_institute_id": inst["id"], "name": "Enfermagem", "requires_gurney": False},
     ).json()
     student = client.post(
         "/api/v1/students",
         json={
             "edu_institute_id": inst["id"],
-            "course_id": course["id"],
+            "discipline_id": discipline["id"],
             "status": "PENDING",
             "document_url": "https://example.com/document.pdf",
         },
     ).json()
-    return inst, course, student
+    return inst, discipline, student
 
 
 def _create_priority_period(client):
@@ -120,7 +120,7 @@ def _make_role_headers(client, db, role, email):
 
 
 def test_link_and_unlink_student_to_period(client, db):
-    inst, _course, student = _create_institute_course_student(client)
+    inst, _discipline, student = _create_institute_discipline_student(client)
     period = _create_priority_period(client)
     headers = _make_institute_headers(client, db, inst["id"])
 
@@ -166,7 +166,7 @@ def test_link_and_unlink_student_to_period(client, db):
 
 
 def test_admin_can_unlink_student_from_period(client, db):
-    inst, _course, student = _create_institute_course_student(client)
+    inst, _discipline, student = _create_institute_discipline_student(client)
     period = _create_priority_period(client)
     institute_headers = _make_institute_headers(client, db, inst["id"])
     admin_headers = _make_role_headers(client, db, "admin", "admin@test.com")
@@ -188,23 +188,23 @@ def test_admin_can_unlink_student_from_period(client, db):
     assert resp_unlink.json()["message"] == "Aluno desvinculado com sucesso"
 
 
-def test_service_cannot_unlink_student_from_period(client, db):
-    _inst, _course, student = _create_institute_course_student(client)
+def test_internships_cannot_unlink_student_from_period(client, db):
+    _inst, _discipline, student = _create_institute_discipline_student(client)
     period = _create_priority_period(client)
-    service_headers = _make_role_headers(client, db, "service", "service@test.com")
+    internships_headers = _make_role_headers(client, db, "internships", "internships@test.com")
 
     resp = client.request(
         "DELETE",
         "/api/v1/periods/students",
         json={"period_id": period["id"], "student_id": student["id"]},
-        headers=service_headers,
+        headers=internships_headers,
     )
     assert resp.status_code == 403
 
 
 def test_institute_cannot_unlink_student_from_other_institute(client, db):
-    inst, _course, _student = _create_institute_course_student(client, "Inst A")
-    _other_inst, _other_course, other_student = _create_institute_course_student(client, "Inst B")
+    inst, _discipline, _student = _create_institute_discipline_student(client, "Inst A")
+    _other_inst, _other_discipline, other_student = _create_institute_discipline_student(client, "Inst B")
     period = _create_priority_period(client)
     headers = _make_institute_headers(client, db, inst["id"])
 
@@ -226,23 +226,23 @@ def test_institute_cannot_unlink_student_from_other_institute(client, db):
 def test_period_unlink_removes_student_from_schedule_slot(db):
     today = date.today()
     institute = EducationInstitute(name="Inst X", priority=0, is_active=True)
-    service = Service(name="Service X", is_active=True)
-    db.add_all([institute, service])
+    internships = Internship(name="Internships X", is_active=True)
+    db.add_all([institute, internships])
     db.commit()
     db.refresh(institute)
-    db.refresh(service)
+    db.refresh(internships)
 
-    course = Course(name="Enfermagem", requires_gurney=False)
-    room = Room(service_id=service.id, name="Sala 1", room_capacity=2, has_gurney=False, is_active=True)
-    db.add_all([course, room])
+    discipline = Discipline(name="Enfermagem", requires_gurney=False)
+    room = Room(internships_id=internships.id, name="Sala 1", room_capacity=2, has_gurney=False, is_active=True)
+    db.add_all([discipline, room])
     db.commit()
-    db.refresh(course)
+    db.refresh(discipline)
     db.refresh(room)
     schedule_repository.create_schedule_for_room(db, room.id)
 
     student = Student(
         edu_institute_id=institute.id,
-        course_id=course.id,
+        discipline_id=discipline.id,
         status="PENDING",
         document_url="https://example.com/document.pdf",
         is_active=True,
@@ -292,23 +292,23 @@ def test_period_unlink_removes_student_from_schedule_slot(db):
 def test_list_histories_by_room(client, db):
     today = date.today()
     institute = EducationInstitute(name="Inst X", priority=0, is_active=True)
-    service = Service(name="Service X", is_active=True)
-    db.add_all([institute, service])
+    internships = Internship(name="Internships X", is_active=True)
+    db.add_all([institute, internships])
     db.commit()
     db.refresh(institute)
-    db.refresh(service)
+    db.refresh(internships)
 
-    course = Course(name="Enfermagem", requires_gurney=False)
-    room = Room(service_id=service.id, name="Sala 1", room_capacity=2, has_gurney=False, is_active=True)
-    db.add_all([course, room])
+    discipline = Discipline(name="Enfermagem", requires_gurney=False)
+    room = Room(internships_id=internships.id, name="Sala 1", room_capacity=2, has_gurney=False, is_active=True)
+    db.add_all([discipline, room])
     db.commit()
-    db.refresh(course)
+    db.refresh(discipline)
     db.refresh(room)
     schedule_repository.create_schedule_for_room(db, room.id)
 
     student = Student(
         edu_institute_id=institute.id,
-        course_id=course.id,
+        discipline_id=discipline.id,
         status="PENDING",
         document_url="https://example.com/document.pdf",
         is_active=True,
@@ -352,17 +352,17 @@ def test_list_histories_by_room(client, db):
 def test_list_histories_by_schedule(client, db):
     today = date.today()
     institute = EducationInstitute(name="Inst X", priority=0, is_active=True)
-    service = Service(name="Service X", is_active=True)
-    db.add_all([institute, service])
+    internships = Internship(name="Internships X", is_active=True)
+    db.add_all([institute, internships])
     db.commit()
     db.refresh(institute)
-    db.refresh(service)
+    db.refresh(internships)
 
-    course = Course(name="Enfermagem", requires_gurney=False)
-    room = Room(service_id=service.id, name="Sala 1", room_capacity=2, has_gurney=False, is_active=True)
-    db.add_all([course, room])
+    discipline = Discipline(name="Enfermagem", requires_gurney=False)
+    room = Room(internships_id=internships.id, name="Sala 1", room_capacity=2, has_gurney=False, is_active=True)
+    db.add_all([discipline, room])
     db.commit()
-    db.refresh(course)
+    db.refresh(discipline)
     db.refresh(room)
     schedule_repository.create_schedule_for_room(db, room.id)
     schedule = schedule_repository.get_schedule_by_room(db, room.id)
@@ -370,7 +370,7 @@ def test_list_histories_by_schedule(client, db):
 
     student = Student(
         edu_institute_id=institute.id,
-        course_id=course.id,
+        discipline_id=discipline.id,
         status="PENDING",
         document_url="https://example.com/document.pdf",
         is_active=True,
@@ -414,23 +414,23 @@ def test_list_histories_by_schedule(client, db):
 def test_list_histories_by_student(client, db):
     today = date.today()
     institute = EducationInstitute(name="Inst X", priority=0, is_active=True)
-    service = Service(name="Service X", is_active=True)
-    db.add_all([institute, service])
+    internships = Internship(name="Internships X", is_active=True)
+    db.add_all([institute, internships])
     db.commit()
     db.refresh(institute)
-    db.refresh(service)
+    db.refresh(internships)
 
-    course = Course(name="Enfermagem", requires_gurney=False)
-    room = Room(service_id=service.id, name="Sala 1", room_capacity=2, has_gurney=False, is_active=True)
-    db.add_all([course, room])
+    discipline = Discipline(name="Enfermagem", requires_gurney=False)
+    room = Room(internships_id=internships.id, name="Sala 1", room_capacity=2, has_gurney=False, is_active=True)
+    db.add_all([discipline, room])
     db.commit()
-    db.refresh(course)
+    db.refresh(discipline)
     db.refresh(room)
     schedule_repository.create_schedule_for_room(db, room.id)
 
     student = Student(
         edu_institute_id=institute.id,
-        course_id=course.id,
+        discipline_id=discipline.id,
         status="PENDING",
         document_url="https://example.com/document.pdf",
         is_active=True,

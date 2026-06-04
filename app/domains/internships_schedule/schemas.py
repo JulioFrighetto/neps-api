@@ -7,26 +7,26 @@ WeekDay = Literal["SEG", "TER", "QUA", "QUI", "SEX", "SAB", "DOM"]
 Shift = Literal["MAN", "TRD", "VSP"]
 
 
-class ServiceScheduleBase(BaseModel):
-    service_room_id: int
+class InternshipsScheduleBase(BaseModel):
+    internships_room_id: int
     week_day: WeekDay
     shift: Shift
     student_id: int | None = None
     is_active: bool = True
 
 
-class ServiceScheduleCreate(ServiceScheduleBase):
+class InternshipsScheduleCreate(InternshipsScheduleBase):
     pass
 
 
-class ServiceScheduleUpdate(BaseModel):
+class InternshipsScheduleUpdate(BaseModel):
     week_day: WeekDay | None = None
     shift: Shift | None = None
     student_id: int | None = None
     is_active: bool | None = None
 
 
-class ServiceScheduleResponse(ServiceScheduleBase):
+class InternshipsScheduleResponse(InternshipsScheduleBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int

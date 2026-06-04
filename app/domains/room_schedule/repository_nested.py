@@ -120,7 +120,7 @@ def assign_student_to_period(
     if not student.is_active:
         raise ValueError("Aluno inativo")
 
-    if student.course and student.course.requires_gurney and not room.has_gurney:
+    if student.discipline and student.discipline.requires_gurney and not room.has_gurney:
         raise ValueError("Este aluno requer sala com maca")
 
     if _student_has_conflict(db, student_id, day_of_week, period_name, room_id=room_id):
@@ -205,7 +205,7 @@ def get_available_slots_for_student(db: Session, student_id: int, room_id: int |
     available = []
     for room in rooms:
         # skip rooms that cannot serve this student due to gurney requirement
-        if student.course and student.course.requires_gurney and not room.has_gurney:
+        if student.discipline and student.discipline.requires_gurney and not room.has_gurney:
             continue
 
         schedule = create_schedule_for_room(db, room.id)

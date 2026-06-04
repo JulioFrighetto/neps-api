@@ -45,7 +45,7 @@ class Settings(BaseSettings):
     SENDGRID_FROM_EMAIL: str | None = None
     SENDGRID_FROM_NAME: str = "NEPS API"
 
-    # MailerSend (alternative email service)
+    # MailerSend (alternative email internships)
     mailersend_api_token: str | None = None
     mailersend_from_email: str | None = None
     mailersend_from_name: str | None = None

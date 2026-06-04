@@ -1,4 +1,4 @@
-services:
+internshipss:
   - type: web
     name: neps-api
     env: python

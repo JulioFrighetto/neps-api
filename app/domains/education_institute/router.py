@@ -16,6 +16,11 @@ from app.domains.education_institute.schemas import (
     EducationInstituteResponse,
     EducationInstituteUpdate,
 )
+from app.domains.education_institute.usecases import find_one
+from app.domains.education_institute.usecases.create import create_usecase
+from app.domains.education_institute.usecases.get_all import get_all_usecase
+from app.domains.education_institute.usecases.update import update_usecase
+from app.domains.education_institute.usecases.update import update_usecase
 
 router = APIRouter(prefix="/education-institutes", tags=["Education Institutes"])
 
@@ -42,34 +47,18 @@ def list_institutes(
     current_user=Depends(get_current_user),
 ):
     filters = {k: v for k, v in {"name_like": name_like, "cnpj": cnpj, "is_active": is_active, "priority": priority}.items() if v is not None}
-
-    if current_user.role == "admin":
-        items, total = repository.get_all(db, page=page, per_page=per_page, filters=filters)
-    elif current_user.role == "education_institute" and current_user.education_institute_id is not None:
-        institute = repository.get_by_id(db, current_user.education_institute_id)
-        if institute:
-            items = [institute]
-            total = 1
-        else:
-            items = []
-            total = 0
-    else:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
-    return Page(
-        items=items,
-        pagination=PaginationInfo(
-            page=page,
-            per_page=per_page,
-            total=total,
-            total_pages=max(1, math.ceil(total / per_page)) if total > 0 else 0,
-        ),
-        filters=FilterInfo(applied=list(filters.keys()), available=AVAILABLE_FILTERS),
-    )
+    return get_all_usecase(
+        db=db,
+        page=page,
+        per_page=per_page,
+        filters=filters,
+        current_user=current_user,
+        )
 
 
 @router.post("/detail", response_model=EducationInstituteResponse)
 def get_institute(data: InstituteGetRequest, db: Session = Depends(get_db)):
-    institute = repository.get_by_id(db, data.institute_id)
+    institute = find_one.find_one_usecase(db, data.institute_id)
     if not institute:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Instituição não encontrada")
     return institute
@@ -77,25 +66,13 @@ def get_institute(data: InstituteGetRequest, db: Session = Depends(get_db)):
 
 @router.post("/", response_model=EducationInstituteResponse, status_code=status.HTTP_201_CREATED)
 def create_institute(data: EducationInstituteCreate, db: Session = Depends(get_db)):
-    institute = repository.create(db, data)
-    target_email = data.user_email or data.email
-
-    if target_email:
-        reset_token = create_reset_token(target_email)
-        reset_link = f"{settings.FRONTEND_URL.rstrip('/')}/reset-password?token={reset_token}"
-        body = build_welcome_body(reset_link, data.user_name or institute.name)
-
-        try:
-            send_email(target_email, "Bem-vindo ao NEPS", body)
-        except EmailDeliveryError:
-            pass
-
+    institute = create_usecase(db, data)
     return institute
 
 
 @router.patch("/", response_model=EducationInstituteResponse)
 def update_institute(data: InstituteUpdateRequest, db: Session = Depends(get_db)):
-    institute = repository.update(db, data.institute_id, data)
+    institute = update_usecase(db, data.institute_id, data)
     if not institute:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Instituição não encontrada")
     return institute
@@ -103,4 +80,7 @@ def update_institute(data: InstituteUpdateRequest, db: Session = Depends(get_db)
 
 @router.put("/", response_model=EducationInstituteResponse)
 def replace_institute(data: InstituteUpdateRequest, db: Session = Depends(get_db)):
-    return update_institute(data=data, db=db)
+    institute = update_usecase(db, data.institute_id, data)
+    if not institute:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Instituição não encontrada")
+    return institute

@@ -258,4 +258,4 @@ const inactiveRegions = allRegions.filter((r) => !r.is_active);
 
 ## Observações
 
-- As regiões podem ter serviços associados (`Service.region_id`)
+- As regiões podem ter serviços associados (`Internships.region_id`)

@@ -17,7 +17,7 @@ class GestaoStudentCreate(BaseModel):
     cpf: str | None = None
     email: str | None = None
     phone: str | None = None
-    course_id: int
+    discipline_id: int
     semester: int | None = None
     institution_id: int
 
@@ -27,7 +27,7 @@ class GestaoStudentUpdate(BaseModel):
     cpf: str | None = None
     email: str | None = None
     phone: str | None = None
-    course_id: int | None = None
+    discipline_id: int | None = None
     semester: int | None = None
     institution_id: int | None = None
 
@@ -44,7 +44,7 @@ class GestaoStudentUpdateRequest(GestaoStudentUpdate):
 class GestaoStudentResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    class CourseSummary(BaseModel):
+    class DisciplineSummary(BaseModel):
         model_config = ConfigDict(from_attributes=True)
 
         id: int
@@ -61,14 +61,14 @@ class GestaoStudentResponse(BaseModel):
     cpf: str | None
     email: str | None
     phone: str | None
-    course_id: int
+    discipline_id: int
     semester: int | None
     institution_id: int
-    course: CourseSummary | None = None
+    discipline: DisciplineSummary | None = None
     institution: InstitutionSummary | None = None
 
 
-AVAILABLE_FILTERS = ["name_like", "cpf", "email", "course_id", "institution_id", "semester"]
+AVAILABLE_FILTERS = ["name_like", "cpf", "email", "discipline_id", "institution_id", "semester"]
 
 
 def _to_response(student: Student, include: set[str] | None = None) -> GestaoStudentResponse:
@@ -80,12 +80,12 @@ def _to_response(student: Student, include: set[str] | None = None) -> GestaoStu
         cpf=student.cpf,
         email=student.email,
         phone=student.phone,
-        course_id=student.course_id,
+        discipline_id=student.discipline_id,
         semester=student.semester,
         institution_id=student.edu_institute_id,
-        course=(
-            GestaoStudentResponse.CourseSummary(id=student.course.id, name=student.course.name)
-            if "course" in include and student.course
+        discipline=(
+            GestaoStudentResponse.DisciplineSummary(id=student.discipline.id, name=student.discipline.name)
+            if "discipline" in include and student.discipline
             else None
         ),
         institution=(
@@ -106,10 +106,10 @@ def list_students(
     name_like: str | None = Body(None),
     cpf: str | None = Body(None),
     email: str | None = Body(None),
-    course_id: int | None = Body(None),
+    discipline_id: int | None = Body(None),
     institution_id: int | None = Body(None),
     semester: int | None = Body(None),
-    include: str | None = Body(None, description="Relacionamentos a incluir: course,institution"),
+    include: str | None = Body(None, description="Relacionamentos a incluir: discipline,institution"),
     db: Session = Depends(get_db),
 ):
     filters = {}
@@ -119,8 +119,8 @@ def list_students(
         filters["cpf"] = cpf
     if email is not None:
         filters["email"] = email
-    if course_id is not None:
-        filters["course_id"] = course_id
+    if discipline_id is not None:
+        filters["discipline_id"] = discipline_id
     if institution_id is not None:
         filters["edu_institute_id"] = institution_id
     if semester is not None:
@@ -129,8 +129,8 @@ def list_students(
     include_set = {item.strip().lower() for item in include.split(",")} if include else set()
 
     query = db.query(Student)
-    if "course" in include_set:
-        query = query.options(selectinload(Student.course))
+    if "discipline" in include_set:
+        query = query.options(selectinload(Student.discipline))
     if "institution" in include_set:
         query = query.options(selectinload(Student.education_institute))
 
@@ -156,8 +156,8 @@ def get_student(data: GestaoStudentGetRequest, db: Session = Depends(get_db)):
     include_set = {item.strip().lower() for item in data.include.split(",")} if data.include else set()
 
     query = db.query(Student)
-    if "course" in include_set:
-        query = query.options(selectinload(Student.course))
+    if "discipline" in include_set:
+        query = query.options(selectinload(Student.discipline))
     if "institution" in include_set:
         query = query.options(selectinload(Student.education_institute))
 
@@ -174,7 +174,7 @@ def create_student(data: GestaoStudentCreate, db: Session = Depends(get_db)):
         cpf=data.cpf,
         email=data.email,
         phone=data.phone,
-        course_id=data.course_id,
+        discipline_id=data.discipline_id,
         semester=data.semester,
         edu_institute_id=data.institution_id,
         status="PENDING",

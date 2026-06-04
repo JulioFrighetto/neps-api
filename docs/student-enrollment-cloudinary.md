@@ -103,7 +103,7 @@ Content-Type: application/json
   "cpf": "003.534.560-80",
   "email": "alexdonay@gmail.com",
   "phone": "54999932318",
-  "course_id": 1,
+  "discipline_id": 1,
   "semester": 1,
   "institution_id": 3,
   "document_url": "https://res.cloudinary.com/dpsxz0o9k/image/upload/v1234567890/student_docs/abc123.pdf"
@@ -119,7 +119,7 @@ Content-Type: application/json
   "cpf": "003.534.560-80",
   "email": "alexdonay@gmail.com",
   "phone": "54999932318",
-  "course_id": 1,
+  "discipline_id": 1,
   "semester": 1,
   "institution_id": 3,
   "status": "PENDING",
@@ -144,7 +144,7 @@ export function EnrollmentForm() {
     cpf: "",
     email: "",
     phone: "",
-    course_id: 1,
+    discipline_id: 1,
     semester: 1,
     institution_id: 3,
   });
@@ -213,7 +213,7 @@ export function EnrollmentForm() {
         cpf: "",
         email: "",
         phone: "",
-        course_id: 1,
+        discipline_id: 1,
         semester: 1,
         institution_id: 3,
       });
@@ -359,7 +359,7 @@ curl -X POST http://localhost:8000/api/v1/students/ \
     "cpf": "123.456.789-00",
     "email": "teste@example.com",
     "phone": "11999999999",
-    "course_id": 1,
+    "discipline_id": 1,
     "semester": 1,
     "institution_id": 1,
     "document_url": "https://res.cloudinary.com/dpsxz0o9k/image/upload/v1234567890/test.pdf"

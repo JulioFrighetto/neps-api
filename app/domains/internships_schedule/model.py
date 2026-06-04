@@ -4,16 +4,21 @@ from sqlalchemy import Boolean, DateTime, ForeignKey, String, UniqueConstraint, 
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from app.domains.internships_room.model import InternshipsRoom
+if TYPE_CHECKING:
+    from app.domains.student.model import Student
 
 
-class ServiceSchedule(Base):
-    __tablename__ = "service_schedules"
+class InternshipsSchedule(Base):
+    __tablename__ = "internships_schedules"
     __table_args__ = (
-        UniqueConstraint("service_room_id", "week_day", "shift", name="uq_service_slot"),
+        UniqueConstraint("internships_room_id", "week_day", "shift", name="uq_internships_slot"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    service_room_id: Mapped[int] = mapped_column(ForeignKey("service_rooms.id"), nullable=False)
+    internships_room_id: Mapped[int] = mapped_column(ForeignKey("internships_rooms.id"), nullable=False)
     week_day: Mapped[str] = mapped_column(String(3), nullable=False)
     shift: Mapped[str] = mapped_column(String(3), nullable=False)
     student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id"), nullable=True)
@@ -23,9 +28,9 @@ class ServiceSchedule(Base):
         DateTime, server_default=func.now(), onupdate=func.now()
     )
 
-    service_room: Mapped["ServiceRoom"] = relationship(  # noqa: F821
-        "ServiceRoom", back_populates="service_schedules"
+    internships_room: Mapped["InternshipsRoom"] = relationship(  # noqa: F821
+        "InternshipsRoom", back_populates="internships_schedules"
     )
     student: Mapped["Student | None"] = relationship(  # noqa: F821
-        "Student", back_populates="service_schedules"
+        "Student", back_populates="internships_schedules"
     )

@@ -38,10 +38,10 @@ def send_email(to_email: str, subject: str, body: str) -> None:
             # no SendGrid configured, re-raise original SMTP error
             raise
     
-    # No email service configured
+    # No email internships configured
     if settings.DEBUG:
         logger.warning(
-            "Email service não configurado (MailerSend ou SMTP)",
+            "Email internships não configurado (MailerSend ou SMTP)",
             extra={"to_email": to_email, "subject": subject},
         )
         return

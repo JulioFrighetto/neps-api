@@ -3,18 +3,18 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
-class ServiceBase(BaseModel):
+class InternshipsBase(BaseModel):
     name: str
     region_id: int | None = None
     is_active: bool = True
 
 
-class ServiceCreate(ServiceBase):
+class InternshipsCreate(InternshipsBase):
     user_name: str | None = None
     user_email: EmailStr | None = None
 
 
-class ServiceUpdate(BaseModel):
+class InternshipsUpdate(BaseModel):
     name: str | None = None
     region_id: int | None = None
     is_active: bool | None = None
@@ -22,7 +22,7 @@ class ServiceUpdate(BaseModel):
     user_email: EmailStr | None = None
 
 
-class ServiceUserSummary(BaseModel):
+class InternshipsUserSummary(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
@@ -30,12 +30,12 @@ class ServiceUserSummary(BaseModel):
     email: EmailStr
 
 
-class ServiceResponse(ServiceBase):
+class InternshipsResponse(InternshipsBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
     user_id: int | None = None
     email: EmailStr | None = None
-    users: list[ServiceUserSummary] = Field(default_factory=list)
+    users: list[InternshipsUserSummary] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime

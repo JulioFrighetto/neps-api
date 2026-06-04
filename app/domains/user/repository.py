@@ -22,7 +22,7 @@ def get_by_id(db: Session, user_id: int) -> User | None:
     return (
         db.query(User)
         .options(
-            selectinload(User.service),
+            selectinload(User.internships),
             selectinload(User.education_institute),
         )
         .filter(User.id == user_id)
@@ -34,7 +34,7 @@ def get_by_email(db: Session, email: str) -> User | None:
     return (
         db.query(User)
         .options(
-            selectinload(User.service),
+            selectinload(User.internships),
             selectinload(User.education_institute),
         )
         .filter(User.email == email)
@@ -49,7 +49,7 @@ def create(db: Session, data: UserCreate) -> User:
         email=data.email,
         password=hash_password(password),
         role=data.role,
-        service_id=data.service_id,
+        internships_id=data.internships_id,
         education_institute_id=data.education_institute_id,
         is_active=data.is_active,
     )
@@ -112,8 +112,8 @@ def authenticate(db: Session, email: str, password: str) -> User | None:
         return None
     if not verify_password(password, user.password):
         return None
-    # If user is linked to a service or education_institute, ensure those entities are active
-    if getattr(user, "service", None) is not None and not getattr(user.service, "is_active", True):
+    # If user is linked to a internships or education_institute, ensure those entities are active
+    if getattr(user, "internships", None) is not None and not getattr(user.internships, "is_active", True):
         return None
     if getattr(user, "education_institute", None) is not None and not getattr(user.education_institute, "is_active", True):
         return None

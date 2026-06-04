@@ -5,7 +5,7 @@ Todas as rotas do módulo de agenda de sala agora recebem parâmetros exclusivam
 
 ## Renomeação de domínio
 
-O termo "Unidade de Saúde" foi substituído por "Campo de Estágio" nas mensagens e rotas relacionadas ao domínio `service`.
+O termo "Unidade de Saúde" foi substituído por "Campo de Estágio" nas mensagens e rotas relacionadas ao domínio `internships`.
 
 Além disso, o vínculo entre campo de estágio e usuário passou a ser de muitos para um:
 

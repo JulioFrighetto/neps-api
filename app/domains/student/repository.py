@@ -18,7 +18,7 @@ def get_by_id(db: Session, student_id: int) -> Student | None:
     return (
         db.query(Student)
         .options(
-            selectinload(Student.course),
+            selectinload(Student.discipline),
             selectinload(Student.education_institute),
         )
         .filter(Student.id == student_id)
@@ -26,8 +26,8 @@ def get_by_id(db: Session, student_id: int) -> Student | None:
     )
 
 
-def get_by_course(db: Session, course_id: int, page: int = 1, per_page: int = 10, filters: dict | None = None) -> tuple[list[Student], int]:
-    query = db.query(Student).filter(Student.course_id == course_id)
+def get_by_discipline(db: Session, discipline_id: int, page: int = 1, per_page: int = 10, filters: dict | None = None) -> tuple[list[Student], int]:
+    query = db.query(Student).filter(Student.discipline_id == discipline_id)
     if filters:
         query, _ = apply_filters(query, Student, filters)
     total = query.count()

@@ -4,7 +4,7 @@ from typing import Literal
 from pydantic import AliasChoices, BaseModel, ConfigDict, EmailStr, Field, model_validator
 
 
-UserRole = Literal["admin", "education_institute", "service"]
+UserRole = Literal["admin", "education_institute", "internships"]
 
 
 class UserBase(BaseModel):
@@ -16,26 +16,26 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str | None = None
     role: UserRole
-    service_id: int | None = None
+    internships_id: int | None = None
     education_institute_id: int | None = None
 
     @model_validator(mode="after")
     def validate_profile_links(self):
         if self.role == "admin":
             if (
-                self.service_id is not None
+                self.internships_id is not None
                 or self.education_institute_id is not None
             ):
                 raise ValueError("Admin não deve ser vinculado a instituição de ensino ou unidade")
-        elif self.role == "service":
-            if self.service_id is None:
-                raise ValueError("Usuário de service precisa de service vinculada")
+        elif self.role == "internships":
+            if self.internships_id is None:
+                raise ValueError("Usuário de internships precisa de internships vinculada")
             if self.education_institute_id is not None:
-                raise ValueError("Usuário de service não pode ser vinculado a instituição de ensino")
+                raise ValueError("Usuário de internships não pode ser vinculado a instituição de ensino")
         elif self.role == "education_institute":
             if self.education_institute_id is None:
                 raise ValueError("Usuário de entidade de ensino precisa de instituição vinculada")
-            if self.service_id is not None:
+            if self.internships_id is not None:
                 raise ValueError("Usuário de entidade de ensino não pode ser vinculado a unidade")
         return self
 
@@ -56,7 +56,7 @@ class UserResponse(UserBase):
 
     id: int
     role: str
-    service_id: int | None = None
+    internships_id: int | None = None
     education_institute_id: int | None = None
     created_at: datetime
     updated_at: datetime

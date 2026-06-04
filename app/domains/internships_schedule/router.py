@@ -7,37 +7,37 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.deps import get_current_user
 from app.core.schemas import Page, PaginationInfo
-from app.domains.service_room.repository import get_by_id as get_service_room_by_id
-from app.domains.service_schedule import repository
-from app.domains.service_schedule.schemas import (
-    ServiceScheduleCreate,
-    ServiceScheduleResponse,
-    ServiceScheduleUpdate,
+from app.domains.internships_room.repository import get_by_id as get_internships_room_by_id
+from app.domains.internships_schedule import repository
+from app.domains.internships_schedule.schemas import (
+    InternshipsScheduleCreate,
+    InternshipsScheduleResponse,
+    InternshipsScheduleUpdate,
 )
 from app.domains.student.repository import get_by_id as get_student_by_id
 
-router = APIRouter(prefix="/service-schedules", tags=["Agendas do Campo de Estágio"])
+router = APIRouter(prefix="/internship-schedules", tags=["Internships Schedules"])
 
 
-class ServiceScheduleGetRequest(BaseModel):
-    service_schedule_id: int
+class InternshipsScheduleGetRequest(BaseModel):
+    internships_schedule_id: int
 
 
-class ServiceSchedulesByRoomRequest(BaseModel):
-    service_room_id: int
+class InternshipsSchedulesByRoomRequest(BaseModel):
+    internships_room_id: int
 
 
-class ServiceSchedulesByRoomDayRequest(BaseModel):
-    service_room_id: int
+class InternshipsSchedulesByRoomDayRequest(BaseModel):
+    internships_room_id: int
     week_day: str
 
 
-class ServiceScheduleUpdateRequest(ServiceScheduleUpdate):
-    service_schedule_id: int
+class InternshipsScheduleUpdateRequest(InternshipsScheduleUpdate):
+    internships_schedule_id: int
 
 
-@router.get("/", response_model=Page[ServiceScheduleResponse])
-def list_service_schedules(
+@router.get("/", response_model=Page[InternshipsScheduleResponse])
+def list_internships_schedules(
     page: int = Body(1, ge=1),
     per_page: int = Body(10, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -45,8 +45,8 @@ def list_service_schedules(
 ):
     if current_user.role == "admin":
         items, total = repository.get_all(db, page=page, per_page=per_page)
-    elif current_user.role == "service" and current_user.service_id is not None:
-        items, total = repository.get_by_service(db, current_user.service_id, page=page, per_page=per_page)
+    elif current_user.role == "internships" and current_user.internships_id is not None:
+        items, total = repository.get_by_internships(db, current_user.internships_id, page=page, per_page=per_page)
     else:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
     return Page(
@@ -60,37 +60,37 @@ def list_service_schedules(
     )
 
 
-@router.post("/detail", response_model=ServiceScheduleResponse)
-def get_service_schedule(data: ServiceScheduleGetRequest, db: Session = Depends(get_db)):
-    schedule = repository.get_by_id(db, data.service_schedule_id)
+@router.post("/detail", response_model=InternshipsScheduleResponse)
+def get_internships_schedule(data: InternshipsScheduleGetRequest, db: Session = Depends(get_db)):
+    schedule = repository.get_by_id(db, data.internships_schedule_id)
     if not schedule:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agenda não encontrada")
     return schedule
 
 
-@router.post("/by-room", response_model=list[ServiceScheduleResponse])
-def list_service_schedules_by_room(data: ServiceSchedulesByRoomRequest, db: Session = Depends(get_db)):
-    # First, check if it's a ServiceRoom ID
-    service_schedules = repository.get_by_room(db, data.service_room_id)
-    if service_schedules:
-        return service_schedules
+@router.post("/by-room", response_model=list[InternshipsScheduleResponse])
+def list_internships_schedules_by_room(data: InternshipsSchedulesByRoomRequest, db: Session = Depends(get_db)):
+    # First, check if it's a InternshipsRoom ID
+    internships_schedules = repository.get_by_room(db, data.internships_room_id)
+    if internships_schedules:
+        return internships_schedules
     
     # If not found, check if it's a Room ID
     from app.domains.room_schedule import repository as room_schedule_repository
-    room_schedules = room_schedule_repository.get_by_room(db, data.service_room_id)
+    room_schedules = room_schedule_repository.get_by_room(db, data.internships_room_id)
     if room_schedules:
-        # Map RoomSchedule to ServiceScheduleResponse format
+        # Map RoomSchedule to InternshipsScheduleResponse format
         # Convert day and shift from lowercase to uppercase
         day_map = {"seg": "SEG", "ter": "TER", "qua": "QUA", "qui": "QUI", "sex": "SEX", "sab": "SAB", "dom": "DOM"}
         shift_map = {"manhã": "MAN", "tarde": "TRD", "noite": "VSP"}
         
-        from app.domains.service_schedule.schemas import ServiceScheduleResponse
+        from app.domains.internships_schedule.schemas import InternshipsScheduleResponse
         result = []
         for rs in room_schedules:
             result.append(
-                ServiceScheduleResponse(
+                InternshipsScheduleResponse(
                     id=rs.id,
-                    service_room_id=rs.room_id,
+                    internships_room_id=rs.room_id,
                     week_day=day_map.get(rs.week_day, rs.week_day),
                     shift=shift_map.get(rs.shift, rs.shift),
                     is_active=rs.is_active,
@@ -103,23 +103,23 @@ def list_service_schedules_by_room(data: ServiceSchedulesByRoomRequest, db: Sess
     return []
 
 
-@router.post("/by-room/by-day", response_model=list[ServiceScheduleResponse])
-def list_service_schedules_by_room_and_day(
-    data: ServiceSchedulesByRoomDayRequest, db: Session = Depends(get_db)
+@router.post("/by-room/by-day", response_model=list[InternshipsScheduleResponse])
+def list_internships_schedules_by_room_and_day(
+    data: InternshipsSchedulesByRoomDayRequest, db: Session = Depends(get_db)
 ):
-    return repository.get_by_room_and_day(db, data.service_room_id, data.week_day)
+    return repository.get_by_room_and_day(db, data.internships_room_id, data.week_day)
 
 
-@router.post("/", response_model=ServiceScheduleResponse, status_code=status.HTTP_201_CREATED)
-def create_service_schedule(data: ServiceScheduleCreate, db: Session = Depends(get_db)):
-    service_room = get_service_room_by_id(db, data.service_room_id)
-    if not service_room:
+@router.post("/", response_model=InternshipsScheduleResponse, status_code=status.HTTP_201_CREATED)
+def create_internships_schedule(data: InternshipsScheduleCreate, db: Session = Depends(get_db)):
+    internships_room = get_internships_room_by_id(db, data.internships_room_id)
+    if not internships_room:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sala não encontrada")
     if data.student_id is not None:
         student = get_student_by_id(db, data.student_id)
         if not student:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Aluno não encontrado")
-    if repository.get_by_slot(db, data.service_room_id, data.week_day, data.shift):
+    if repository.get_by_slot(db, data.internships_room_id, data.week_day, data.shift):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Já existe agenda para esta sala, dia e turno",
@@ -127,11 +127,11 @@ def create_service_schedule(data: ServiceScheduleCreate, db: Session = Depends(g
     return repository.create(db, data)
 
 
-@router.patch("/", response_model=ServiceScheduleResponse)
-def update_service_schedule(
-    data: ServiceScheduleUpdateRequest, db: Session = Depends(get_db)
+@router.patch("/", response_model=InternshipsScheduleResponse)
+def update_internships_schedule(
+    data: InternshipsScheduleUpdateRequest, db: Session = Depends(get_db)
 ):
-    schedule = repository.get_by_id(db, data.service_schedule_id)
+    schedule = repository.get_by_id(db, data.internships_schedule_id)
     if not schedule:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agenda não encontrada")
 
@@ -145,14 +145,14 @@ def update_service_schedule(
         if not student:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Aluno não encontrado")
 
-    conflict = repository.get_by_slot(db, schedule.service_room_id, new_week_day, new_shift)
+    conflict = repository.get_by_slot(db, schedule.internships_room_id, new_week_day, new_shift)
     if conflict and conflict.id != schedule.id:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Já existe agenda para esta sala, dia e turno",
         )
 
-    updated = repository.update(db, data.service_schedule_id, data)
+    updated = repository.update(db, data.internships_schedule_id, data)
     if not updated:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agenda não encontrada")
     return updated

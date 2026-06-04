@@ -10,7 +10,7 @@ from app.core.security import hash_password
 from app.core.models import *  # noqa: F401, F403
 from app.main import app
 from app.domains.education_institute.model import EducationInstitute
-from app.domains.service.model import Service
+from app.domains.internships.model import Internships
 from app.domains.user.model import User
 
 TEST_DATABASE_URL = "sqlite:///./test.db"
@@ -117,84 +117,84 @@ def test_list_education_institutes_pagination(client):
 
 
 
-# ── Services ────────────────────────────────────────────────────────────────
+# ── Internshipss ────────────────────────────────────────────────────────────────
 
-def test_create_service(client):
+def test_create_internships(client):
     response = client.post(
-        "/api/v1/services",
+        "/api/v1/internshipss",
         json={
             "name": "Serviço Norte",
             "is_active": True,
-            "user_name": "Service Norte",
-            "user_email": "service-norte@neps.com",
+            "user_name": "Internships Norte",
+            "user_email": "internships-norte@neps.com",
         },
     )
     assert response.status_code == 201
     assert response.json()["name"] == "Serviço Norte"
 
 
-def test_create_service_creates_user(client, db, monkeypatch):
-    monkeypatch.setattr("app.domains.service.router.send_email", lambda *args, **kwargs: None)
+def test_create_internships_creates_user(client, db, monkeypatch):
+    monkeypatch.setattr("app.domains.internships.router.send_email", lambda *args, **kwargs: None)
 
     response = client.post(
-        "/api/v1/services",
+        "/api/v1/internshipss",
         json={
             "name": "Serviço Centro",
             "is_active": True,
-            "user_name": "Service Centro",
-            "user_email": "service-centro@neps.com",
+            "user_name": "Internships Centro",
+            "user_email": "internships-centro@neps.com",
         },
     )
 
     assert response.status_code == 201
-    service = db.query(Service).filter(Service.name == "Serviço Centro").first()
-    assert service is not None
-    user = db.query(User).filter(User.service_id == service.id).first()
+    internships = db.query(Internships).filter(Internships.name == "Serviço Centro").first()
+    assert internships is not None
+    user = db.query(User).filter(User.internships_id == internships.id).first()
     assert user is not None
-    assert user.role == "service"
-    assert user.email == "service-centro@neps.com"
+    assert user.role == "internships"
+    assert user.email == "internships-centro@neps.com"
 
 
-def test_create_service_room(client):
-    service = client.post("/api/v1/services", json={"name": "Serviço Centro"}).json()
+def test_create_internships_room(client):
+    internships = client.post("/api/v1/internshipss", json={"name": "Serviço Centro"}).json()
     response = client.post(
-        "/api/v1/service-rooms",
+        "/api/v1/internships-rooms",
         json={
-            "service_id": service["id"],
+            "internships_id": internships["id"],
             "name": "Sala 01",
             "room_capacity": 6,
             "has_gurney": True,
         },
     )
     assert response.status_code == 201
-    assert response.json()["service_id"] == service["id"]
+    assert response.json()["internships_id"] == internships["id"]
 
 
-def test_create_service_schedule(client):
-    service = client.post("/api/v1/services", json={"name": "Serviço Sul"}).json()
+def test_create_internships_schedule(client):
+    internships = client.post("/api/v1/internshipss", json={"name": "Serviço Sul"}).json()
     room = client.post(
-        "/api/v1/service-rooms",
+        "/api/v1/internships-rooms",
         json={
-            "service_id": service["id"],
+            "internships_id": internships["id"],
             "name": "Sala 02",
             "room_capacity": 4,
             "has_gurney": False,
         },
     ).json()
     institute = client.post("/api/v1/education-institutes", json={"name": "FEEVALE"}).json()
-    course = client.post(
-        "/api/v1/courses",
+    discipline = client.post(
+        "/api/v1/disciplines",
         json={"edu_institute_id": institute["id"], "name": "Enfermagem", "requires_gurney": False},
     ).json()
     student = client.post(
         "/api/v1/students",
-        json={"edu_institute_id": institute["id"], "course_id": course["id"], "status": "PENDING"},
+        json={"edu_institute_id": institute["id"], "discipline_id": discipline["id"], "status": "PENDING"},
     ).json()
 
     response = client.post(
-        "/api/v1/service-agendas",
+        "/api/v1/internships-agendas",
         json={
-            "service_room_id": room["id"],
+            "internships_room_id": room["id"],
             "week_day": "SEG",
             "shift": "MAN",
             "student_id": student["id"],
@@ -205,12 +205,12 @@ def test_create_service_schedule(client):
     assert response.json()["student_id"] == student["id"]
 
 
-# ── Course ────────────────────────────────────────────────────────────────────
+# ── Discipline ────────────────────────────────────────────────────────────────────
 
-def test_create_course(client):
+def test_create_discipline(client):
     inst = client.post("/api/v1/education-institutes", json={"name": "PUCRS"}).json()
     response = client.post(
-        "/api/v1/courses",
+        "/api/v1/disciplines",
         json={
             "edu_institute_id": inst["id"],
             "name": "Enfermagem",
@@ -225,29 +225,29 @@ def test_create_course(client):
 
 def test_create_student(client):
     inst = client.post("/api/v1/education-institutes", json={"name": "FEEVALE"}).json()
-    course = client.post(
-        "/api/v1/courses",
+    discipline = client.post(
+        "/api/v1/disciplines",
         json={"edu_institute_id": inst["id"], "name": "Fisioterapia", "requires_gurney": False},
     ).json()
     response = client.post(
         "/api/v1/students",
-        json={"edu_institute_id": inst["id"], "course_id": course["id"], "status": "PENDING"},
+        json={"edu_institute_id": inst["id"], "discipline_id": discipline["id"], "status": "PENDING"},
     )
     assert response.status_code == 201
     assert response.json()["status"] == "PENDING"
 
 
-def test_get_student_returns_course_and_institution(client):
+def test_get_student_returns_discipline_and_institution(client):
     inst = client.post("/api/v1/education-institutes", json={"name": "FEEVALE"}).json()
-    course = client.post(
-        "/api/v1/courses",
+    discipline = client.post(
+        "/api/v1/disciplines",
         json={"edu_institute_id": inst["id"], "name": "Fisioterapia", "requires_gurney": False},
     ).json()
     student = client.post(
         "/api/v1/students",
         json={
             "edu_institute_id": inst["id"],
-            "course_id": course["id"],
+            "discipline_id": discipline["id"],
             "status": "PENDING",
             "document_url": "https://example.com/document.pdf",
         },
@@ -256,9 +256,9 @@ def test_get_student_returns_course_and_institution(client):
     response = client.post("/api/v1/students/detail", json={"student_id": student["id"]})
     assert response.status_code == 200
     body = response.json()
-    assert body["course"] is not None
-    assert body["course"]["id"] == course["id"]
-    assert body["course"]["name"] == course["name"]
+    assert body["discipline"] is not None
+    assert body["discipline"]["id"] == discipline["id"]
+    assert body["discipline"]["name"] == discipline["name"]
     assert body["institution"] is not None
     assert body["institution"]["id"] == inst["id"]
     assert body["institution"]["name"] == inst["name"]
@@ -266,12 +266,12 @@ def test_get_student_returns_course_and_institution(client):
 
 # ── Filter Tests ─────────────────────────────────────────────────────────────
 
-def test_courses_filter_name_like(client):
-    client.post("/api/v1/courses", json={"name": "Enfermagem", "requires_gurney": True})
-    client.post("/api/v1/courses", json={"name": "Fisioterapia", "requires_gurney": False})
-    client.post("/api/v1/courses", json={"name": "Medicina", "requires_gurney": False})
+def test_disciplines_filter_name_like(client):
+    client.post("/api/v1/disciplines", json={"name": "Enfermagem", "requires_gurney": True})
+    client.post("/api/v1/disciplines", json={"name": "Fisioterapia", "requires_gurney": False})
+    client.post("/api/v1/disciplines", json={"name": "Medicina", "requires_gurney": False})
 
-    response = client.get("/api/v1/courses?name_like=enfer")
+    response = client.get("/api/v1/disciplines?name_like=enfer")
     assert response.status_code == 200
     body = response.json()
     assert body["pagination"]["total"] == 1
@@ -279,11 +279,11 @@ def test_courses_filter_name_like(client):
     assert "name_like" in body["filters"]["applied"]
 
 
-def test_courses_pagination_page_per_page(client):
+def test_disciplines_pagination_page_per_page(client):
     for i in range(5):
-        client.post("/api/v1/courses", json={"name": f"Curso {i}", "requires_gurney": False})
+        client.post("/api/v1/disciplines", json={"name": f"Curso {i}", "requires_gurney": False})
 
-    response = client.get("/api/v1/courses?page=1&per_page=2")
+    response = client.get("/api/v1/disciplines?page=1&per_page=2")
     assert response.status_code == 200
     body = response.json()
     assert len(body["items"]) == 2
@@ -454,4 +454,4 @@ def test_users_roles_endpoint(client):
     roles = {item["value"] for item in body["items"]}
     assert "admin" in roles
     assert "education_institute" in roles
-    assert "service" in roles
+    assert "internships" in roles

@@ -31,8 +31,8 @@ def _ensure_user_profile_columns(conn) -> None:
     columns = conn.execute(text("PRAGMA table_info(users)")).fetchall()
     column_names = {column[1] for column in columns}
 
-    if "service_id" not in column_names:
-        conn.execute(text("ALTER TABLE users ADD COLUMN service_id INTEGER NULL"))
+    if "internships_id" not in column_names:
+        conn.execute(text("ALTER TABLE users ADD COLUMN internships_id INTEGER NULL"))
     if "education_institute_id" not in column_names:
         conn.execute(text("ALTER TABLE users ADD COLUMN education_institute_id INTEGER NULL"))
 
@@ -46,9 +46,9 @@ def _ensure_user_timestamps(conn) -> None:
     if "updated_at" in column_names:
         conn.execute(text("UPDATE users SET updated_at = CURRENT_TIMESTAMP WHERE updated_at IS NULL"))
 
-def _rebuild_users_table_without_unique_service_id(conn) -> None:
+def _rebuild_users_table_without_unique_internships_id(conn) -> None:
     indexes = conn.execute(text("PRAGMA index_list(users)")).fetchall()
-    unique_service_index_exists = False
+    unique_internships_index_exists = False
 
     for index in indexes:
         if not index[2]:
@@ -56,11 +56,11 @@ def _rebuild_users_table_without_unique_service_id(conn) -> None:
         index_name = index[1]
         columns = conn.execute(text(f"PRAGMA index_info('{index_name}')")).fetchall()
         column_names = [column[2] for column in columns]
-        if column_names == ["service_id"]:
-            unique_service_index_exists = True
+        if column_names == ["internships_id"]:
+            unique_internships_index_exists = True
             break
 
-    if not unique_service_index_exists:
+    if not unique_internships_index_exists:
         return
 
     conn.execute(text("PRAGMA foreign_keys=off"))
@@ -74,12 +74,12 @@ def _rebuild_users_table_without_unique_service_id(conn) -> None:
                 email VARCHAR(150) NOT NULL UNIQUE,
                 password VARCHAR(255),
                 role VARCHAR(20) NOT NULL DEFAULT 'user',
-                service_id INTEGER NULL,
+                internships_id INTEGER NULL,
                 education_institute_id INTEGER NULL,
                 is_active BOOLEAN NOT NULL DEFAULT 1,
                 created_at DATETIME,
                 updated_at DATETIME,
-                FOREIGN KEY(service_id) REFERENCES services(id),
+                FOREIGN KEY(internships_id) REFERENCES internships(id),
                 FOREIGN KEY(education_institute_id) REFERENCES education_institutes(id)
             )
             """
@@ -89,11 +89,11 @@ def _rebuild_users_table_without_unique_service_id(conn) -> None:
         text(
             """
             INSERT INTO users (
-                id, name, email, password, role, service_id, education_institute_id,
+                id, name, email, password, role, internships_id, education_institute_id,
                 is_active, created_at, updated_at
             )
             SELECT
-                id, name, email, password, role, service_id, education_institute_id,
+                id, name, email, password, role, internships_id, education_institute_id,
                 is_active, created_at, updated_at
             FROM users_legacy
             """
@@ -106,8 +106,8 @@ def _ensure_room_columns(conn) -> None:
     columns = conn.execute(text("PRAGMA table_info(rooms)")).fetchall()
     column_names = {column[1] for column in columns}
 
-    if "service_id" not in column_names:
-        conn.execute(text("ALTER TABLE rooms ADD COLUMN service_id INTEGER NULL"))
+    if "internships_id" not in column_names:
+        conn.execute(text("ALTER TABLE rooms ADD COLUMN internships_id INTEGER NULL"))
 
 def _ensure_room_timestamps(conn) -> None:
     columns = conn.execute(text("PRAGMA table_info(rooms)")).fetchall()
@@ -132,14 +132,14 @@ def _rebuild_rooms_table_without_internship_field(conn) -> None:
             """
             CREATE TABLE rooms (
                 id INTEGER NOT NULL PRIMARY KEY,
-                service_id INTEGER NOT NULL,
+                internships_id INTEGER NOT NULL,
                 name VARCHAR(20) NOT NULL,
                 room_capacity INTEGER NOT NULL,
                 has_gurney BOOLEAN NOT NULL,
                 is_active BOOLEAN NOT NULL,
                 created_at DATETIME,
                 updated_at DATETIME,
-                FOREIGN KEY(service_id) REFERENCES services(id)
+                FOREIGN KEY(internships_id) REFERENCES internships(id)
             )
             """
         )
@@ -147,8 +147,8 @@ def _rebuild_rooms_table_without_internship_field(conn) -> None:
     conn.execute(
         text(
             """
-            INSERT INTO rooms (id, service_id, name, room_capacity, has_gurney, is_active, created_at, updated_at)
-            SELECT id, service_id, name, room_capacity, has_gurney, is_active, created_at, updated_at
+            INSERT INTO rooms (id, internships_id, name, room_capacity, has_gurney, is_active, created_at, updated_at)
+            SELECT id, internships_id, name, room_capacity, has_gurney, is_active, created_at, updated_at
             FROM rooms_legacy
             """
         )
@@ -199,7 +199,7 @@ def init_db() -> None:
         _ensure_user_role_column(conn)
         _ensure_user_profile_columns(conn)
         _ensure_user_timestamps(conn)
-        _rebuild_users_table_without_unique_service_id(conn)
+        _rebuild_users_table_without_unique_internships_id(conn)
     seed_admin()
 
 def seed_admin():
@@ -233,15 +233,15 @@ def seed_admin():
             if "is_active" not in column_names:
                 conn.execute(text("ALTER TABLE education_institutes ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT 1"))
 
-        def _ensure_course_columns(conn) -> None:
-            columns = conn.execute(text("PRAGMA table_info(courses)")).fetchall()
+        def _ensure_discipline_columns(conn) -> None:
+            columns = conn.execute(text("PRAGMA table_info(disciplines)")).fetchall()
             column_names = {column[1] for column in columns}
             if "code" not in column_names:
-                conn.execute(text("ALTER TABLE courses ADD COLUMN code VARCHAR(20) NULL"))
+                conn.execute(text("ALTER TABLE disciplines ADD COLUMN code VARCHAR(20) NULL"))
             if "region_id" not in column_names:
-                conn.execute(text("ALTER TABLE courses ADD COLUMN region_id INTEGER NULL"))
+                conn.execute(text("ALTER TABLE disciplines ADD COLUMN region_id INTEGER NULL"))
 
-        _ensure_course_columns(conn)
+        _ensure_discipline_columns(conn)
         _ensure_education_institute_columns(conn)
 
         def _ensure_student_columns(conn) -> None:

@@ -40,7 +40,7 @@ class EducationInstituteResponse(EducationInstituteBase):
     class StudentSummary(BaseModel):
         model_config = ConfigDict(from_attributes=True)
         id: int
-        course_id: int
+        discipline_id: int
         status: str
 
     class UserSummary(BaseModel):

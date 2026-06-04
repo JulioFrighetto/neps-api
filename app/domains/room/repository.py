@@ -23,8 +23,8 @@ def get_by_id(db: Session, room_id: int) -> Room | None:
     return db.query(Room).filter(Room.id == room_id).first()
 
 
-def get_by_service(db: Session, service_id: int, page: int = 1, per_page: int = 10, filters: dict | None = None) -> tuple[list[Room], int]:
-    query = db.query(Room).filter(Room.service_id == service_id)
+def get_by_internships(db: Session, internships_id: int, page: int = 1, per_page: int = 10, filters: dict | None = None) -> tuple[list[Room], int]:
+    query = db.query(Room).filter(Room.internships_id == internships_id)
     if filters:
         query, _ = apply_filters(query, Room, filters)
     total = query.count()

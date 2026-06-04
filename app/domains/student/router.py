@@ -14,13 +14,13 @@ from app.domains.student.schemas import StudentCreate, StudentUpdate
 
 router = APIRouter(prefix="/students", tags=["Students"])
 
-AVAILABLE_FILTERS = ["name_like", "cpf", "email_like", "course_id", "institution_id", "semester", "status"]
+AVAILABLE_FILTERS = ["name_like", "cpf", "email_like", "discipline_id", "institution_id", "semester", "status"]
 
 
 class StudentListResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    class CourseSummary(BaseModel):
+    class DisciplineSummary(BaseModel):
         model_config = ConfigDict(from_attributes=True)
 
         id: int
@@ -37,7 +37,7 @@ class StudentListResponse(BaseModel):
     cpf: str | None
     email: str | None
     phone: str | None
-    course_id: int
+    discipline_id: int
     semester: int | None
     institution_id: int
     status: str
@@ -46,7 +46,7 @@ class StudentListResponse(BaseModel):
     director_signed_pdf: bytes | None = None
     internship_start_date: date | None = None
     internship_expected_end_date: date | None = None
-    course: CourseSummary | None = None
+    discipline: DisciplineSummary | None = None
     institution: InstitutionSummary | None = None
 
 
@@ -55,8 +55,8 @@ class StudentGetRequest(BaseModel):
     include: str | None = None
 
 
-class StudentsByCourseRequest(BaseModel):
-    course_id: int
+class StudentsByDisciplineRequest(BaseModel):
+    discipline_id: int
     page: int = 1
     per_page: int = 10
 
@@ -80,7 +80,7 @@ def _to_response(student: Student, include: set[str] | None = None) -> StudentLi
         cpf=student.cpf,
         email=student.email,
         phone=student.phone,
-        course_id=student.course_id,
+        discipline_id=student.discipline_id,
         semester=student.semester,
         institution_id=student.edu_institute_id,
         status=student.status,
@@ -89,9 +89,9 @@ def _to_response(student: Student, include: set[str] | None = None) -> StudentLi
         director_signed_pdf=student.director_signed_pdf,
         internship_start_date=student.internship_start_date,
         internship_expected_end_date=student.internship_expected_end_date,
-        course=(
-            StudentListResponse.CourseSummary(id=student.course.id, name=student.course.name)
-            if "course" in include and student.course
+        discipline=(
+            StudentListResponse.DisciplineSummary(id=student.discipline.id, name=student.discipline.name)
+            if "discipline" in include and student.discipline
             else None
         ),
         institution=(
@@ -112,11 +112,11 @@ def list_students(
     name_like: str | None = Body(None),
     cpf: str | None = Body(None),
     email_like: str | None = Body(None),
-    course_id: int | None = Body(None),
+    discipline_id: int | None = Body(None),
     institution_id: int | None = Body(None),
     semester: int | None = Body(None),
     status: str | None = Body(None),
-    include: str | None = Body(None, description="Relacionamentos a incluir: course,institution"),
+    include: str | None = Body(None, description="Relacionamentos a incluir: discipline,institution"),
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
@@ -127,8 +127,8 @@ def list_students(
         filters["cpf"] = cpf
     if email_like is not None:
         filters["email_like"] = email_like
-    if course_id is not None:
-        filters["course_id"] = course_id
+    if discipline_id is not None:
+        filters["discipline_id"] = discipline_id
     if institution_id is not None:
         filters["edu_institute_id"] = institution_id
     if semester is not None:
@@ -159,7 +159,7 @@ def list_students(
 
 @router.post("/detail", response_model=StudentListResponse)
 def get_student(data: StudentGetRequest, db: Session = Depends(get_db)):
-    include_set = {"course", "institution"}
+    include_set = {"discipline", "institution"}
     if data.include:
         include_set = {item.strip().lower() for item in data.include.split(",") if item.strip()}
     student = repository.get_by_id(db, data.student_id)
@@ -168,9 +168,9 @@ def get_student(data: StudentGetRequest, db: Session = Depends(get_db)):
     return _to_response(student, include_set)
 
 
-@router.post("/by-course", response_model=Page[StudentListResponse])
-def list_students_by_course(data: StudentsByCourseRequest, db: Session = Depends(get_db)):
-    items, total = repository.get_by_course(db, data.course_id, page=data.page, per_page=data.per_page)
+@router.post("/by-discipline", response_model=Page[StudentListResponse])
+def list_students_by_discipline(data: StudentsByDisciplineRequest, db: Session = Depends(get_db)):
+    items, total = repository.get_by_discipline(db, data.discipline_id, page=data.page, per_page=data.per_page)
     return Page(
         items=[_to_response(item) for item in items],
         pagination=PaginationInfo(

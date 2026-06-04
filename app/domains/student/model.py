@@ -5,6 +5,14 @@ from sqlalchemy import Boolean, DateTime, Date, ForeignKey, Integer, String, fun
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from app.domains.education_institute.model import EducationInstitute
+if TYPE_CHECKING:
+    from app.domains.discipline.model import Discipline
+from app.domains.internships_schedule.model import InternshipsSchedule
+from app.domains.period.model import Period
+from app.domains.history.model import History
 
 StudentStatus = Literal["PENDING", "PLACED", "COMPLETED"]
 
@@ -16,7 +24,7 @@ class Student(Base):
     edu_institute_id: Mapped[int] = mapped_column(
         ForeignKey("education_institutes.id"), nullable=False
     )
-    course_id: Mapped[int] = mapped_column(ForeignKey("courses.id"), nullable=False)
+    discipline_id: Mapped[int] = mapped_column(ForeignKey("disciplines.id"), nullable=False)
     name: Mapped[str | None] = mapped_column(String(100), nullable=True)
     cpf: Mapped[str | None] = mapped_column(String(20), nullable=True)
     email: Mapped[str | None] = mapped_column(String(150), nullable=True)
@@ -37,9 +45,9 @@ class Student(Base):
     education_institute: Mapped["EducationInstitute"] = relationship(  # noqa: F821
         "EducationInstitute", back_populates="students"
     )
-    course: Mapped["Course"] = relationship("Course", back_populates="students")  # noqa: F821
-    service_schedules: Mapped[list["ServiceSchedule"]] = relationship(  # noqa: F821
-        "ServiceSchedule", back_populates="student"
+    discipline: Mapped["Discipline"] = relationship("Discipline", back_populates="students")  # noqa: F821
+    internships_schedules: Mapped[list["InternshipsSchedule"]] = relationship(  # noqa: F821
+        "InternshipsSchedule", back_populates="student"
     )
 
     periods: Mapped[list["Period"]] = relationship(

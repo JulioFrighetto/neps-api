@@ -2,12 +2,9 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError
 from sqlalchemy.orm import Session
-
 from app.core.database import get_db
 from app.core.jwt import decode_token
-
 bearer_scheme = HTTPBearer()
-
 
 def _get_token_payload(
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
@@ -33,7 +30,6 @@ def get_current_user(
     db: Session = Depends(get_db),
 ):
     from app.domains.user.repository import get_by_id
-
     user = get_by_id(db, int(payload["sub"]))
     if not user or not user.is_active:
         raise HTTPException(

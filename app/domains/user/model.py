@@ -14,7 +14,7 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(150), nullable=False, unique=True, index=True)
     password: Mapped[str] = mapped_column(String(255), nullable=True)
     role: Mapped[str] = mapped_column(String(20), nullable=False, default="user")
-    service_id: Mapped[int | None] = mapped_column(ForeignKey("services.id"), nullable=True)
+    internships_id: Mapped[int | None] = mapped_column(ForeignKey("internships.id"), nullable=True)
     education_institute_id: Mapped[int | None] = mapped_column(
         ForeignKey("education_institutes.id"), nullable=True
     )
@@ -24,5 +24,5 @@ class User(Base):
         DateTime, server_default=func.now(), onupdate=func.now()
     )
 
-    service = relationship("Service", back_populates="users")
+    internships = relationship("Internship", back_populates="users")
     education_institute = relationship("EducationInstitute", back_populates="users")

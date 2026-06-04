@@ -27,17 +27,17 @@ Parâmetros de query:
 | ------ | ----------------------------------------------- | ---------------------------------- |
 | GET    | `/api/v1/users/`                                | `Page[UserResponse]`               |
 | GET    | `/api/v1/students/`                             | `Page[StudentResponse]`            |
-| GET    | `/api/v1/students/by-course/{course_id}`        | `Page[StudentResponse]`            |
+| GET    | `/api/v1/students/by-discipline/{discipline_id}`        | `Page[StudentResponse]`            |
 | GET    | `/api/v1/students/by-institute/{institute_id}`  | `Page[StudentResponse]`            |
-| GET    | `/api/v1/services/`                             | `Page[ServiceResponse]`            |
-| GET    | `/api/v1/service-rooms/`                        | `Page[ServiceRoomResponse]`        |
-| GET    | `/api/v1/service-rooms/by-service/{service_id}` | `Page[ServiceRoomResponse]`        |
-| GET    | `/api/v1/service-schedules/`                    | `Page[ServiceScheduleResponse]`    |
+| GET    | `/api/v1/internshipss/`                             | `Page[InternshipsResponse]`            |
+| GET    | `/api/v1/internships-rooms/`                        | `Page[InternshipsRoomResponse]`        |
+| GET    | `/api/v1/internships-rooms/by-internships/{internships_id}` | `Page[InternshipsRoomResponse]`        |
+| GET    | `/api/v1/internships-schedules/`                    | `Page[InternshipsScheduleResponse]`    |
 | GET    | `/api/v1/education-institutes/`                 | `Page[EducationInstituteResponse]` |
 
 | GET    | `/api/v1/regions`                               | `Page[RegionResponse]`             |
 | GET    | `/api/v1/rooms/`                                | `Page[RoomResponse]`               |
-| GET    | `/api/v1/courses/`                              | `Page[CourseResponse]`             |
+| GET    | `/api/v1/disciplines/`                              | `Page[DisciplineResponse]`             |
 
 ## Exemplo de Uso
 

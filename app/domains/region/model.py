@@ -4,6 +4,10 @@ from sqlalchemy import Boolean, DateTime, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from app.domains.education_institute.model import EducationInstitute
+    from app.domains.internships.model import Internship
 
 
 class Region(Base):
@@ -22,6 +26,6 @@ class Region(Base):
     education_institutes: Mapped[list["EducationInstitute"]] = relationship(
         "EducationInstitute", secondary="education_institute_regions", back_populates="regions"
     )
-    services: Mapped[list["Service"]] = relationship(
-        "Service", back_populates="region"
+    internships: Mapped[list["Internship"]] = relationship(
+        "Internship", back_populates="region"
     )

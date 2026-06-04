@@ -45,10 +45,10 @@ def client(db):
 
 
 def _create_basic_entities(client, *, requires_gurney: bool = False, has_gurney: bool = True):
-    service = client.post("/api/v1/services", json={"name": "Serviço Teste"}).json()
+    internships = client.post("/api/v1/internshipss", json={"name": "Serviço Teste"}).json()
     institute = client.post("/api/v1/education-institutes", json={"name": "Instituto Teste"}).json()
-    course = client.post(
-        "/api/v1/courses",
+    discipline = client.post(
+        "/api/v1/disciplines",
         json={
             "edu_institute_id": institute["id"],
             "name": "Curso Teste",
@@ -59,7 +59,7 @@ def _create_basic_entities(client, *, requires_gurney: bool = False, has_gurney:
         "/api/v1/students",
         json={
             "edu_institute_id": institute["id"],
-            "course_id": course["id"],
+            "discipline_id": discipline["id"],
             "status": "PENDING",
             "document_url": "https://example.com/document.pdf",
         },
@@ -67,13 +67,13 @@ def _create_basic_entities(client, *, requires_gurney: bool = False, has_gurney:
     room = client.post(
         "/api/v1/rooms",
         json={
-            "service_id": service["id"],
+            "internships_id": internships["id"],
             "name": "Sala 01",
             "room_capacity": 10,
             "has_gurney": has_gurney,
         },
     ).json()
-    return service, institute, course, student, room
+    return internships, institute, discipline, student, room
 
 
 def _create_period(db):
@@ -93,12 +93,12 @@ def _create_period(db):
 
 
 def test_prevents_student_conflict_in_other_room(client, db):
-    service, _institute, _course, student, room1 = _create_basic_entities(client)
+    internships, _institute, _discipline, student, room1 = _create_basic_entities(client)
     period = _create_period(db)
     room2 = client.post(
         "/api/v1/rooms",
         json={
-            "service_id": service["id"],
+            "internships_id": internships["id"],
             "name": "Sala 02",
             "room_capacity": 10,
             "has_gurney": True,
@@ -131,8 +131,8 @@ def test_prevents_student_conflict_in_other_room(client, db):
     assert "outra sala" in resp_conflict.json()["detail"].lower()
 
 
-def test_requires_gurney_when_course_needs_it(client, db):
-    _, _institute, _course, student, room = _create_basic_entities(client, requires_gurney=True, has_gurney=False)
+def test_requires_gurney_when_discipline_needs_it(client, db):
+    _, _institute, _discipline, student, room = _create_basic_entities(client, requires_gurney=True, has_gurney=False)
     period = _create_period(db)
 
     resp = client.post(
@@ -150,7 +150,7 @@ def test_requires_gurney_when_course_needs_it(client, db):
 
 
 def test_room_schedule_link_updates_history_and_unlink_closes_it(client, db):
-    _service, _institute, _course, student, room = _create_basic_entities(client)
+    _internships, _institute, _discipline, student, room = _create_basic_entities(client)
 
     schedule_repository.create_schedule_for_room(db, room["id"])
 
@@ -214,7 +214,7 @@ def test_room_schedule_link_updates_history_and_unlink_closes_it(client, db):
 
 
 def test_get_room_schedule_receives_room_id_in_body(client):
-    _service, _institute, _course, _student, room = _create_basic_entities(client)
+    _internships, _institute, _discipline, _student, room = _create_basic_entities(client)
 
     response = client.post(
         "/api/v1/rooms/schedule",
@@ -228,7 +228,7 @@ def test_get_room_schedule_receives_room_id_in_body(client):
 
 
 def test_available_slots_receives_filters_in_body(client):
-    _service, _institute, _course, student, room = _create_basic_entities(client)
+    _internships, _institute, _discipline, student, room = _create_basic_entities(client)
 
     response = client.post(
         "/api/v1/rooms/available-slots",

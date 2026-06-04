@@ -44,7 +44,7 @@ NEPS-API/
 │       │   ├── schemas.py
 │       │   ├── repository.py
 │       │   └── router.py
-│       ├── course/                  # Curso
+│       ├── discipline/                  # Curso
 │       ├── room/                    # Sala + RoomSchedule + RoomTimeTable + TimeTableStudent
 │       └── student/                 # Aluno
 ├── tests/

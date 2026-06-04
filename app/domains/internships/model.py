@@ -4,10 +4,17 @@ from sqlalchemy import Boolean, DateTime, ForeignKey, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
+from app.domains.region.model import Region
+from app.domains.internships_room.model import InternshipsRoom
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.domains.room.model import Room
+from app.domains.user.model import User
 
 
-class Service(Base):
-    __tablename__ = "services"
+class Internship(Base):
+    __tablename__ = "internships"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False, unique=True, index=True)
@@ -18,13 +25,13 @@ class Service(Base):
         DateTime, server_default=func.now(), onupdate=func.now()
     )
     
-    region: Mapped["Region | None"] = relationship("Region", back_populates="services")  # noqa: F821
+    region: Mapped["Region | None"] = relationship("Region", back_populates="internships")  # noqa: F821
 
-    service_rooms: Mapped[list["ServiceRoom"]] = relationship(  # noqa: F821
-        "ServiceRoom", back_populates="service", cascade="all, delete-orphan"
+    internships_rooms: Mapped[list["InternshipsRoom"]] = relationship(  # noqa: F821
+        "InternshipsRoom", back_populates="internships", cascade="all, delete-orphan"
     )
-    rooms: Mapped[list["Room"]] = relationship("Room", back_populates="service")  # noqa: F821
-    users: Mapped[list["User"]] = relationship("User", back_populates="service")  # noqa: F821
+    rooms: Mapped[list["Room"]] = relationship("Room", back_populates="internships")  # noqa: F821
+    users: Mapped[list["User"]] = relationship("User", back_populates="internships")  # noqa: F821
 
     @property
     def user_id(self) -> int | None:

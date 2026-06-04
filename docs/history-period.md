@@ -224,7 +224,7 @@ Retorna a lista paginada de vínculos históricos de um schedule específico.
 **Permissões:**
 
 - `admin` pode consultar qualquer schedule;
-- `service` pode consultar apenas schedules das salas do próprio serviço.
+- `internships` pode consultar apenas schedules das salas do próprio serviço.
 
 **Path Parameters:**
 
@@ -296,7 +296,7 @@ Retorna a lista paginada de vínculos históricos de uma sala específica.
 **Permissões:**
 
 - `admin` pode consultar qualquer sala;
-- `service` pode consultar apenas as salas do próprio serviço.
+- `internships` pode consultar apenas as salas do próprio serviço.
 
 **Path Parameters:**
 
@@ -369,7 +369,7 @@ Retorna a lista paginada de vínculos históricos de um schedule específico.
 **Permissões:**
 
 - `admin` pode consultar qualquer schedule;
-- `service` pode consultar apenas schedules das salas do próprio serviço.
+- `internships` pode consultar apenas schedules das salas do próprio serviço.
 
 **Path Parameters:**
 

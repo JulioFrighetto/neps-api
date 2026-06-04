@@ -31,17 +31,17 @@ Regra aplicada:
 - Agora: `DELETE /api/v1/rooms/schedule/student` (mantido)
 - Body: `room_id`, `day_of_week`, `period`, `period_id`, `student_id`
 
-## Course
+## Discipline
 
 1. Detalhe do curso
-- Antes: `GET /api/v1/courses/{course_id}`
-- Agora: `POST /api/v1/courses/detail`
-- Body: `course_id`
+- Antes: `GET /api/v1/disciplines/{discipline_id}`
+- Agora: `POST /api/v1/disciplines/detail`
+- Body: `discipline_id`
 
 2. Atualizacao de curso
-- Antes: `PUT /api/v1/courses/{course_id}` e `PATCH /api/v1/courses/{course_id}`
-- Agora: `PUT /api/v1/courses/` e `PATCH /api/v1/courses/`
-- Body: `course_id` + campos de `CourseUpdate`
+- Antes: `PUT /api/v1/disciplines/{discipline_id}` e `PATCH /api/v1/disciplines/{discipline_id}`
+- Agora: `PUT /api/v1/disciplines/` e `PATCH /api/v1/disciplines/`
+- Body: `discipline_id` + campos de `DisciplineUpdate`
 
 ## Education Institute
 
@@ -97,9 +97,9 @@ Regra aplicada:
 - Body: `student_id`, `include` (opcional)
 
 2. Listagem por curso
-- Antes: `GET /api/v1/students/by-course/{course_id}`
-- Agora: `POST /api/v1/students/by-course`
-- Body: `course_id`, `page`, `per_page`
+- Antes: `GET /api/v1/students/by-discipline/{discipline_id}`
+- Agora: `POST /api/v1/students/by-discipline`
+- Body: `discipline_id`, `page`, `per_page`
 
 3. Listagem por instituicao
 - Antes: `GET /api/v1/students/by-institute/{institute_id}`
@@ -131,70 +131,70 @@ Regra aplicada:
 - Body: `room_id`
 
 2. Salas por servico
-- Antes: `GET /api/v1/rooms/by-service/{service_id}`
-- Agora: `POST /api/v1/rooms/by-service`
-- Body: `service_id`, `page`, `per_page`
+- Antes: `GET /api/v1/rooms/by-internships/{internships_id}`
+- Agora: `POST /api/v1/rooms/by-internships`
+- Body: `internships_id`, `page`, `per_page`
 
 3. Atualizacao da sala
 - Antes: `PATCH /api/v1/rooms/{room_id}`
 - Agora: `PATCH /api/v1/rooms/`
 - Body: `room_id` + campos de `RoomUpdate`
 
-## Service
+## Internships
 
 1. Detalhe do servico
-- Antes: `GET /api/v1/services/{service_id}`
-- Agora: `POST /api/v1/services/detail`
-- Body: `service_id`
+- Antes: `GET /api/v1/internshipss/{internships_id}`
+- Agora: `POST /api/v1/internshipss/detail`
+- Body: `internships_id`
 
 2. Atualizacao do servico
-- Antes: `PATCH /api/v1/services/{service_id}`
-- Agora: `PATCH /api/v1/services/`
-- Body: `service_id` + campos de `ServiceUpdate`
+- Antes: `PATCH /api/v1/internshipss/{internships_id}`
+- Agora: `PATCH /api/v1/internshipss/`
+- Body: `internships_id` + campos de `InternshipsUpdate`
 
 3. Substituicao do servico
-- Antes: `PUT /api/v1/services/{service_id}`
-- Agora: `PUT /api/v1/services/`
-- Body: `service_id` + campos de `ServiceCreate`
+- Antes: `PUT /api/v1/internshipss/{internships_id}`
+- Agora: `PUT /api/v1/internshipss/`
+- Body: `internships_id` + campos de `InternshipsCreate`
 
-## Service Room
+## Internships Room
 
 1. Detalhe da sala de servico
-- Antes: `GET /api/v1/service-rooms/{service_room_id}`
-- Agora: `POST /api/v1/service-rooms/detail`
-- Body: `service_room_id`
+- Antes: `GET /api/v1/internships-rooms/{internships_room_id}`
+- Agora: `POST /api/v1/internships-rooms/detail`
+- Body: `internships_room_id`
 
 2. Salas por servico
-- Antes: `GET /api/v1/service-rooms/by-service/{service_id}`
-- Agora: `POST /api/v1/service-rooms/by-service`
-- Body: `service_id`, `page`, `per_page`
+- Antes: `GET /api/v1/internships-rooms/by-internships/{internships_id}`
+- Agora: `POST /api/v1/internships-rooms/by-internships`
+- Body: `internships_id`, `page`, `per_page`
 
 3. Atualizacao da sala de servico
-- Antes: `PATCH /api/v1/service-rooms/{service_room_id}`
-- Agora: `PATCH /api/v1/service-rooms/`
-- Body: `service_room_id` + campos de `ServiceRoomUpdate`
+- Antes: `PATCH /api/v1/internships-rooms/{internships_room_id}`
+- Agora: `PATCH /api/v1/internships-rooms/`
+- Body: `internships_room_id` + campos de `InternshipsRoomUpdate`
 
-## Service Schedule
+## Internships Schedule
 
 1. Detalhe da agenda
-- Antes: `GET /api/v1/service-schedules/{service_schedule_id}`
-- Agora: `POST /api/v1/service-schedules/detail`
-- Body: `service_schedule_id`
+- Antes: `GET /api/v1/internships-schedules/{internships_schedule_id}`
+- Agora: `POST /api/v1/internships-schedules/detail`
+- Body: `internships_schedule_id`
 
 2. Agendas por sala
-- Antes: `GET /api/v1/service-schedules/by-room/{service_room_id}`
-- Agora: `POST /api/v1/service-schedules/by-room`
-- Body: `service_room_id`
+- Antes: `GET /api/v1/internships-schedules/by-room/{internships_room_id}`
+- Agora: `POST /api/v1/internships-schedules/by-room`
+- Body: `internships_room_id`
 
 3. Agendas por sala e dia
-- Antes: `GET /api/v1/service-schedules/by-room/{service_room_id}/by-day/{week_day}`
-- Agora: `POST /api/v1/service-schedules/by-room/by-day`
-- Body: `service_room_id`, `week_day`
+- Antes: `GET /api/v1/internships-schedules/by-room/{internships_room_id}/by-day/{week_day}`
+- Agora: `POST /api/v1/internships-schedules/by-room/by-day`
+- Body: `internships_room_id`, `week_day`
 
 4. Atualizacao da agenda
-- Antes: `PATCH /api/v1/service-schedules/{service_schedule_id}`
-- Agora: `PATCH /api/v1/service-schedules/`
-- Body: `service_schedule_id` + campos de `ServiceScheduleUpdate`
+- Antes: `PATCH /api/v1/internships-schedules/{internships_schedule_id}`
+- Agora: `PATCH /api/v1/internships-schedules/`
+- Body: `internships_schedule_id` + campos de `InternshipsScheduleUpdate`
 
 ## History
 

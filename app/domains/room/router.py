@@ -16,15 +16,15 @@ from app.domains.room.schemas import (
 
 router = APIRouter(prefix="/rooms", tags=["Rooms"])
 
-AVAILABLE_FILTERS = ["name_like", "service_id", "has_gurney", "capacity_min", "capacity_max"]
+AVAILABLE_FILTERS = ["name_like", "internships_id", "has_gurney", "capacity_min", "capacity_max"]
 
 
 class RoomGetRequest(BaseModel):
     room_id: int
 
 
-class RoomsByServiceRequest(BaseModel):
-    service_id: int
+class RoomsByInternshipsRequest(BaseModel):
+    internships_id: int
     page: int = 1
     per_page: int = 10
 
@@ -38,20 +38,20 @@ def list_rooms(
     page: int = Body(1, ge=1),
     per_page: int = Body(10, ge=1, le=100),
     name_like: str | None = Body(None),
-    service_id: int | None = Body(None),
+    internships_id: int | None = Body(None),
     has_gurney: bool | None = Body(None),
     capacity_min: int | None = Body(None),
     capacity_max: int | None = Body(None),
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    filters = {k: v for k, v in {"name_like": name_like, "service_id": service_id, "has_gurney": has_gurney, "capacity_min": capacity_min, "capacity_max": capacity_max}.items() if v is not None}
+    filters = {k: v for k, v in {"name_like": name_like, "internships_id": internships_id, "has_gurney": has_gurney, "capacity_min": capacity_min, "capacity_max": capacity_max}.items() if v is not None}
 
     if current_user.role == "admin":
         items, total = repository.get_all(db, page=page, per_page=per_page, filters=filters)
-    elif current_user.role == "service" and current_user.service_id is not None:
-        items, total = repository.get_by_service(
-            db, current_user.service_id, page=page, per_page=per_page, filters=filters
+    elif current_user.role == "internships" and current_user.internships_id is not None:
+        items, total = repository.get_by_internships(
+            db, current_user.internships_id, page=page, per_page=per_page, filters=filters
         )
     else:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
@@ -75,9 +75,9 @@ def get_room(data: RoomGetRequest, db: Session = Depends(get_db)):
     return room
 
 
-@router.post("/by-service", response_model=Page[RoomResponse])
-def list_rooms_by_service(data: RoomsByServiceRequest, db: Session = Depends(get_db)):
-    items, total = repository.get_by_service(db, data.service_id, page=data.page, per_page=data.per_page)
+@router.post("/by-internships", response_model=Page[RoomResponse])
+def list_rooms_by_internships(data: RoomsByInternshipsRequest, db: Session = Depends(get_db)):
+    items, total = repository.get_by_internships(db, data.internships_id, page=data.page, per_page=data.per_page)
     return Page(
         items=items,
         pagination=PaginationInfo(

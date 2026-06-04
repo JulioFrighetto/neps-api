@@ -1,6 +1,6 @@
 import math
 
-from fastapi import APIRouter, Body, Depends, HTTPException, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -11,7 +11,7 @@ from app.core.jwt import create_reset_token
 from app.core.schemas import FilterInfo, Page, PaginationInfo
 from app.core.settings import settings
 from app.domains.education_institute.repository import get_by_id as get_institute_by_id
-from app.domains.service.repository import get_by_id as get_service_by_id
+from app.domains.internships.repository import get_by_id as get_internships_by_id
 from app.domains.user import repository
 from app.domains.user.schemas import (
     UserChangePassword,
@@ -52,42 +52,46 @@ class UserChangePasswordRequest(UserChangePassword):
 AVAILABLE_FILTERS = ["name_like", "email_like", "role", "role_in", "is_active"]
 
 
+
+@router.get("/", response_model=Page[UserResponse])
+def list_users(
+    db: Session = Depends(get_db),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(10, ge=1, le=100),
+    name_like: str | None = Query(None),
+    email_like: str | None = Query(None),
+    role: str | None = Query(None),
+    role_in: str | None = Query(None),
+    is_active: bool | None = Query(None),
+    current_user=Depends(get_current_admin_user),
+):
+    # Build filter dict based on query params
+    filter_params = {}
+    if name_like:
+        filter_params["name_like"] = name_like
+    if email_like:
+        filter_params["email_like"] = email_like
+    if role:
+        filter_params["role"] = role
+    if role_in:
+        filter_params["role_in"] = role_in.split(",")
+    if is_active is not None:
+        filter_params["is_active"] = is_active
+    users, total = repository.get_all(db, page=page, per_page=per_page, filters=filter_params)
+    return Page(
+        items=users,
+        pagination=PaginationInfo(
+            page=page,
+            per_page=per_page,
+            total=total,
+            total_pages=math.ceil(total / per_page) if per_page else 0,
+        ),
+    )
 @router.get("/me", response_model=UserResponse)
 def me(current_user=Depends(get_current_user)):
     return current_user
 
 
-@router.get("/", response_model=Page[UserResponse])
-def list_users(
-    page: int = Body(1, ge=1),
-    per_page: int = Body(10, ge=1, le=100),
-    name: str | None = Body(None),
-    name_like: str | None = Body(None),
-    email_like: str | None = Body(None),
-    role: str | None = Body(None),
-    role_in: str | None = Body(None),
-    is_active: bool | None = Body(None),
-    db: Session = Depends(get_db),
-    current_user=Depends(get_current_admin_user),
-):
-    filters = {k: v for k, v in {
-        "name_like": name if name is not None else name_like,
-        "email_like": email_like,
-        "role": role,
-        "role_in": role_in,
-        "is_active": is_active,
-    }.items() if v is not None}
-    items, total = repository.get_all(db, page=page, per_page=per_page, filters=filters)
-    return Page(
-        items=items,
-        pagination=PaginationInfo(
-            page=page,
-            per_page=per_page,
-            total=total,
-            total_pages=max(1, math.ceil(total / per_page)) if total > 0 else 0,
-        ),
-        filters=FilterInfo(applied=list(filters.keys()), available=AVAILABLE_FILTERS),
-    )
 
 
 @router.get("/roles", response_model=RolesResponse)
@@ -95,7 +99,7 @@ def list_roles():
     return RolesResponse(items=[
         RoleItem(label="Administrador", value="admin"),
         RoleItem(label="Instituição de Ensino", value="education_institute"),
-        RoleItem(label="Campo de Estágio", value="service"),
+        RoleItem(label="Campo de Estágio", value="internships"),
     ])
 
 
@@ -129,9 +133,9 @@ def create_user(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Instituição de ensino não encontrada",
             )
-    if data.role == "service":
-        service = get_service_by_id(db, data.service_id) if data.service_id is not None else None
-        if not service:
+    if data.role == "internships":
+        internships = get_internships_by_id(db, data.internships_id) if data.internships_id is not None else None
+        if not internships:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Campo de estágio não encontrado",
@@ -180,9 +184,9 @@ def replace_user(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado")
 
     # validate linked entities when role requires them
-    if data.role == "service":
-        service = get_service_by_id(db, data.service_id) if data.service_id is not None else None
-        if not service:
+    if data.role == "internships":
+        internships = get_internships_by_id(db, data.internships_id) if data.internships_id is not None else None
+        if not internships:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Campo de estágio não encontrado",
@@ -204,7 +208,7 @@ def replace_user(
     user.name = data.name
     user.email = data.email
     user.role = data.role
-    user.service_id = data.service_id
+    user.internships_id = data.internships_id
     user.education_institute_id = data.education_institute_id
     user.is_active = data.is_active
 

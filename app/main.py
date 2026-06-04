@@ -4,12 +4,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.database import init_db
 from app.core.models import *  # noqa: F401, F403 — registers all models with Base.metadata
 from app.core.settings import settings
-from app.domains.course.router import router as course_router
+from app.domains.discipline.router import router as discipline_router
 from app.domains.education_institute.router import router as edu_institute_router
 from app.domains.region.router import router as region_router
-from app.domains.service.router import router as service_router
-from app.domains.service_room.router import router as service_room_router
-from app.domains.service_schedule.router import router as service_schedule_router
+from app.domains.internships.router import router as internship_router
+from app.domains.internships_room.router import router as internships_room_router
+from app.domains.internships_schedule.router import router as internships_schedule_router
 from app.domains.room.router import router as room_router
 from app.domains.room_schedule.router import router as room_schedule_router
 from app.domains.history.router import router as history_router
@@ -44,13 +44,13 @@ API_PREFIX = "/api/v1"
 app.include_router(auth_router, prefix=API_PREFIX)
 app.include_router(user_router, prefix=API_PREFIX)
 app.include_router(edu_institute_router, prefix=API_PREFIX)
-app.include_router(course_router, prefix=API_PREFIX)
+app.include_router(discipline_router, prefix=API_PREFIX)
 app.include_router(region_router, prefix=API_PREFIX)
 app.include_router(room_schedule_router, prefix=API_PREFIX)
 app.include_router(room_router, prefix=API_PREFIX)
-app.include_router(service_router, prefix=API_PREFIX)
-app.include_router(service_room_router, prefix=API_PREFIX)
-app.include_router(service_schedule_router, prefix=API_PREFIX)
+app.include_router(internship_router, prefix=API_PREFIX)
+app.include_router(internships_room_router, prefix=API_PREFIX)
+app.include_router(internships_schedule_router, prefix=API_PREFIX)
 app.include_router(history_router, prefix=API_PREFIX)
 app.include_router(student_router, prefix=API_PREFIX)
 app.include_router(period_router, prefix=API_PREFIX)

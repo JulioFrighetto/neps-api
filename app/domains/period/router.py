@@ -131,7 +131,7 @@ def get_period(
         from app.domains.room.model import Room
         
         student_query = db.query(Student).options(
-            selectinload(Student.course),
+            selectinload(Student.discipline),
             selectinload(Student.education_institute),
         )
 
@@ -173,7 +173,7 @@ def get_period(
                     "semester": s.semester,
                     "has_slot": has_slot,
                     "slot": slot_obj,
-                    "course": {"id": s.course.id, "name": s.course.name} if getattr(s, "course", None) else None,
+                    "discipline": {"id": s.discipline.id, "name": s.discipline.name} if getattr(s, "discipline", None) else None,
                     "institution": {"id": s.education_institute.id, "name": s.education_institute.name} if getattr(s, "education_institute", None) else None,
                 }
             )

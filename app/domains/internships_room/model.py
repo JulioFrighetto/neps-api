@@ -4,13 +4,17 @@ from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from app.domains.internships.model import Internship
+from app.domains.internships_schedule.model import InternshipsSchedule
 
 
-class ServiceRoom(Base):
-    __tablename__ = "service_rooms"
+class InternshipsRoom(Base):
+    __tablename__ = "internships_rooms"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    service_id: Mapped[int] = mapped_column(ForeignKey("services.id"), nullable=False)
+    internships_id: Mapped[int] = mapped_column(ForeignKey("internships.id"), nullable=False)
     name: Mapped[str] = mapped_column(String(20), nullable=False)
     room_capacity: Mapped[int] = mapped_column(Integer, nullable=False)
     has_gurney: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
@@ -20,9 +24,9 @@ class ServiceRoom(Base):
         DateTime, server_default=func.now(), onupdate=func.now()
     )
 
-    service: Mapped["Service"] = relationship(  # noqa: F821
-        "Service", back_populates="service_rooms"
+    internships: Mapped["Internship"] = relationship(  # noqa: F821
+        "Internship", back_populates="internships_rooms"
     )
-    service_schedules: Mapped[list["ServiceSchedule"]] = relationship(  # noqa: F821
-        "ServiceSchedule", back_populates="service_room", cascade="all, delete-orphan"
+    internships_schedules: Mapped[list["InternshipsSchedule"]] = relationship(  # noqa: F821
+        "InternshipsSchedule", back_populates="internships_room", cascade="all, delete-orphan"
     )
