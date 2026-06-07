@@ -1,6 +1,6 @@
 import math
 
-from fastapi import APIRouter, Body, Depends, HTTPException, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -43,11 +43,11 @@ class InternshipsReplaceRequest(InternshipsCreate):
 
 @router.get("/", response_model=Page[InternshipsResponse])
 def list_internships(
-    page: int = Body(1, ge=1),
-    per_page: int = Body(10, ge=1, le=100),
-    name_like: str | None = Body(None),
-    region_id: int | None = Body(None),
-    is_active: bool | None = Body(None),
+    page: int = Query(1, ge=1, description="Número da página"),
+    per_page: int = Query(10, ge=1, le=100, description="Itens por página"),
+    name_like: str | None = Query(None, description="Filtro por nome"),
+    region_id: int | None = Query(None, description="Filtro por região"),
+    is_active: bool | None = Query(None, description="Filtro por status ativo"),
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
