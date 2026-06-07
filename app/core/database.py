@@ -22,29 +22,38 @@ def get_db():
         db.close()
 
 def _ensure_user_role_column(conn) -> None:
-    columns = conn.execute(text("PRAGMA table_info(users)")).fetchall()
-    has_role = any(column[1] == "role" for column in columns)
-    if not has_role:
-        conn.execute(text("ALTER TABLE users ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'user'"))
+    try:
+        columns = conn.execute(text("PRAGMA table_info(users)")).fetchall()
+        has_role = any(column[1] == "role" for column in columns)
+        if not has_role:
+            conn.execute(text("ALTER TABLE users ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'user'"))
+    except Exception:
+        pass
 
 def _ensure_user_profile_columns(conn) -> None:
-    columns = conn.execute(text("PRAGMA table_info(users)")).fetchall()
-    column_names = {column[1] for column in columns}
+    try:
+        columns = conn.execute(text("PRAGMA table_info(users)")).fetchall()
+        column_names = {column[1] for column in columns}
 
-    if "internships_id" not in column_names:
-        conn.execute(text("ALTER TABLE users ADD COLUMN internships_id INTEGER NULL"))
-    if "education_institute_id" not in column_names:
-        conn.execute(text("ALTER TABLE users ADD COLUMN education_institute_id INTEGER NULL"))
+        if "internships_id" not in column_names:
+            conn.execute(text("ALTER TABLE users ADD COLUMN internships_id INTEGER NULL"))
+        if "education_institute_id" not in column_names:
+            conn.execute(text("ALTER TABLE users ADD COLUMN education_institute_id INTEGER NULL"))
+    except Exception:
+        pass
 
 def _ensure_user_timestamps(conn) -> None:
     """Garante que todos os usuários tenham timestamps válidos nos campos created_at e updated_at"""
-    columns = conn.execute(text("PRAGMA table_info(users)")).fetchall()
-    column_names = {column[1] for column in columns}
+    try:
+        columns = conn.execute(text("PRAGMA table_info(users)")).fetchall()
+        column_names = {column[1] for column in columns}
 
-    if "created_at" in column_names:
-        conn.execute(text("UPDATE users SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL"))
-    if "updated_at" in column_names:
-        conn.execute(text("UPDATE users SET updated_at = CURRENT_TIMESTAMP WHERE updated_at IS NULL"))
+        if "created_at" in column_names:
+            conn.execute(text("UPDATE users SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL"))
+        if "updated_at" in column_names:
+            conn.execute(text("UPDATE users SET updated_at = CURRENT_TIMESTAMP WHERE updated_at IS NULL"))
+    except Exception:
+        pass
 
 def _rebuild_users_table_without_unique_internships_id(conn) -> None:
     indexes = conn.execute(text("PRAGMA index_list(users)")).fetchall()
@@ -103,20 +112,26 @@ def _rebuild_users_table_without_unique_internships_id(conn) -> None:
     conn.execute(text("PRAGMA foreign_keys=on"))
 
 def _ensure_room_columns(conn) -> None:
-    columns = conn.execute(text("PRAGMA table_info(rooms)")).fetchall()
-    column_names = {column[1] for column in columns}
+    try:
+        columns = conn.execute(text("PRAGMA table_info(rooms)")).fetchall()
+        column_names = {column[1] for column in columns}
 
-    if "internships_id" not in column_names:
-        conn.execute(text("ALTER TABLE rooms ADD COLUMN internships_id INTEGER NULL"))
+        if "internships_id" not in column_names:
+            conn.execute(text("ALTER TABLE rooms ADD COLUMN internships_id INTEGER NULL"))
+    except Exception:
+        pass  # Table doesn't exist yet, will be created by Base.metadata.create_all()
 
 def _ensure_room_timestamps(conn) -> None:
-    columns = conn.execute(text("PRAGMA table_info(rooms)")).fetchall()
-    column_names = {column[1] for column in columns}
+    try:
+        columns = conn.execute(text("PRAGMA table_info(rooms)")).fetchall()
+        column_names = {column[1] for column in columns}
 
-    if "created_at" in column_names:
-        conn.execute(text("UPDATE rooms SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL"))
-    if "updated_at" in column_names:
-        conn.execute(text("UPDATE rooms SET updated_at = CURRENT_TIMESTAMP WHERE updated_at IS NULL"))
+        if "created_at" in column_names:
+            conn.execute(text("UPDATE rooms SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL"))
+        if "updated_at" in column_names:
+            conn.execute(text("UPDATE rooms SET updated_at = CURRENT_TIMESTAMP WHERE updated_at IS NULL"))
+    except Exception:
+        pass  # Table doesn't exist yet
 
 def _rebuild_rooms_table_without_internship_field(conn) -> None:
     columns = conn.execute(text("PRAGMA table_info(rooms)")).fetchall()
@@ -157,37 +172,40 @@ def _rebuild_rooms_table_without_internship_field(conn) -> None:
     conn.execute(text("PRAGMA foreign_keys=on"))
 
 def _ensure_history_columns(conn) -> None:
-    columns = conn.execute(text("PRAGMA table_info(histories)")).fetchall()
-    column_names = {column[1] for column in columns}
+    try:
+        columns = conn.execute(text("PRAGMA table_info(histories)")).fetchall()
+        column_names = {column[1] for column in columns}
 
-    if not column_names:
-        return
+        if not column_names:
+            return
 
-    if "schedule_id" not in column_names:
-        conn.execute(text("ALTER TABLE histories ADD COLUMN schedule_id INTEGER NULL"))
+        if "schedule_id" not in column_names:
+            conn.execute(text("ALTER TABLE histories ADD COLUMN schedule_id INTEGER NULL"))
 
-    if "room_id" not in column_names:
-        conn.execute(text("ALTER TABLE histories ADD COLUMN room_id INTEGER NULL"))
+        if "room_id" not in column_names:
+            conn.execute(text("ALTER TABLE histories ADD COLUMN room_id INTEGER NULL"))
 
-    conn.execute(
-        text(
-            """
-            UPDATE histories
-            SET schedule_id = (
-                SELECT schedules.id
-                FROM schedules
-                WHERE schedules.room_id = histories.room_id
-                LIMIT 1
+        conn.execute(
+            text(
+                """
+                UPDATE histories
+                SET schedule_id = (
+                    SELECT schedules.id
+                    FROM schedules
+                    WHERE schedules.room_id = histories.room_id
+                    LIMIT 1
+                )
+                WHERE schedule_id IS NULL AND room_id IS NOT NULL
+                """
             )
-            WHERE schedule_id IS NULL AND room_id IS NOT NULL
-            """
         )
-    )
 
-    if "created_at" in column_names:
-        conn.execute(text("UPDATE histories SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL"))
-    if "updated_at" in column_names:
-        conn.execute(text("UPDATE histories SET updated_at = CURRENT_TIMESTAMP WHERE updated_at IS NULL"))
+        if "created_at" in column_names:
+            conn.execute(text("UPDATE histories SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL"))
+        if "updated_at" in column_names:
+            conn.execute(text("UPDATE histories SET updated_at = CURRENT_TIMESTAMP WHERE updated_at IS NULL"))
+    except Exception:
+        pass  # Table doesn't exist yet
 
 def init_db() -> None:
     Base.metadata.create_all(bind=engine)
@@ -200,6 +218,45 @@ def init_db() -> None:
         _ensure_user_profile_columns(conn)
         _ensure_user_timestamps(conn)
         _rebuild_users_table_without_unique_internships_id(conn)
+        
+        def _ensure_internship_columns(conn) -> None:
+            columns = conn.execute(text("PRAGMA table_info(internships)")).fetchall()
+            column_names = {column[1] for column in columns}
+            if "region_id" not in column_names:
+                try:
+                    conn.execute(text("ALTER TABLE internships ADD COLUMN region_id INTEGER NULL"))
+                except Exception as e:
+                    pass  # Column might already exist, ignore
+        
+        def _ensure_student_columns(conn) -> None:
+            columns = conn.execute(text("PRAGMA table_info(students)")).fetchall()
+            column_names = {column[1] for column in columns}
+            if "name" not in column_names:
+                conn.execute(text("ALTER TABLE students ADD COLUMN name VARCHAR(100) NULL"))
+            if "cpf" not in column_names:
+                conn.execute(text("ALTER TABLE students ADD COLUMN cpf VARCHAR(20) NULL"))
+            if "email" not in column_names:
+                conn.execute(text("ALTER TABLE students ADD COLUMN email VARCHAR(150) NULL"))
+            if "phone" not in column_names:
+                conn.execute(text("ALTER TABLE students ADD COLUMN phone VARCHAR(20) NULL"))
+            if "semester" not in column_names:
+                conn.execute(text("ALTER TABLE students ADD COLUMN semester INTEGER NULL"))
+            if "document_url" not in column_names:
+                conn.execute(text("ALTER TABLE students ADD COLUMN document_url VARCHAR(500) NOT NULL DEFAULT ''"))
+            if "director_signed_pdf" not in column_names:
+                conn.execute(text("ALTER TABLE students ADD COLUMN director_signed_pdf BLOB NULL"))
+            if "internship_start_date" not in column_names:
+                conn.execute(text("ALTER TABLE students ADD COLUMN internship_start_date DATE NULL"))
+            if "internship_expected_end_date" not in column_names:
+                conn.execute(text("ALTER TABLE students ADD COLUMN internship_expected_end_date DATE NULL"))
+            if "discipline_id" not in column_names:
+                try:
+                    conn.execute(text("ALTER TABLE students ADD COLUMN discipline_id INTEGER NULL"))
+                except Exception as e:
+                    pass  # Column might already exist, ignore
+        
+        _ensure_internship_columns(conn)
+        _ensure_student_columns(conn)
     seed_admin()
 
 def seed_admin():
@@ -241,7 +298,14 @@ def seed_admin():
             if "region_id" not in column_names:
                 conn.execute(text("ALTER TABLE disciplines ADD COLUMN region_id INTEGER NULL"))
 
+        def _ensure_internship_columns(conn) -> None:
+            columns = conn.execute(text("PRAGMA table_info(internships)")).fetchall()
+            column_names = {column[1] for column in columns}
+            if "region_id" not in column_names:
+                conn.execute(text("ALTER TABLE internships ADD COLUMN region_id INTEGER NULL"))
+
         _ensure_discipline_columns(conn)
+        _ensure_internship_columns(conn)
         _ensure_education_institute_columns(conn)
 
         def _ensure_student_columns(conn) -> None:
@@ -265,10 +329,8 @@ def seed_admin():
                 conn.execute(text("ALTER TABLE students ADD COLUMN internship_start_date DATE NULL"))
             if "internship_expected_end_date" not in column_names:
                 conn.execute(text("ALTER TABLE students ADD COLUMN internship_expected_end_date DATE NULL"))
-            if "internship_start_date" not in column_names:
-                conn.execute(text("ALTER TABLE students ADD COLUMN internship_start_date DATE NULL"))
-            if "internship_expected_end_date" not in column_names:
-                conn.execute(text("ALTER TABLE students ADD COLUMN internship_expected_end_date DATE NULL"))
+            if "discipline_id" not in column_names:
+                conn.execute(text("ALTER TABLE students ADD COLUMN discipline_id INTEGER NULL"))
 
         _ensure_student_columns(conn)
         conn.execute(
