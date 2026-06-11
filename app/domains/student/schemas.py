@@ -67,6 +67,7 @@ class StudentResponse(StudentBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    course_id: int | None = None
     created_at: datetime
     updated_at: datetime
 
