@@ -119,7 +119,7 @@ def _ensure_room_columns(conn) -> None:
         if "internships_id" not in column_names:
             conn.execute(text("ALTER TABLE rooms ADD COLUMN internships_id INTEGER NULL"))
     except Exception:
-        pass  # Table doesn't exist yet, will be created by Base.metadata.create_all()
+        pass
 
 def _ensure_room_timestamps(conn) -> None:
     try:
@@ -131,7 +131,7 @@ def _ensure_room_timestamps(conn) -> None:
         if "updated_at" in column_names:
             conn.execute(text("UPDATE rooms SET updated_at = CURRENT_TIMESTAMP WHERE updated_at IS NULL"))
     except Exception:
-        pass  # Table doesn't exist yet
+        pass 
 
 def _rebuild_rooms_table_without_internship_field(conn) -> None:
     columns = conn.execute(text("PRAGMA table_info(rooms)")).fetchall()
@@ -205,7 +205,7 @@ def _ensure_history_columns(conn) -> None:
         if "updated_at" in column_names:
             conn.execute(text("UPDATE histories SET updated_at = CURRENT_TIMESTAMP WHERE updated_at IS NULL"))
     except Exception:
-        pass  # Table doesn't exist yet
+        pass
 
 def init_db() -> None:
     Base.metadata.create_all(bind=engine)
@@ -228,7 +228,7 @@ def init_db() -> None:
                 try:
                     conn.execute(text("ALTER TABLE internships ADD COLUMN region_id INTEGER NULL"))
                 except Exception as e:
-                    pass  # Column might already exist, ignore
+                    pass 
         
         def _ensure_student_columns(conn) -> None:
             columns = conn.execute(text("PRAGMA table_info(students)")).fetchall()
@@ -255,7 +255,17 @@ def init_db() -> None:
                 try:
                     conn.execute(text("ALTER TABLE students ADD COLUMN discipline_id INTEGER NULL"))
                 except Exception as e:
-                    pass  # Column might already exist, ignore
+                    pass
+            if "course_id" not in column_names:
+                try:
+                    conn.execute(text("ALTER TABLE students ADD COLUMN course_id INTEGER NULL"))
+                except Exception as e:
+                    pass
+            if "internship_id" not in column_names:
+                try:
+                    conn.execute(text("ALTER TABLE students ADD COLUMN internship_id INTEGER NULL"))
+                except Exception as e:
+                    pass
         
         def _rebuild_internships_table(conn) -> None:
             columns = conn.execute(text("PRAGMA table_info(internships)")).fetchall()

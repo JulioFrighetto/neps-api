@@ -44,7 +44,7 @@ class StudentListResponse(BaseModel):
     cpf: str | None
     email: str | None
     phone: str | None
-    course_id: int
+    course_id: int | None = None
     discipline_id: int | None
     semester: int | None
     institution_id: int
@@ -138,7 +138,7 @@ def _to_response(student: Student, include: set[str] | None = None) -> StudentLi
 @router.get("/", response_model=Page[StudentListResponse])
 def list_students(
     page: int = Query(1, ge=1),
-    per_page: int = Query(10, ge=1, le=100),
+    per_page: int = Query(10, ge=1, le=500),
     name_like: str | None = Query(None),
     cpf: str | None = Query(None),
     email_like: str | None = Query(None),
