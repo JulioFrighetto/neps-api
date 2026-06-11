@@ -1,3 +1,5 @@
+import logging
+
 from sqlalchemy.orm import Session
 
 from app.core.settings import settings
@@ -5,6 +7,8 @@ from app.core.email import EmailDeliveryError, build_welcome_body, send_email
 from app.core.jwt import create_reset_token
 from app.domains.education_institute import repository
 from app.domains.education_institute.schemas import EducationInstituteCreate
+
+logger = logging.getLogger(__name__)
 
 
 def create_usecase(db: Session, data: EducationInstituteCreate):
@@ -16,6 +20,6 @@ def create_usecase(db: Session, data: EducationInstituteCreate):
         body = build_welcome_body(reset_link, data.user_name or institute.name)
         try:
             send_email(target_email, "Bem-vindo ao NEPS", body)
-        except EmailDeliveryError:
-            pass
+        except EmailDeliveryError as exc:
+            logger.error("Falha ao enviar e-mail de boas-vindas para %s: %s", target_email, exc)
     return institute

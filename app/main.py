@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.database import init_db
 from app.core.models import *  # noqa: F401, F403 — registers all models with Base.metadata
 from app.core.settings import settings
+from app.domains.course.router import router as course_router
 from app.domains.discipline.router import router as discipline_router
 from app.domains.education_institute.router import router as edu_institute_router
 from app.domains.region.router import router as region_router
@@ -44,6 +45,7 @@ API_PREFIX = "/api/v1"
 app.include_router(auth_router, prefix=API_PREFIX)
 app.include_router(user_router, prefix=API_PREFIX)
 app.include_router(edu_institute_router, prefix=API_PREFIX)
+app.include_router(course_router, prefix=API_PREFIX)
 app.include_router(discipline_router, prefix=API_PREFIX)
 app.include_router(region_router, prefix=API_PREFIX)
 app.include_router(room_schedule_router, prefix=API_PREFIX)

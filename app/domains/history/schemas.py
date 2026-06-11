@@ -3,12 +3,20 @@ from datetime import date, datetime
 from pydantic import BaseModel, ConfigDict
 
 
+class HistoryInternshipSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+
+
 class HistoryStudentSummary(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
     name: str | None = None
     cpf: str | None = None
+    internship: HistoryInternshipSummary | None = None
 
 
 class HistoryPeriodSummary(BaseModel):

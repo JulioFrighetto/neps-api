@@ -36,5 +36,9 @@ class DisciplineFilters(BaseModel):
 class DisciplineGetRequest(BaseModel):
     discipline_id: int
 
+class DisciplineBrief(BaseModel):
+    id: int
+    name: str
+
 class DisciplineUpdateRequest(DisciplineUpdate):
     discipline_id: int

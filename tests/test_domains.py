@@ -231,7 +231,12 @@ def test_create_student(client):
     ).json()
     response = client.post(
         "/api/v1/students",
-        json={"edu_institute_id": inst["id"], "discipline_id": discipline["id"], "status": "PENDING"},
+        json={
+            "edu_institute_id": inst["id"],
+            "discipline_id": discipline["id"],
+            "status": "PENDING",
+            "document_url": "https://example.com/document.pdf",
+        },
     )
     assert response.status_code == 201
     assert response.json()["status"] == "PENDING"

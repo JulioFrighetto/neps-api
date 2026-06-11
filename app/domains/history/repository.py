@@ -3,12 +3,16 @@ from datetime import date
 from sqlalchemy.orm import Session, selectinload
 
 from app.domains.history.model import History
+from app.domains.student.model import Student
 
 
 def get_by_period(db: Session, period_id: int, page: int = 1, per_page: int = 10) -> tuple[list[History], int]:
     query = (
         db.query(History)
-        .options(selectinload(History.student), selectinload(History.period))
+        .options(
+            selectinload(History.student).selectinload(Student.internship),
+            selectinload(History.period),
+        )
         .filter(History.period_id == period_id)
         .order_by(History.start_date.desc(), History.id.desc())
     )
@@ -21,7 +25,7 @@ def get_by_room(db: Session, room_id: int, page: int = 1, per_page: int = 10) ->
     query = (
         db.query(History)
         .options(
-            selectinload(History.student),
+            selectinload(History.student).selectinload(Student.internship),
             selectinload(History.period),
             selectinload(History.room),
             selectinload(History.schedule),
@@ -38,7 +42,7 @@ def get_by_schedule(db: Session, schedule_id: int, page: int = 1, per_page: int 
     query = (
         db.query(History)
         .options(
-            selectinload(History.student),
+            selectinload(History.student).selectinload(Student.internship),
             selectinload(History.period),
             selectinload(History.room),
             selectinload(History.schedule),
@@ -55,7 +59,7 @@ def get_by_student(db: Session, student_id: int, page: int = 1, per_page: int = 
     query = (
         db.query(History)
         .options(
-            selectinload(History.student),
+            selectinload(History.student).selectinload(Student.internship),
             selectinload(History.period),
             selectinload(History.room),
             selectinload(History.schedule),

@@ -222,6 +222,8 @@ def init_db() -> None:
         def _ensure_internship_columns(conn) -> None:
             columns = conn.execute(text("PRAGMA table_info(internships)")).fetchall()
             column_names = {column[1] for column in columns}
+            if "name" not in column_names:
+                conn.execute(text("ALTER TABLE internships ADD COLUMN name VARCHAR(100) NOT NULL DEFAULT ''"))
             if "region_id" not in column_names:
                 try:
                     conn.execute(text("ALTER TABLE internships ADD COLUMN region_id INTEGER NULL"))
@@ -255,7 +257,56 @@ def init_db() -> None:
                 except Exception as e:
                     pass  # Column might already exist, ignore
         
+        def _rebuild_internships_table(conn) -> None:
+            columns = conn.execute(text("PRAGMA table_info(internships)")).fetchall()
+            column_names = {column[1] for column in columns}
+            col_defaults = {c[1]: c[4] for c in columns}
+            if "course_id" not in column_names and col_defaults.get("created_at") == "CURRENT_TIMESTAMP":
+                return
+            conn.execute(text("PRAGMA foreign_keys=off"))
+            conn.execute(text("ALTER TABLE internships RENAME TO internships_legacy"))
+            conn.execute(
+                text(
+                    """
+                    CREATE TABLE internships (
+                        id INTEGER NOT NULL PRIMARY KEY,
+                        name VARCHAR(100) NOT NULL UNIQUE,
+                        region_id INTEGER NULL,
+                        is_active BOOLEAN NOT NULL DEFAULT 1,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY(region_id) REFERENCES regions(id)
+                    )
+                    """
+                )
+            )
+            conn.execute(
+                text(
+                    """
+                    INSERT INTO internships (id, name, region_id, is_active, created_at, updated_at)
+                    SELECT id, COALESCE(name, ''), region_id, is_active, created_at, updated_at
+                    FROM internships_legacy
+                    """
+                )
+            )
+            conn.execute(text("DROP TABLE internships_legacy"))
+            conn.execute(text("PRAGMA foreign_keys=on"))
+
+        _rebuild_internships_table(conn)
         _ensure_internship_columns(conn)
+
+        def _ensure_internship_timestamps(conn) -> None:
+            try:
+                columns = conn.execute(text("PRAGMA table_info(internships)")).fetchall()
+                column_names = {column[1] for column in columns}
+                if "created_at" in column_names:
+                    conn.execute(text("UPDATE internships SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL"))
+                if "updated_at" in column_names:
+                    conn.execute(text("UPDATE internships SET updated_at = CURRENT_TIMESTAMP WHERE updated_at IS NULL"))
+            except Exception:
+                pass
+        _ensure_internship_timestamps(conn)
+
         _ensure_student_columns(conn)
     seed_admin()
 
@@ -301,6 +352,8 @@ def seed_admin():
         def _ensure_internship_columns(conn) -> None:
             columns = conn.execute(text("PRAGMA table_info(internships)")).fetchall()
             column_names = {column[1] for column in columns}
+            if "name" not in column_names:
+                conn.execute(text("ALTER TABLE internships ADD COLUMN name VARCHAR(100) NOT NULL DEFAULT ''"))
             if "region_id" not in column_names:
                 conn.execute(text("ALTER TABLE internships ADD COLUMN region_id INTEGER NULL"))
 
@@ -331,6 +384,10 @@ def seed_admin():
                 conn.execute(text("ALTER TABLE students ADD COLUMN internship_expected_end_date DATE NULL"))
             if "discipline_id" not in column_names:
                 conn.execute(text("ALTER TABLE students ADD COLUMN discipline_id INTEGER NULL"))
+            if "professor_name" not in column_names:
+                conn.execute(text("ALTER TABLE students ADD COLUMN professor_name VARCHAR(100) NULL"))
+            if "preceptor_name" not in column_names:
+                conn.execute(text("ALTER TABLE students ADD COLUMN preceptor_name VARCHAR(100) NULL"))
 
         _ensure_student_columns(conn)
         conn.execute(

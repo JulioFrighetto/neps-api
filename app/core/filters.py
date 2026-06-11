@@ -76,6 +76,17 @@ def apply_filters(
                     query = query.filter(col.in_(values))
                     applied.append(key)
 
+        elif key.endswith("_isnull"):
+            field = key[:-7]
+            col = getattr(model, field, None)
+            if col is not None:
+                if _parse_bool(str(raw_value)):
+                    query = query.filter(col.is_(None))
+                    applied.append(key)
+                else:
+                    query = query.filter(col.is_not(None))
+                    applied.append(key)
+
         else:
             col = getattr(model, key, None)
             if col is not None:

@@ -16,7 +16,10 @@ def get_all_usecase(db: Session, page: int, per_page: int, filters: dict, curren
         else:
             items = []
             total = 0
-    
+    else:
+        items = []
+        total = 0
+
     return Page(
         items=items,
         pagination=PaginationInfo(

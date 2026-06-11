@@ -1,26 +1,25 @@
 import math
 
-from fastapi import APIRouter, Depends, HTTPException, Body, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.deps import get_current_user
-from app.core.schemas import FilterInfo, Page, PaginationInfo
 from app.core.email import EmailDeliveryError, build_welcome_body, send_email
 from app.core.jwt import create_reset_token
+from app.core.schemas import FilterInfo, Page, PaginationInfo
 from app.core.settings import settings
 from app.domains.education_institute import repository
 from app.domains.education_institute.schemas import (
-    EducationInstituteCreate,
-    EducationInstituteResponse,
-    EducationInstituteUpdate,
-)
+    EducationInstituteBrief, EducationInstituteCreate,
+    EducationInstituteFilters, EducationInstituteResponse,
+    EducationInstituteUpdate)
 from app.domains.education_institute.usecases import find_one
 from app.domains.education_institute.usecases.create import create_usecase
 from app.domains.education_institute.usecases.get_all import get_all_usecase
 from app.domains.education_institute.usecases.update import update_usecase
-from app.domains.education_institute.usecases.update import update_usecase
+from app.domains.user.model import User
 
 router = APIRouter(prefix="/education-institutes", tags=["Education Institutes"])
 
@@ -35,14 +34,38 @@ class InstituteUpdateRequest(EducationInstituteUpdate):
     institute_id: int
 
 
+@router.get("/list", response_model=Page[EducationInstituteBrief])
+def list_institutes_brief(
+    filters: EducationInstituteFilters = Depends(),
+    current_user: User = Depends(get_current_user),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(10, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    page_obj = get_all_usecase(
+        db=db,
+        page=page,
+        per_page=per_page,
+        filters=filters.model_dump(exclude_none=True),
+        current_user=current_user,
+    )
+    brief_items = [{"id": d.id, "name": d.name} for d in page_obj.items]
+    return Page(
+        items=brief_items,
+        pagination=page_obj.pagination,
+        filters=page_obj.filters,
+    )
+
+
+
 @router.get("/", response_model=Page[EducationInstituteResponse])
 def list_institutes(
-    page: int = Body(1, ge=1),
-    per_page: int = Body(10, ge=1, le=100),
-    name_like: str | None = Body(None),
-    cnpj: str | None = Body(None),
-    is_active: bool | None = Body(None),
-    priority: int | None = Body(None),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(10, ge=1, le=100),
+    name_like: str | None = Query(None),
+    cnpj: str | None = Query(None),
+    is_active: bool | None = Query(None),
+    priority: int | None = Query(None),
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):

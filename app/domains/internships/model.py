@@ -10,6 +10,8 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from app.domains.room.model import Room
+if TYPE_CHECKING:
+    from app.domains.student.model import Student
 from app.domains.user.model import User
 
 
@@ -31,6 +33,7 @@ class Internship(Base):
         "InternshipsRoom", back_populates="internships", cascade="all, delete-orphan"
     )
     rooms: Mapped[list["Room"]] = relationship("Room", back_populates="internships")  # noqa: F821
+    students: Mapped[list["Student"]] = relationship("Student", back_populates="internship")  # noqa: F821
     users: Mapped[list["User"]] = relationship("User", back_populates="internships")  # noqa: F821
 
     @property

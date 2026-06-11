@@ -1,20 +1,21 @@
 import math
 from datetime import date
 
-from fastapi import APIRouter, Body, Depends, HTTPException, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.deps import get_current_user
 from app.core.schemas import FilterInfo, Page, PaginationInfo
+from app.domains.internships.model import Internship
 from app.domains.student import repository
 from app.domains.student.model import Student
 from app.domains.student.schemas import StudentCreate, StudentUpdate
 
 router = APIRouter(prefix="/students", tags=["Students"])
 
-AVAILABLE_FILTERS = ["name_like", "cpf", "email_like", "discipline_id", "institution_id", "semester", "status"]
+AVAILABLE_FILTERS = ["name_like", "cpf", "email_like", "discipline_id", "institution_id", "semester", "status", "internship_id"]
 
 
 class StudentListResponse(BaseModel):
@@ -32,22 +33,33 @@ class StudentListResponse(BaseModel):
         id: int
         name: str
 
+    class InternshipSummary(BaseModel):
+        model_config = ConfigDict(from_attributes=True)
+
+        id: int
+        name: str
+
     id: int
     name: str | None
     cpf: str | None
     email: str | None
     phone: str | None
-    discipline_id: int
+    course_id: int
+    discipline_id: int | None
     semester: int | None
     institution_id: int
     status: str
     is_active: bool
     document_url: str
-    director_signed_pdf: bytes | None = None
+    director_signed_pdf: str | None = None
+    internship_id: int | None = None
     internship_start_date: date | None = None
     internship_expected_end_date: date | None = None
+    professor_name: str | None = None
+    preceptor_name: str | None = None
     discipline: DisciplineSummary | None = None
     institution: InstitutionSummary | None = None
+    internship: InternshipSummary | None = None
 
 
 class StudentGetRequest(BaseModel):
@@ -71,6 +83,11 @@ class StudentUpdateRequest(StudentUpdate):
     student_id: int
 
 
+class LinkInternshipRequest(BaseModel):
+    student_id: int
+    internship_id: int
+
+
 def _to_response(student: Student, include: set[str] | None = None) -> StudentListResponse:
     include = include or set()
 
@@ -80,15 +97,23 @@ def _to_response(student: Student, include: set[str] | None = None) -> StudentLi
         cpf=student.cpf,
         email=student.email,
         phone=student.phone,
+        course_id=student.course_id,
         discipline_id=student.discipline_id,
         semester=student.semester,
         institution_id=student.edu_institute_id,
         status=student.status,
         is_active=student.is_active,
         document_url=student.document_url,
-        director_signed_pdf=student.director_signed_pdf,
+        director_signed_pdf=(
+            student.director_signed_pdf.decode("utf-8")
+            if isinstance(student.director_signed_pdf, bytes)
+            else student.director_signed_pdf
+        ),
+        internship_id=student.internship_id,
         internship_start_date=student.internship_start_date,
         internship_expected_end_date=student.internship_expected_end_date,
+        professor_name=student.professor_name,
+        preceptor_name=student.preceptor_name,
         discipline=(
             StudentListResponse.DisciplineSummary(id=student.discipline.id, name=student.discipline.name)
             if "discipline" in include and student.discipline
@@ -102,21 +127,28 @@ def _to_response(student: Student, include: set[str] | None = None) -> StudentLi
             if "institution" in include and student.education_institute
             else None
         ),
+        internship=(
+            StudentListResponse.InternshipSummary(id=student.internship.id, name=student.internship.name)
+            if student.internship
+            else None
+        ),
     )
 
 
 @router.get("/", response_model=Page[StudentListResponse])
 def list_students(
-    page: int = Body(1, ge=1),
-    per_page: int = Body(10, ge=1, le=100),
-    name_like: str | None = Body(None),
-    cpf: str | None = Body(None),
-    email_like: str | None = Body(None),
-    discipline_id: int | None = Body(None),
-    institution_id: int | None = Body(None),
-    semester: int | None = Body(None),
-    status: str | None = Body(None),
-    include: str | None = Body(None, description="Relacionamentos a incluir: discipline,institution"),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(10, ge=1, le=100),
+    name_like: str | None = Query(None),
+    cpf: str | None = Query(None),
+    email_like: str | None = Query(None),
+    discipline_id: int | None = Query(None),
+    institution_id: int | None = Query(None),
+    semester: int | None = Query(None),
+    status: str | None = Query(None),
+    internship_id: int | None = Query(None),
+    internship_id_null: bool | None = Query(None, description="Filtrar alunos sem vínculo com campo de estágio"),
+    include: str | None = Query(None, description="Relacionamentos a incluir: discipline,institution"),
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
@@ -135,6 +167,10 @@ def list_students(
         filters["semester"] = semester
     if status is not None:
         filters["status"] = status
+    if internship_id is not None:
+        filters["internship_id"] = internship_id
+    if internship_id_null is not None:
+        filters["internship_id_isnull"] = internship_id_null
 
     include_set = {item.strip().lower() for item in include.split(",")} if include else set()
 
@@ -207,4 +243,18 @@ def update_student(data: StudentUpdateRequest, db: Session = Depends(get_db)):
     student = repository.update(db, data.student_id, data)
     if not student:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Aluno não encontrado")
+    return _to_response(student)
+
+
+@router.post("/link-internship", response_model=StudentListResponse)
+def link_student_to_internship(data: LinkInternshipRequest, db: Session = Depends(get_db)):
+    student = repository.get_by_id(db, data.student_id)
+    if not student:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Aluno não encontrado")
+    internship = db.query(Internship).filter(Internship.id == data.internship_id).first()
+    if not internship:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Campo de estágio não encontrado")
+    student.internship_id = data.internship_id
+    db.commit()
+    db.refresh(student)
     return _to_response(student)

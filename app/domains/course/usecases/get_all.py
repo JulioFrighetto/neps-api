@@ -1,8 +1,9 @@
 import math
 
 from app.core.schemas import FilterInfo, Page, PaginationInfo
-from app.domains.discipline import repository
-from app.domains.discipline.schemas import DisciplineFilters
+from app.domains.course import repository
+from app.domains.course.constants import AVAILABLE_FILTERS
+from app.domains.course.schemas import CourseFilters
 
 
 def get_all_usecase(db, page, per_page, filters):
@@ -24,7 +25,6 @@ def get_all_usecase(db, page, per_page, filters):
         ),
         filters=FilterInfo(
             applied=list(filters.keys()),
-            available=DisciplineFilters.available_filters(),
+            available=CourseFilters.available_filters(),
         ),
     )
-    

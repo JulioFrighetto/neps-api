@@ -19,11 +19,17 @@ class EmailDeliveryError(RuntimeError):
 
 def send_email(to_email: str, subject: str, body: str) -> None:
     """Send email via MailerSend (preferred) or SMTP (fallback)."""
+    mailersend_error: str | None = None
+
     # Try MailerSend first (preferred)
     if settings.MAILERSEND_API_TOKEN and settings.MAILERSEND_FROM_EMAIL:
-        return _send_via_mailersend(to_email, subject, body)
+        try:
+            return _send_via_mailersend(to_email, subject, body)
+        except EmailDeliveryError as exc:
+            mailersend_error = str(exc)
+            logger.warning("MailerSend failed, attempting SMTP fallback", extra={"error": mailersend_error})
 
-    # Otherwise try SMTP first, and if it fails try SendGrid as fallback
+    # Try SMTP, and if it fails try SendGrid as fallback
     if settings.SMTP_HOST:
         try:
             return _send_via_smtp(to_email, subject, body)
@@ -33,19 +39,18 @@ def send_email(to_email: str, subject: str, body: str) -> None:
                 try:
                     return _send_via_sendgrid(to_email, subject, body)
                 except EmailDeliveryError as sg_exc:
-                    logger.error("SendGrid fallback also failed", extra={"smtp_error": str(smtp_exc), "sendgrid_error": str(sg_exc)})
-                    raise EmailDeliveryError(f"SMTP failed: {smtp_exc}; SendGrid fallback failed: {sg_exc}") from sg_exc
-            # no SendGrid configured, re-raise original SMTP error
+                    logger.error("All email providers failed", extra={"mailersend_error": mailersend_error, "smtp_error": str(smtp_exc), "sendgrid_error": str(sg_exc)})
+                    raise EmailDeliveryError(f"MailerSend: {mailersend_error}; SMTP: {smtp_exc}; SendGrid: {sg_exc}") from sg_exc
             raise
-    
-    # No email internships configured
+
+    # No email provider configured (MailerSend was tried but failed, SMTP not available)
     if settings.DEBUG:
         logger.warning(
-            "Email internships não configurado (MailerSend ou SMTP)",
+            "Email não configurado (MailerSend ou SMTP)",
             extra={"to_email": to_email, "subject": subject},
         )
         return
-    
+
     raise EmailDeliveryError("Nenhum serviço de email configurado (MailerSend ou SMTP)")
 
 

@@ -1,7 +1,6 @@
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.filters import apply_filters
-
 from app.domains.discipline.model import Discipline
 from app.domains.discipline.schemas import DisciplineCreate, DisciplineUpdate
 
@@ -16,8 +15,6 @@ def get_all(db: Session, page: int = 1, per_page: int = 10, filters: dict | None
 
 
 def get_by_id(db: Session, discipline_id: int) -> Discipline | None:
-    
-    print(vars(db.query(Discipline).options(selectinload(Discipline.region)).filter(Discipline.id == discipline_id).first()))
     return db.query(Discipline).options(selectinload(Discipline.region)).filter(Discipline.id == discipline_id).first()
 
 

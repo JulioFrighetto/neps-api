@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.filters import apply_filters
+from app.domains.internships.model import Internship
 from app.domains.student.model import Student
 from app.domains.student.schemas import StudentCreate, StudentUpdate
 
@@ -20,6 +21,7 @@ def get_by_id(db: Session, student_id: int) -> Student | None:
         .options(
             selectinload(Student.discipline),
             selectinload(Student.education_institute),
+            selectinload(Student.internship),
         )
         .filter(Student.id == student_id)
         .first()
@@ -45,7 +47,10 @@ def get_by_institute(db: Session, institute_id: int, page: int = 1, per_page: in
 
 
 def create(db: Session, data: StudentCreate) -> Student:
-    student = Student(**data.model_dump())
+    values = data.model_dump()
+    if values.get("director_signed_pdf") is not None:
+        values["director_signed_pdf"] = values["director_signed_pdf"].encode("utf-8")
+    student = Student(**values)
     db.add(student)
     db.commit()
     db.refresh(student)
@@ -56,7 +61,10 @@ def update(db: Session, student_id: int, data: StudentUpdate) -> Student | None:
     student = get_by_id(db, student_id)
     if not student:
         return None
-    for field, value in data.model_dump(exclude_unset=True).items():
+    values = data.model_dump(exclude_unset=True)
+    if values.get("director_signed_pdf") is not None:
+        values["director_signed_pdf"] = values["director_signed_pdf"].encode("utf-8")
+    for field, value in values.items():
         setattr(student, field, value)
     db.commit()
     db.refresh(student)

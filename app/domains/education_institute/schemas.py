@@ -1,6 +1,7 @@
 from datetime import datetime
+from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, Field, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class EducationInstituteBase(BaseModel):
@@ -40,7 +41,7 @@ class EducationInstituteResponse(EducationInstituteBase):
     class StudentSummary(BaseModel):
         model_config = ConfigDict(from_attributes=True)
         id: int
-        discipline_id: int
+        discipline_id: int | None = None
         status: str
 
     class UserSummary(BaseModel):
@@ -59,3 +60,17 @@ class EducationInstituteResponse(EducationInstituteBase):
         name: str
 
     regions: list[RegionSummary] = []
+
+class EducationInstituteBrief(BaseModel):
+    id: int
+    name: str
+
+class EducationInstituteFilters(BaseModel):
+    name_like: Optional[str] = None
+    cnpj: Optional[str] = None
+    is_active: Optional[bool] = None
+    priority: Optional[int] = None
+
+
+
+
