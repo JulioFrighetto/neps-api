@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Query, Session, selectinload
 
 from app.core.filters import apply_filters
 from app.domains.room.model import Room
@@ -10,8 +10,12 @@ from app.domains.room.schemas import (
 )
 
 
+def _base_query(db: Session) -> Query:
+    return db.query(Room).options(selectinload(Room.internships))
+
+
 def get_all(db: Session, page: int = 1, per_page: int = 10, filters: dict | None = None) -> tuple[list[Room], int]:
-    query = db.query(Room)
+    query = _base_query(db)
     if filters:
         query, _ = apply_filters(query, Room, filters)
     total = query.count()
@@ -20,11 +24,11 @@ def get_all(db: Session, page: int = 1, per_page: int = 10, filters: dict | None
 
 
 def get_by_id(db: Session, room_id: int) -> Room | None:
-    return db.query(Room).filter(Room.id == room_id).first()
+    return _base_query(db).filter(Room.id == room_id).first()
 
 
 def get_by_internships(db: Session, internships_id: int, page: int = 1, per_page: int = 10, filters: dict | None = None) -> tuple[list[Room], int]:
-    query = db.query(Room).filter(Room.internships_id == internships_id)
+    query = _base_query(db).filter(Room.internships_id == internships_id)
     if filters:
         query, _ = apply_filters(query, Room, filters)
     total = query.count()

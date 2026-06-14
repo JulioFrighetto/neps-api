@@ -3,6 +3,13 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict
 
 
+class InternshipSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+
+
 class RoomBase(BaseModel):
     internships_id: int
     name: str
@@ -20,6 +27,7 @@ class RoomUpdate(BaseModel):
     room_capacity: int | None = None
     has_gurney: bool | None = None
     is_active: bool | None = None
+    internships_id: int | None = None
 
 
 class RoomResponse(RoomBase):
@@ -28,3 +36,4 @@ class RoomResponse(RoomBase):
     id: int
     created_at: datetime
     updated_at: datetime
+    internships: InternshipSummary | None = None

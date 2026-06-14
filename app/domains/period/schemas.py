@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_serializer
 
 
 class PeriodBase(BaseModel):
@@ -31,6 +31,10 @@ class PeriodResponse(PeriodBase):
     id: int
     created_at: datetime
     updated_at: datetime
+
+    @field_serializer("priority_start_date", "priority_end_date", "start_date", "end_date")
+    def serialize_date(self, value: date) -> str:
+        return value.isoformat() + "T00:00:00"
 
 
 class StudentSummary(BaseModel):
