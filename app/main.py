@@ -17,6 +17,7 @@ from app.domains.history.router import router as history_router
 from app.domains.student.router import router as student_router
 from app.domains.user.auth_router import router as auth_router
 from app.domains.user.router import router as user_router
+from app.domains.dashboard.router import router as dashboard_router
 from app.domains.period.router import router as period_router
 
 app = FastAPI(
@@ -55,6 +56,7 @@ app.include_router(internships_room_router, prefix=API_PREFIX)
 app.include_router(internships_schedule_router, prefix=API_PREFIX)
 app.include_router(history_router, prefix=API_PREFIX)
 app.include_router(student_router, prefix=API_PREFIX)
+app.include_router(dashboard_router, prefix=API_PREFIX)
 app.include_router(period_router, prefix=API_PREFIX)
 
 

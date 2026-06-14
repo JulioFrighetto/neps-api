@@ -44,7 +44,7 @@ class StudentListResponse(BaseModel):
     cpf: str | None
     email: str | None
     phone: str | None
-    course_id: int
+    course_id: int | None = None
     discipline_id: int | None
     semester: int | None
     institution_id: int
