@@ -156,7 +156,11 @@ def list_students(
     if name_like is not None:
         filters["name_like"] = name_like
     if cpf is not None:
-        filters["cpf"] = cpf
+        digits = "".join(c for c in cpf if c.isdigit())
+        if len(digits) == 11:
+            filters["cpf"] = f"{digits[:3]}.{digits[3:6]}.{digits[6:9]}-{digits[9:]}"
+        else:
+            filters["cpf_like"] = cpf
     if email_like is not None:
         filters["email_like"] = email_like
     if discipline_id is not None:

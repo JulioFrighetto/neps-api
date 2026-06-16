@@ -1,6 +1,6 @@
 import math
 
-from fastapi import APIRouter, Body, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import selectinload
@@ -40,14 +40,14 @@ class PeriodUpdateRequest(PeriodUpdate):
 
 @router.get("/", response_model=Page[PeriodResponse])
 def list_periods(
-    page: int = Body(1, ge=1),
-    per_page: int = Body(10, ge=1, le=100),
-    name_like: str | None = Body(None),
-    is_active: bool | None = Body(None),
-    start_date_from: str | None = Body(None),
-    start_date_to: str | None = Body(None),
-    end_date_from: str | None = Body(None),
-    end_date_to: str | None = Body(None),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(10, ge=1, le=100),
+    name_like: str | None = Query(None),
+    is_active: bool | None = Query(None),
+    start_date_from: str | None = Query(None),
+    start_date_to: str | None = Query(None),
+    end_date_from: str | None = Query(None),
+    end_date_to: str | None = Query(None),
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):

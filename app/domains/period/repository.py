@@ -9,23 +9,31 @@ from app.domains.period.model import Period
 from app.domains.period.schemas import PeriodCreate, PeriodUpdate
 
 
-def _apply_visibility_filter(query: Query, institute_priority: int | None = None, today: date | None = None) -> Query:
+def _apply_visibility_filter(query: Query, institute_priority: int | None = None, today: date | None = None, applied_filters: set[str] | None = None) -> Query:
     if today is None:
         today = date.today()
 
+    applied_filters = applied_filters or set()
+
     # Admins (institute_priority is None) see all active periods
     if institute_priority is None:
-        return query.filter(Period.is_active.is_(True))
+        if "is_active" not in applied_filters:
+            query = query.filter(Period.is_active.is_(True))
+        return query
 
     open_period = and_(Period.start_date <= today, Period.end_date >= today)
     priority_period = and_(Period.priority_start_date <= today, Period.priority_end_date >= today)
 
     # institute_priority == 0 => prioritized institute: see priority window OR open window
     if institute_priority == 0:
-        return query.filter(Period.is_active.is_(True)).filter(or_(open_period, priority_period))
+        if "is_active" not in applied_filters:
+            query = query.filter(Period.is_active.is_(True))
+        return query.filter(or_(open_period, priority_period))
 
     # non-priority institutes see only open window
-    return query.filter(Period.is_active.is_(True)).filter(open_period)
+    if "is_active" not in applied_filters:
+        query = query.filter(Period.is_active.is_(True))
+    return query.filter(open_period)
 
 
 def get_all(
@@ -38,10 +46,12 @@ def get_all(
 ) -> tuple[list[Period], int]:
     query = db.query(Period)
 
+    applied_keys: set[str] = set()
     if filters:
         query, _applied = apply_filters(query, Period, filters)
+        applied_keys = set(_applied)
 
-    query = _apply_visibility_filter(query, institute_priority=institute_priority, today=today)
+    query = _apply_visibility_filter(query, institute_priority=institute_priority, today=today, applied_filters=applied_keys)
 
     total = query.count()
     items = query.offset((page - 1) * per_page).limit(per_page).all()

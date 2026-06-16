@@ -1,6 +1,6 @@
 import math
 
-from fastapi import APIRouter, Body, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -16,7 +16,7 @@ from app.domains.room.schemas import (
 
 router = APIRouter(prefix="/rooms", tags=["Rooms"])
 
-AVAILABLE_FILTERS = ["name_like", "internships_id", "has_gurney", "capacity_min", "capacity_max"]
+AVAILABLE_FILTERS = ["name_like", "internship_id", "has_gurney", "capacity_min", "capacity_max"]
 
 
 class RoomGetRequest(BaseModel):
@@ -35,17 +35,27 @@ class RoomUpdateRequest(RoomUpdate):
 
 @router.get("/", response_model=Page[RoomResponse])
 def list_rooms(
-    page: int = Body(1, ge=1),
-    per_page: int = Body(10, ge=1, le=100),
-    name_like: str | None = Body(None),
-    internships_id: int | None = Body(None),
-    has_gurney: bool | None = Body(None),
-    capacity_min: int | None = Body(None),
-    capacity_max: int | None = Body(None),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(10, ge=1, le=100),
+    name_like: str | None = Query(None),
+    internship_id: int | None = Query(None),
+    has_gurney: bool | None = Query(None),
+    capacity_min: int | None = Query(None),
+    capacity_max: int | None = Query(None),
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    filters = {k: v for k, v in {"name_like": name_like, "internships_id": internships_id, "has_gurney": has_gurney, "capacity_min": capacity_min, "capacity_max": capacity_max}.items() if v is not None}
+    filters = {}
+    if name_like is not None:
+        filters["name_like"] = name_like
+    if internship_id is not None:
+        filters["internships_id"] = internship_id
+    if has_gurney is not None:
+        filters["has_gurney"] = has_gurney
+    if capacity_min is not None:
+        filters["capacity_min"] = capacity_min
+    if capacity_max is not None:
+        filters["capacity_max"] = capacity_max
 
     if current_user.role == "admin":
         items, total = repository.get_all(db, page=page, per_page=per_page, filters=filters)
