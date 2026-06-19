@@ -54,12 +54,15 @@ class EducationInstituteResponse(EducationInstituteBase):
 
     students: list[StudentSummary] = []
     users: list[UserSummary] = []
+
     class RegionSummary(BaseModel):
         model_config = ConfigDict(from_attributes=True)
         id: int
         name: str
 
     regions: list[RegionSummary] = []
+    region_id: int | None = None
+    region: RegionSummary | None = None
 
 class EducationInstituteBrief(BaseModel):
     id: int

@@ -228,7 +228,9 @@ def get_available_slots_for_student(db: Session, student_id: int, room_id: int |
                     continue
 
                 available.append({
+                    "id": period.id,
                     "room_id": room.id,
+                    "room_name": room.name,
                     "day_of_week": day.day_of_week,
                     "period": period.period,
                     "capacity": capacity,

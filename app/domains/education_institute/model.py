@@ -40,3 +40,11 @@ class EducationInstitute(Base):
     regions: Mapped[list["Region"]] = relationship(
         "Region", secondary="education_institute_regions", back_populates="education_institutes"
     )
+
+    @property
+    def region_id(self) -> int | None:
+        return self.regions[0].id if self.regions else None
+
+    @property
+    def region(self) -> "Region | None":
+        return self.regions[0] if self.regions else None

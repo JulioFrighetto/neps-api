@@ -9,6 +9,9 @@ from app.domains.education_institute.model import EducationInstitute
 from app.domains.internships.model import Internship
 from app.domains.internships_room.model import InternshipsRoom
 from app.domains.period.model import Period
+from app.domains.region.model import Region
+from app.domains.room.model import Room
+from app.domains.room_schedule.models_nested import Schedule, ScheduleDay, SchedulePeriod, schedule_period_students
 from app.domains.student.model import Student
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
@@ -39,4 +42,145 @@ def get_dashboard(
         total_periods=total_periods,
         total_institutions=total_institutions,
         total_rooms=total_rooms,
+    )
+
+
+class RegionSlotItem(BaseModel):
+    region_id: int
+    region_name: str
+    vacancies: int
+
+
+class RegionSlotResponse(BaseModel):
+    items: list[RegionSlotItem]
+
+
+@router.get("/vacancies-by-region", response_model=RegionSlotResponse)
+def vacancies_by_region(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    rows = (
+        db.query(Region.id, Region.name, func.sum(Room.room_capacity).label("vacancies"))
+        .join(Internship, Internship.region_id == Region.id)
+        .join(Room, Room.internships_id == Internship.id)
+        .filter(Room.is_active.is_(True), Internship.is_active.is_(True))
+        .group_by(Region.id, Region.name)
+        .order_by(func.sum(Room.room_capacity).desc())
+        .all()
+    )
+    return RegionSlotResponse(
+        items=[
+            RegionSlotItem(region_id=r.id, region_name=r.name, vacancies=r.vacancies)
+            for r in rows
+        ]
+    )
+
+
+class StudentsByInstitutionItem(BaseModel):
+    institution_id: int
+    institution_name: str
+    student_count: int
+
+
+class StudentsByInstitutionResponse(BaseModel):
+    items: list[StudentsByInstitutionItem]
+
+
+@router.get("/students-by-institution", response_model=StudentsByInstitutionResponse)
+def students_by_institution(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    rows = (
+        db.query(
+            EducationInstitute.id,
+            EducationInstitute.name,
+            func.count(Student.id).label("student_count"),
+        )
+        .join(Student, Student.edu_institute_id == EducationInstitute.id)
+        .filter(Student.internship_id.isnot(None))
+        .group_by(EducationInstitute.id, EducationInstitute.name)
+        .order_by(func.count(Student.id).desc())
+        .all()
+    )
+    return StudentsByInstitutionResponse(
+        items=[
+            StudentsByInstitutionItem(institution_id=r.id, institution_name=r.name, student_count=r.student_count)
+            for r in rows
+        ]
+    )
+
+
+class InstitutionCount(BaseModel):
+    institution_name: str
+    student_count: int
+
+
+class StudentsByRegionInstitutionItem(BaseModel):
+    region_name: str
+    institutions: list[InstitutionCount]
+
+
+class StudentsByRegionInstitutionResponse(BaseModel):
+    items: list[StudentsByRegionInstitutionItem]
+
+
+@router.get("/students-by-region-institution", response_model=StudentsByRegionInstitutionResponse)
+def students_by_region_institution(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    rows = (
+        db.query(
+            Region.name.label("region_name"),
+            EducationInstitute.name.label("institution_name"),
+            func.count(Student.id).label("student_count"),
+        )
+        .join(Internship, Student.internship_id == Internship.id)
+        .join(Region, Internship.region_id == Region.id)
+        .join(EducationInstitute, Student.edu_institute_id == EducationInstitute.id)
+        .filter(Student.internship_id.isnot(None))
+        .group_by(Region.id, Region.name, EducationInstitute.id, EducationInstitute.name)
+        .order_by(Region.name, func.count(Student.id).desc())
+        .all()
+    )
+
+    grouped: dict[str, list[InstitutionCount]] = {}
+    for r in rows:
+        grouped.setdefault(r.region_name, []).append(
+            InstitutionCount(institution_name=r.institution_name, student_count=r.student_count)
+        )
+
+    return StudentsByRegionInstitutionResponse(
+        items=[
+            StudentsByRegionInstitutionItem(region_name=region, institutions=institutions)
+            for region, institutions in grouped.items()
+        ]
+    )
+
+
+@router.get("/occupied-by-region", response_model=RegionSlotResponse)
+def occupied_by_region(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    rows = (
+        db.query(Region.id, Region.name, func.count(schedule_period_students.c.student_id).label("vacancies"))
+        .join(Internship, Internship.region_id == Region.id)
+        .join(Room, Room.internships_id == Internship.id)
+        .join(Schedule, Schedule.room_id == Room.id)
+        .join(ScheduleDay, ScheduleDay.schedule_id == Schedule.id)
+        .join(SchedulePeriod, SchedulePeriod.schedule_day_id == ScheduleDay.id)
+        .join(schedule_period_students, schedule_period_students.c.schedule_period_id == SchedulePeriod.id)
+        .filter(Room.is_active.is_(True), Internship.is_active.is_(True))
+        .group_by(Region.id, Region.name)
+        .order_by(func.count(schedule_period_students.c.student_id).desc())
+        .all()
+    )
+    return RegionSlotResponse(
+        items=[
+            RegionSlotItem(region_id=r.id, region_name=r.name, vacancies=r.vacancies)
+            for r in rows
+        ]
     )

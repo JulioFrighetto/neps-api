@@ -130,9 +130,10 @@ def get_period(
         from app.domains.room_schedule.models_nested import schedule_period_students
         from app.domains.room.model import Room
         
+        from app.domains.education_institute.model import EducationInstitute
         student_query = db.query(Student).options(
             selectinload(Student.discipline),
-            selectinload(Student.education_institute),
+            selectinload(Student.education_institute).selectinload(EducationInstitute.regions),
         )
 
         if current_user.role != "admin":
@@ -174,7 +175,11 @@ def get_period(
                     "has_slot": has_slot,
                     "slot": slot_obj,
                     "discipline": {"id": s.discipline.id, "name": s.discipline.name} if getattr(s, "discipline", None) else None,
-                    "institution": {"id": s.education_institute.id, "name": s.education_institute.name} if getattr(s, "education_institute", None) else None,
+                    "institution": {
+                        "id": s.education_institute.id,
+                        "name": s.education_institute.name,
+                        "region_id": s.education_institute.regions[0].id if s.education_institute.regions else None,
+                    } if getattr(s, "education_institute", None) else None,
                 }
             )
             student_ids.append(s.id)

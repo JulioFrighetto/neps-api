@@ -132,12 +132,11 @@ def remove_student_from_period(
     }
 
 
-@router.post("/available-slots", response_model=list[dict])
+@router.post("/available-slots", response_model=dict)
 def available_slots_for_student(payload: AvailableSlotsRequest, db: Session = Depends(get_db)):
-    """Return available slots for a given student across rooms (or single room if `room_id` provided)."""
     slots = schedule_repository.get_available_slots_for_student(
         db,
         payload.student_id,
         room_id=payload.room_id,
     )
-    return slots
+    return {"items": slots}
