@@ -136,7 +136,7 @@ def students_by_region_institution(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    rows = (
+    query = (
         db.query(
             Region.name.label("region_name"),
             EducationInstitute.name.label("institution_name"),
@@ -146,6 +146,12 @@ def students_by_region_institution(
         .join(Region, Internship.region_id == Region.id)
         .join(EducationInstitute, Student.edu_institute_id == EducationInstitute.id)
         .filter(Student.internship_id.isnot(None))
+    )
+    if current_user.role == "education_institute" and current_user.education_institute_id:
+        query = query.filter(EducationInstitute.id == current_user.education_institute_id)
+
+    rows = (
+        query
         .group_by(Region.id, Region.name, EducationInstitute.id, EducationInstitute.name)
         .order_by(Region.name, func.count(Student.id).desc())
         .all()
@@ -161,6 +167,115 @@ def students_by_region_institution(
         items=[
             StudentsByRegionInstitutionItem(region_name=region, institutions=institutions)
             for region, institutions in grouped.items()
+        ]
+    )
+
+
+class OccupiedByInternshipItem(BaseModel):
+    internship_id: int
+    internship_name: str
+    occupied: int
+
+
+class OccupiedByInternshipResponse(BaseModel):
+    items: list[OccupiedByInternshipItem]
+
+
+class InternshipCapacityItem(BaseModel):
+    internship_id: int
+    internship_name: str
+    total: int
+    occupied: int
+    free: int
+
+
+class InternshipCapacityResponse(BaseModel):
+    items: list[InternshipCapacityItem]
+
+
+@router.get("/capacity-by-internship", response_model=InternshipCapacityResponse)
+def capacity_by_internship(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    capacity_query = (
+        db.query(
+            Internship.id,
+            Internship.name,
+            func.coalesce(func.sum(Room.room_capacity), 0).label("total"),
+        )
+        .outerjoin(Room, (Room.internships_id == Internship.id) & Room.is_active.is_(True))
+        .filter(Internship.is_active.is_(True))
+    )
+    if current_user.role == "internships" and current_user.internships_id:
+        capacity_query = capacity_query.filter(Internship.id == current_user.internships_id)
+
+    capacity_rows = capacity_query.group_by(Internship.id, Internship.name).all()
+    capacity_map = {r.id: (r.name, r.total) for r in capacity_rows}
+
+    occupied_query = (
+        db.query(
+            Internship.id,
+            func.count(schedule_period_students.c.student_id).label("occupied"),
+        )
+        .join(Room, Room.internships_id == Internship.id)
+        .join(Schedule, Schedule.room_id == Room.id)
+        .join(ScheduleDay, ScheduleDay.schedule_id == Schedule.id)
+        .join(SchedulePeriod, SchedulePeriod.schedule_day_id == ScheduleDay.id)
+        .join(schedule_period_students, schedule_period_students.c.schedule_period_id == SchedulePeriod.id)
+        .filter(Room.is_active.is_(True), Internship.is_active.is_(True))
+    )
+    if current_user.role == "internships" and current_user.internships_id:
+        occupied_query = occupied_query.filter(Internship.id == current_user.internships_id)
+
+    occupied_map = {r.id: r.occupied for r in occupied_query.group_by(Internship.id).all()}
+
+    items = []
+    for internship_id, (name, total) in capacity_map.items():
+        occupied = occupied_map.get(internship_id, 0)
+        items.append(InternshipCapacityItem(
+            internship_id=internship_id,
+            internship_name=name,
+            total=total,
+            occupied=occupied,
+            free=max(0, total - occupied),
+        ))
+
+    items.sort(key=lambda x: x.total, reverse=True)
+    return InternshipCapacityResponse(items=items)
+
+
+@router.get("/occupied-by-internship", response_model=OccupiedByInternshipResponse)
+def occupied_by_internship(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    query = (
+        db.query(
+            Internship.id,
+            Internship.name,
+            func.count(schedule_period_students.c.student_id).label("occupied"),
+        )
+        .join(Room, Room.internships_id == Internship.id)
+        .join(Schedule, Schedule.room_id == Room.id)
+        .join(ScheduleDay, ScheduleDay.schedule_id == Schedule.id)
+        .join(SchedulePeriod, SchedulePeriod.schedule_day_id == ScheduleDay.id)
+        .join(schedule_period_students, schedule_period_students.c.schedule_period_id == SchedulePeriod.id)
+        .filter(Room.is_active.is_(True), Internship.is_active.is_(True))
+    )
+    if current_user.role == "internships" and current_user.internships_id:
+        query = query.filter(Internship.id == current_user.internships_id)
+
+    rows = (
+        query
+        .group_by(Internship.id, Internship.name)
+        .order_by(func.count(schedule_period_students.c.student_id).desc())
+        .all()
+    )
+    return OccupiedByInternshipResponse(
+        items=[
+            OccupiedByInternshipItem(internship_id=r.id, internship_name=r.name, occupied=r.occupied)
+            for r in rows
         ]
     )
 
