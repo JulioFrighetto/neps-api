@@ -30,7 +30,11 @@ def get_dashboard(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    total_students = db.query(func.count(Student.id)).scalar() or 0
+    student_query = db.query(func.count(Student.id))
+    if current_user.role == "education_institute" and current_user.education_institute_id:
+        student_query = student_query.filter(Student.edu_institute_id == current_user.education_institute_id)
+
+    total_students = student_query.scalar() or 0
     total_internships = db.query(func.count(Internship.id)).scalar() or 0
     total_periods = db.query(func.count(Period.id)).scalar() or 0
     total_institutions = db.query(func.count(EducationInstitute.id)).scalar() or 0
@@ -92,7 +96,7 @@ def students_by_institution(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    rows = (
+    query = (
         db.query(
             EducationInstitute.id,
             EducationInstitute.name,
@@ -100,10 +104,11 @@ def students_by_institution(
         )
         .join(Student, Student.edu_institute_id == EducationInstitute.id)
         .filter(Student.internship_id.isnot(None))
-        .group_by(EducationInstitute.id, EducationInstitute.name)
-        .order_by(func.count(Student.id).desc())
-        .all()
     )
+    if current_user.role == "education_institute" and current_user.education_institute_id:
+        query = query.filter(EducationInstitute.id == current_user.education_institute_id)
+
+    rows = query.group_by(EducationInstitute.id, EducationInstitute.name).order_by(func.count(Student.id).desc()).all()
     return StudentsByInstitutionResponse(
         items=[
             StudentsByInstitutionItem(institution_id=r.id, institution_name=r.name, student_count=r.student_count)
