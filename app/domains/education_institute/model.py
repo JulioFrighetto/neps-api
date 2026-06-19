@@ -8,6 +8,13 @@ from app.core.database import Base
 from app.domains.student.model import Student
 from app.domains.user.model import User
 
+education_institute_courses = Table(
+    "education_institute_courses",
+    Base.metadata,
+    Column("education_institute_id", Integer, ForeignKey("education_institutes.id"), primary_key=True),
+    Column("course_id", Integer, ForeignKey("courses.id"), primary_key=True),
+)
+
 
 class EducationInstitute(Base):
     __tablename__ = "education_institutes"
@@ -39,6 +46,9 @@ class EducationInstitute(Base):
     )
     regions: Mapped[list["Region"]] = relationship(
         "Region", secondary="education_institute_regions", back_populates="education_institutes"
+    )
+    courses: Mapped[list["Course"]] = relationship(  # noqa: F821
+        "Course", secondary=education_institute_courses, back_populates="education_institutes"
     )
 
     @property

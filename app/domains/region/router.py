@@ -7,11 +7,8 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.schemas import FilterInfo, Page, PaginationInfo
 from app.domains.region import repository
-from app.domains.region.schemas import (
-    RegionCreate,
-    RegionResponse,
-    RegionUpdate,
-)
+from app.domains.region.schemas import (RegionCreate, RegionResponse,
+                                        RegionUpdate)
 
 router = APIRouter(tags=["Region"])
 
@@ -29,7 +26,7 @@ class RegionUpdateRequest(RegionUpdate):
 @router.get("/regions", response_model=Page[RegionResponse])
 def list_regions(
     page: int = Query(1, ge=1),
-    per_page: int = Query(10, ge=1, le=100),
+    per_page: int = Query(10, ge=1, le=500),
     name_like: str | None = Query(None),
     is_active: bool | None = Query(None),
     db: Session = Depends(get_db),
@@ -52,7 +49,7 @@ def list_regions(
 def get_region(data: RegionGetRequest, db: Session = Depends(get_db)):
     region = repository.get_region_by_id(db, data.region_id)
     if not region:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Região não encontrada")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Território não encontrado")
     return region
 
 
@@ -65,5 +62,5 @@ def create_region(data: RegionCreate, db: Session = Depends(get_db)):
 def update_region(data: RegionUpdateRequest, db: Session = Depends(get_db)):
     region = repository.update_region(db, data.region_id, data)
     if not region:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Região não encontrada")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Território não encontrado")
     return region

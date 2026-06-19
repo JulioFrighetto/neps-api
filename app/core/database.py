@@ -400,6 +400,16 @@ def seed_admin():
                 conn.execute(text("ALTER TABLE students ADD COLUMN preceptor_name VARCHAR(100) NULL"))
 
         _ensure_student_columns(conn)
+
+        # education_institute_courses join table
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS education_institute_courses (
+                education_institute_id INTEGER NOT NULL REFERENCES education_institutes(id),
+                course_id INTEGER NOT NULL REFERENCES courses(id),
+                PRIMARY KEY (education_institute_id, course_id)
+            )
+        """))
+
         conn.execute(
             sql,
             {

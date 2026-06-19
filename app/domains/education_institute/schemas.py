@@ -64,6 +64,13 @@ class EducationInstituteResponse(EducationInstituteBase):
     region_id: int | None = None
     region: RegionSummary | None = None
 
+    class CourseSummary(BaseModel):
+        model_config = ConfigDict(from_attributes=True)
+        id: int
+        name: str
+
+    courses: list[CourseSummary] = []
+
 class EducationInstituteBrief(BaseModel):
     id: int
     name: str

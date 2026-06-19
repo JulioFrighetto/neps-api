@@ -17,6 +17,7 @@ def get_all(db: Session, page: int = 1, per_page: int = 10, filters: dict | None
     query = db.query(EducationInstitute).options(
         selectinload(EducationInstitute.users),
         selectinload(EducationInstitute.regions),
+        selectinload(EducationInstitute.courses),
     )
     if filters:
         from app.core.filters import apply_filters
@@ -27,13 +28,13 @@ def get_all(db: Session, page: int = 1, per_page: int = 10, filters: dict | None
 
 
 def get_by_id(db: Session, institute_id: int) -> EducationInstitute | None:
-    
     return (
         db.query(EducationInstitute)
         .options(
             selectinload(EducationInstitute.students),
             selectinload(EducationInstitute.users),
             selectinload(EducationInstitute.regions),
+            selectinload(EducationInstitute.courses),
         )
         .filter(EducationInstitute.id == institute_id)
         .first()

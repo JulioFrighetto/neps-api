@@ -32,6 +32,7 @@ logger = logging.getLogger(__name__)
 
 def _build_access_token_extra(user) -> dict[str, int | str | None]:
     return {
+        "role": user.role,
         "user_name": user.name,
         "internships_id": user.internships_id,
         "internships_name": user.internships.name if user.internships else None,

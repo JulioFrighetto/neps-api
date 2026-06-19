@@ -120,6 +120,9 @@ def assign_student_to_period(
     if not student.is_active:
         raise ValueError("Aluno inativo")
 
+    if student.internship_id != room.internships_id:
+        raise ValueError("Aluno não está vinculado ao campo de estágio desta sala")
+
     if student.discipline and student.discipline.requires_gurney and not room.has_gurney:
         raise ValueError("Este aluno requer sala com maca")
 
@@ -204,6 +207,10 @@ def get_available_slots_for_student(db: Session, student_id: int, room_id: int |
 
     available = []
     for room in rooms:
+        # only rooms belonging to the student's internship field
+        if room.internships_id != student.internship_id:
+            continue
+
         # skip rooms that cannot serve this student due to gurney requirement
         if student.discipline and student.discipline.requires_gurney and not room.has_gurney:
             continue
