@@ -39,7 +39,7 @@ def list_institutes_brief(
     filters: EducationInstituteFilters = Depends(),
     current_user: User = Depends(get_current_user),
     page: int = Query(1, ge=1),
-    per_page: int = Query(10, ge=1, le=100),
+    per_page: int = Query(10, ge=1, le=500),
     db: Session = Depends(get_db),
 ):
     page_obj = get_all_usecase(
@@ -61,7 +61,7 @@ def list_institutes_brief(
 @router.get("/", response_model=Page[EducationInstituteResponse])
 def list_institutes(
     page: int = Query(1, ge=1),
-    per_page: int = Query(10, ge=1, le=100),
+    per_page: int = Query(10, ge=1, le=500),
     name_like: str | None = Query(None),
     cnpj: str | None = Query(None),
     is_active: bool | None = Query(None),
@@ -106,4 +106,56 @@ def replace_institute(data: InstituteUpdateRequest, db: Session = Depends(get_db
     institute = update_usecase(db, data.institute_id, data)
     if not institute:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Instituição não encontrada")
+    return institute
+
+
+class InstituteCourseRequest(BaseModel):
+    institute_id: int
+    course_id: int
+
+
+@router.get("/courses", response_model=list[dict])
+def list_institute_courses(
+    institute_id: int = Query(...),
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    from app.domains.education_institute.repository import get_by_id
+    institute = get_by_id(db, institute_id)
+    if not institute:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Instituição não encontrada")
+    return [{"id": c.id, "name": c.name} for c in institute.courses]
+
+
+@router.post("/courses/link", response_model=EducationInstituteResponse)
+def link_course_to_institute(data: InstituteCourseRequest, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    from app.domains.education_institute.repository import get_by_id
+    from app.domains.course.model import Course
+    institute = get_by_id(db, data.institute_id)
+    if not institute:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Instituição não encontrada")
+    course = db.query(Course).filter(Course.id == data.course_id).first()
+    if not course:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Curso não encontrado")
+    if course not in institute.courses:
+        institute.courses.append(course)
+        db.commit()
+        db.refresh(institute)
+    return institute
+
+
+@router.delete("/courses", response_model=EducationInstituteResponse)
+def unlink_course_from_institute(data: InstituteCourseRequest, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    from app.domains.education_institute.repository import get_by_id
+    from app.domains.course.model import Course
+    institute = get_by_id(db, data.institute_id)
+    if not institute:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Instituição não encontrada")
+    course = db.query(Course).filter(Course.id == data.course_id).first()
+    if not course:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Curso não encontrado")
+    if course in institute.courses:
+        institute.courses.remove(course)
+        db.commit()
+        db.refresh(institute)
     return institute

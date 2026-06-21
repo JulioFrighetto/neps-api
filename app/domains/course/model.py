@@ -30,3 +30,8 @@ class Course(Base):
     disciplines: Mapped[list["Discipline"]] = relationship(
         "Discipline", secondary=course_disciplines, back_populates="courses"
     )
+    education_institutes: Mapped[list["EducationInstitute"]] = relationship(  # noqa: F821
+        "EducationInstitute",
+        secondary="education_institute_courses",
+        back_populates="courses",
+    )

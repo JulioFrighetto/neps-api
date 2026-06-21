@@ -86,6 +86,7 @@ class StudentUpdateRequest(StudentUpdate):
 class LinkInternshipRequest(BaseModel):
     student_id: int
     internship_id: int
+    director_signed_pdf: str | None = None
 
 
 def _to_response(student: Student, include: set[str] | None = None) -> StudentListResponse:
@@ -251,14 +252,24 @@ def update_student(data: StudentUpdateRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/link-internship", response_model=StudentListResponse)
-def link_student_to_internship(data: LinkInternshipRequest, db: Session = Depends(get_db)):
+def link_student_to_internship(
+    data: LinkInternshipRequest,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
     student = repository.get_by_id(db, data.student_id)
     if not student:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Aluno não encontrado")
     internship = db.query(Internship).filter(Internship.id == data.internship_id).first()
     if not internship:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Campo de estágio não encontrado")
+    if not internship.is_active:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Campo de estágio está inativo")
     student.internship_id = data.internship_id
+    if data.director_signed_pdf is not None:
+        student.director_signed_pdf = data.director_signed_pdf.encode("utf-8")
     db.commit()
     db.refresh(student)
     return _to_response(student)

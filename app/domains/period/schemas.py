@@ -55,6 +55,7 @@ class StudentSummary(BaseModel):
         model_config = ConfigDict(from_attributes=True)
         id: int
         name: str
+        region_id: int | None = None
     
     class Slot(BaseModel):
         model_config = ConfigDict(from_attributes=True)

@@ -1,4 +1,4 @@
-# API de Regiões (Regions)
+# API de Territórios (Regions)
 
 Base URL: `/api/v1`
 
@@ -37,7 +37,7 @@ GET /regions
 
 ---
 
-### Obter uma região específica
+### Obter um território específica
 
 ```
 GET /regions/{region_id}
@@ -46,7 +46,7 @@ GET /regions/{region_id}
 **Path Parameters:**
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| region_id | int | ID da região |
+| region_id | int | ID da território |
 
 **Response:** `200 OK`
 
@@ -60,11 +60,11 @@ GET /regions/{region_id}
 
 **Error Responses:**
 
-- `404 Not Found` - Região não encontrada
+- `404 Not Found` - Território não encontrada
 
 ---
 
-### Criar uma região
+### Criar uma território
 
 ```
 POST /regions
@@ -74,7 +74,7 @@ POST /regions
 
 ```json
 {
-  "name": "Nome da Região",
+  "name": "Nome da Território",
   "is_active": true
 }
 ```
@@ -82,15 +82,15 @@ POST /regions
 **Parâmetros:**
 | Campo | Tipo | Obrigatório | Descrição |
 |-------|------|-------------|-----------|
-| name | string | Sim | Nome da região |
-| is_active | bool | Não | Status da região (padrão: true) |
+| name | string | Sim | Nome da território |
+| is_active | bool | Não | Status da território (padrão: true) |
 
 **Response:** `201 Created`
 
 ```json
 {
   "id": 1,
-  "name": "Nome da Região",
+  "name": "Nome da Território",
   "is_active": true
 }
 ```
@@ -101,7 +101,7 @@ POST /regions
 
 ---
 
-### Atualizar uma região
+### Atualizar uma território
 
 ```
 PATCH /regions/{region_id}
@@ -110,7 +110,7 @@ PATCH /regions/{region_id}
 **Path Parameters:**
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| region_id | int | ID da região |
+| region_id | int | ID da território |
 
 **Request Body:**
 
@@ -124,7 +124,7 @@ PATCH /regions/{region_id}
 **Parâmetros (todos opcionais):**
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
-| name | string | Novo nome da região |
+| name | string | Novo nome da território |
 | is_active | bool | Novo status |
 
 **Response:** `200 OK`
@@ -139,11 +139,11 @@ PATCH /regions/{region_id}
 
 **Error Responses:**
 
-- `404 Not Found` - Região não encontrada
+- `404 Not Found` - Território não encontrada
 
 ---
 
-### Excluir uma região
+### Excluir uma território
 
 ```
 DELETE /regions/{region_id}
@@ -152,15 +152,15 @@ DELETE /regions/{region_id}
 **Path Parameters:**
 | Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| region_id | int | ID da região |
+| region_id | int | ID da território |
 
 **Response:** `204 No Content`
 
 **Error Responses:**
 
-- `404 Not Found` - Região não encontrada
+- `404 Not Found` - Território não encontrada
 
-**Observação:** A exclusão pode falhar se houver serviços ou outros registros dependentes associados a esta região.
+**Observação:** A exclusão pode falhar se houver serviços ou outros registros dependentes associados a esta território.
 
 ---
 
@@ -205,7 +205,7 @@ const response = await fetch("/api/v1/regions");
 const regions = await response.json();
 ```
 
-### Criar uma região
+### Criar uma território
 
 ```javascript
 const response = await fetch("/api/v1/regions", {
@@ -218,7 +218,7 @@ const response = await fetch("/api/v1/regions", {
 });
 ```
 
-### Atualizar uma região
+### Atualizar uma território
 
 ```javascript
 const response = await fetch("/api/v1/regions/1", {
@@ -230,7 +230,7 @@ const response = await fetch("/api/v1/regions/1", {
 });
 ```
 
-### Excluir uma região
+### Excluir uma território
 
 ```javascript
 const response = await fetch("/api/v1/regions/1", {
