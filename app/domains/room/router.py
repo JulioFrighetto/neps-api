@@ -114,7 +114,7 @@ def create_room(data: RoomCreate, db: Session = Depends(get_db)):
                 detail="O internship_id informado não existe. Verifique se o estágio está cadastrado antes de criar a sala."
             )
         # Para outros erros inesperados, propagamos um 500 genérico.
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro inesperado ao criar a sala.")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro inesperado ao criar a sala: {exc}")
 
 
 @router.patch("/", response_model=RoomResponse)
