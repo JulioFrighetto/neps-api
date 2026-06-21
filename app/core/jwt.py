@@ -23,8 +23,11 @@ def _utcnow() -> datetime:
 
 
 def create_access_token(subject: int, role: str | None = None, extra: dict[str, Any] | None = None) -> str:
+    """Create an access JWT.
+    "role" is added to the payload if provided; otherwise it can be supplied via ``extra``.
+    """
     expire = _utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    payload = {"sub": str(subject), "type": "access", "exp": expire}
+    payload = {"sub": str(subject), "type": "access", "exp": expire, "role": role}
     if extra:
         payload.update(extra)
     return jwt.encode(payload, _SECRET, algorithm=_ALG)
