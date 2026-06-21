@@ -16,7 +16,7 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str | None = None
     role: UserRole
-    internships_id: int | None = None
+    internships_id: int | None = Field(default=None, alias="internship_id")
     education_institute_id: int | None = None
 
     @model_validator(mode="after")
@@ -56,7 +56,7 @@ class UserResponse(UserBase):
 
     id: int
     role: str
-    internships_id: int | None = None
+    internships_id: int | None = Field(default=None, alias="internship_id")
     education_institute_id: int | None = None
     created_at: datetime
     updated_at: datetime
