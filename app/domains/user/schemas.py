@@ -53,12 +53,14 @@ class UserChangePassword(BaseModel):
 
 
 class UserResponse(UserBase):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
     id: int
     role: str
     internships_id: int | None = Field(default=None, alias="internship_id")
     education_institute_id: int | None = None
+    # Expose alias directly in response
+    internship_id: int | None = Field(default=None, alias="internship_id")
     created_at: datetime
     updated_at: datetime
 
