@@ -101,7 +101,20 @@ def list_rooms_by_internships(data: RoomsByInternshipsRequest, db: Session = Dep
 
 @router.post("/", response_model=RoomResponse, status_code=status.HTTP_201_CREATED)
 def create_room(data: RoomCreate, db: Session = Depends(get_db)):
-    return repository.create(db, data)
+    try:
+        return repository.create(db, data)
+    except Exception as exc:
+        # Erro genérico capturado para melhorar a mensagem ao usuário.
+        # Caso a falha seja por violação de chave estrangeira (internship_id inexistente),
+        # retornamos um erro 400 com explicação clara.
+        from sqlalchemy.exc import IntegrityError
+        if isinstance(exc, IntegrityError) and "foreign key" in str(exc).lower():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="O internship_id informado não existe. Verifique se o estágio está cadastrado antes de criar a sala."
+            )
+        # Para outros erros inesperados, propagamos um 500 genérico.
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro inesperado ao criar a sala.")
 
 
 @router.patch("/", response_model=RoomResponse)
