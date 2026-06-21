@@ -13,7 +13,7 @@ class Room(Base):
     __tablename__ = "rooms"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    internship_id: Mapped[int] = mapped_column(ForeignKey("internships.id"), nullable=False)
+    internship_id: Mapped[int] = mapped_column(ForeignKey("internships.id"), nullable=False, name="internships_id")
     name: Mapped[str] = mapped_column(String(20), nullable=False)
     room_capacity: Mapped[int] = mapped_column(Integer, nullable=False)
     has_gurney: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
