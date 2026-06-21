@@ -41,6 +41,7 @@ class UserCreate(UserBase):
 
 
 class UserUpdate(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
     internships_id: int | None = Field(default=None, alias="internship_id")
     name: str | None = None
     email: EmailStr | None = None
