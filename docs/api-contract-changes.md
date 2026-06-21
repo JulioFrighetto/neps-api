@@ -131,9 +131,9 @@ Regra aplicada:
 - Body: `room_id`
 
 2. Salas por servico
-- Antes: `GET /api/v1/rooms/by-internships/{internships_id}`
+- Antes: `GET /api/v1/rooms/by-internships/{internship_id}`
 - Agora: `POST /api/v1/rooms/by-internships`
-- Body: `internships_id`, `page`, `per_page`
+- Body: `internship_id`, `page`, `per_page`
 
 3. Atualizacao da sala
 - Antes: `PATCH /api/v1/rooms/{room_id}`
@@ -143,19 +143,19 @@ Regra aplicada:
 ## Internships
 
 1. Detalhe do servico
-- Antes: `GET /api/v1/internshipss/{internships_id}`
+- Antes: `GET /api/v1/internshipss/{internship_id}`
 - Agora: `POST /api/v1/internshipss/detail`
-- Body: `internships_id`
+- Body: `internship_id`
 
 2. Atualizacao do servico
-- Antes: `PATCH /api/v1/internshipss/{internships_id}`
+- Antes: `PATCH /api/v1/internshipss/{internship_id}`
 - Agora: `PATCH /api/v1/internshipss/`
-- Body: `internships_id` + campos de `InternshipsUpdate`
+- Body: `internship_id` + campos de `InternshipsUpdate`
 
 3. Substituicao do servico
-- Antes: `PUT /api/v1/internshipss/{internships_id}`
+- Antes: `PUT /api/v1/internshipss/{internship_id}`
 - Agora: `PUT /api/v1/internshipss/`
-- Body: `internships_id` + campos de `InternshipsCreate`
+- Body: `internship_id` + campos de `InternshipsCreate`
 
 ## Internships Room
 
@@ -165,9 +165,9 @@ Regra aplicada:
 - Body: `internships_room_id`
 
 2. Salas por servico
-- Antes: `GET /api/v1/internships-rooms/by-internships/{internships_id}`
+- Antes: `GET /api/v1/internships-rooms/by-internships/{internship_id}`
 - Agora: `POST /api/v1/internships-rooms/by-internships`
-- Body: `internships_id`, `page`, `per_page`
+- Body: `internship_id`, `page`, `per_page`
 
 3. Atualizacao da sala de servico
 - Antes: `PATCH /api/v1/internships-rooms/{internships_room_id}`

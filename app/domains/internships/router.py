@@ -30,20 +30,20 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class InternshipsGetRequest(BaseModel):
     internship_id: int = Field(..., alias="internship_id")
-    # Compatibilidade com use‑case que espera `internships_id`
+    # Compatibilidade com use‑case que espera `internship_id`
     @property
-    def internships_id(self) -> int:
+    def internship_id(self) -> int:
         return self.internship_id
 
 
 class InternshipsUpdateRequest(InternshipsUpdate):
-    internships_id: int
+    internship_id: int
 
 
 class InternshipsReplaceRequest(InternshipsCreate):
     internship_id: int = Field(..., alias="internship_id")
     @property
-    def internships_id(self) -> int:
+    def internship_id(self) -> int:
         return self.internship_id
 
 
@@ -73,7 +73,7 @@ def list_internships(
 
 @router.post("/detail", response_model=InternshipsResponse)
 def get_internship(data: InternshipsGetRequest, db: Session = Depends(get_db)):
-    return get_internship_usecase(db, data.internships_id)
+    return get_internship_usecase(db, data.internship_id)
 
 
 class ByRegionRequest(BaseModel):

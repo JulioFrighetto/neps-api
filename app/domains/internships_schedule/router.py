@@ -45,8 +45,8 @@ def list_internships_schedules(
 ):
     if current_user.role == "admin":
         items, total = repository.get_all(db, page=page, per_page=per_page)
-    elif current_user.role == "internships" and current_user.internships_id is not None:
-        items, total = repository.get_by_internships(db, current_user.internships_id, page=page, per_page=per_page)
+    elif current_user.role == "internships" and current_user.internship_id is not None:
+        items, total = repository.get_by_internships(db, current_user.internship_id, page=page, per_page=per_page)
     else:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
     return Page(

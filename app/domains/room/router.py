@@ -24,7 +24,7 @@ class RoomGetRequest(BaseModel):
 
 
 class RoomsByInternshipsRequest(BaseModel):
-    internships_id: int
+    internship_id: int
     page: int = 1
     per_page: int = 10
 
@@ -49,7 +49,7 @@ def list_rooms(
     if name_like is not None:
         filters["name_like"] = name_like
     if internship_id is not None:
-        filters["internships_id"] = internship_id
+        filters["internship_id"] = internship_id
     if has_gurney is not None:
         filters["has_gurney"] = has_gurney
     if capacity_min is not None:
@@ -59,9 +59,9 @@ def list_rooms(
 
     if current_user.role == "admin":
         items, total = repository.get_all(db, page=page, per_page=per_page, filters=filters)
-    elif current_user.role == "internships" and current_user.internships_id is not None:
+    elif current_user.role == "internships" and current_user.internship_id is not None:
         items, total = repository.get_by_internships(
-            db, current_user.internships_id, page=page, per_page=per_page, filters=filters
+            db, current_user.internship_id, page=page, per_page=per_page, filters=filters
         )
     else:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
@@ -87,7 +87,7 @@ def get_room(data: RoomGetRequest, db: Session = Depends(get_db)):
 
 @router.post("/by-internships", response_model=Page[RoomResponse])
 def list_rooms_by_internships(data: RoomsByInternshipsRequest, db: Session = Depends(get_db)):
-    items, total = repository.get_by_internships(db, data.internships_id, page=data.page, per_page=data.per_page)
+    items, total = repository.get_by_internships(db, data.internship_id, page=data.page, per_page=data.per_page)
     return Page(
         items=items,
         pagination=PaginationInfo(

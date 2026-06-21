@@ -4,7 +4,7 @@ from pydantic import BaseModel, ConfigDict
 
 
 class InternshipsRoomBase(BaseModel):
-    internships_id: int
+    internship_id: int
     name: str
     room_capacity: int
     has_gurney: bool = False

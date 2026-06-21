@@ -11,7 +11,7 @@ class InternshipSummary(BaseModel):
 
 
 class RoomBase(BaseModel):
-    internships_id: int
+    internship_id: int
     name: str
     room_capacity: int
     has_gurney: bool = False
@@ -27,7 +27,7 @@ class RoomUpdate(BaseModel):
     room_capacity: int | None = None
     has_gurney: bool | None = None
     is_active: bool | None = None
-    internships_id: int | None = None
+    internship_id: int | None = None
 
 
 class RoomResponse(RoomBase):

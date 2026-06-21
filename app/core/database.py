@@ -35,8 +35,8 @@ def _ensure_user_profile_columns(conn) -> None:
         columns = conn.execute(text("PRAGMA table_info(users)")).fetchall()
         column_names = {column[1] for column in columns}
 
-        if "internships_id" not in column_names:
-            conn.execute(text("ALTER TABLE users ADD COLUMN internships_id INTEGER NULL"))
+        if "internship_id" not in column_names:
+            conn.execute(text("ALTER TABLE users ADD COLUMN internship_id INTEGER NULL"))
         if "education_institute_id" not in column_names:
             conn.execute(text("ALTER TABLE users ADD COLUMN education_institute_id INTEGER NULL"))
     except Exception:
@@ -55,7 +55,7 @@ def _ensure_user_timestamps(conn) -> None:
     except Exception:
         pass
 
-def _rebuild_users_table_without_unique_internships_id(conn) -> None:
+def _rebuild_users_table_without_unique_internship_id(conn) -> None:
     indexes = conn.execute(text("PRAGMA index_list(users)")).fetchall()
     unique_internships_index_exists = False
 
@@ -65,7 +65,7 @@ def _rebuild_users_table_without_unique_internships_id(conn) -> None:
         index_name = index[1]
         columns = conn.execute(text(f"PRAGMA index_info('{index_name}')")).fetchall()
         column_names = [column[2] for column in columns]
-        if column_names == ["internships_id"]:
+        if column_names == ["internship_id"]:
             unique_internships_index_exists = True
             break
 
@@ -83,12 +83,12 @@ def _rebuild_users_table_without_unique_internships_id(conn) -> None:
                 email VARCHAR(150) NOT NULL UNIQUE,
                 password VARCHAR(255),
                 role VARCHAR(20) NOT NULL DEFAULT 'user',
-                internships_id INTEGER NULL,
+                internship_id INTEGER NULL,
                 education_institute_id INTEGER NULL,
                 is_active BOOLEAN NOT NULL DEFAULT 1,
                 created_at DATETIME,
                 updated_at DATETIME,
-                FOREIGN KEY(internships_id) REFERENCES internships(id),
+                FOREIGN KEY(internship_id) REFERENCES internships(id),
                 FOREIGN KEY(education_institute_id) REFERENCES education_institutes(id)
             )
             """
@@ -98,11 +98,11 @@ def _rebuild_users_table_without_unique_internships_id(conn) -> None:
         text(
             """
             INSERT INTO users (
-                id, name, email, password, role, internships_id, education_institute_id,
+                id, name, email, password, role, internship_id, education_institute_id,
                 is_active, created_at, updated_at
             )
             SELECT
-                id, name, email, password, role, internships_id, education_institute_id,
+                id, name, email, password, role, internship_id, education_institute_id,
                 is_active, created_at, updated_at
             FROM users_legacy
             """
@@ -116,8 +116,8 @@ def _ensure_room_columns(conn) -> None:
         columns = conn.execute(text("PRAGMA table_info(rooms)")).fetchall()
         column_names = {column[1] for column in columns}
 
-        if "internships_id" not in column_names:
-            conn.execute(text("ALTER TABLE rooms ADD COLUMN internships_id INTEGER NULL"))
+        if "internship_id" not in column_names:
+            conn.execute(text("ALTER TABLE rooms ADD COLUMN internship_id INTEGER NULL"))
     except Exception:
         pass
 
@@ -147,14 +147,14 @@ def _rebuild_rooms_table_without_internship_field(conn) -> None:
             """
             CREATE TABLE rooms (
                 id INTEGER NOT NULL PRIMARY KEY,
-                internships_id INTEGER NOT NULL,
+                internship_id INTEGER NOT NULL,
                 name VARCHAR(20) NOT NULL,
                 room_capacity INTEGER NOT NULL,
                 has_gurney BOOLEAN NOT NULL,
                 is_active BOOLEAN NOT NULL,
                 created_at DATETIME,
                 updated_at DATETIME,
-                FOREIGN KEY(internships_id) REFERENCES internships(id)
+                FOREIGN KEY(internship_id) REFERENCES internships(id)
             )
             """
         )
@@ -162,8 +162,8 @@ def _rebuild_rooms_table_without_internship_field(conn) -> None:
     conn.execute(
         text(
             """
-            INSERT INTO rooms (id, internships_id, name, room_capacity, has_gurney, is_active, created_at, updated_at)
-            SELECT id, internships_id, name, room_capacity, has_gurney, is_active, created_at, updated_at
+            INSERT INTO rooms (id, internship_id, name, room_capacity, has_gurney, is_active, created_at, updated_at)
+            SELECT id, internship_id, name, room_capacity, has_gurney, is_active, created_at, updated_at
             FROM rooms_legacy
             """
         )
@@ -217,7 +217,7 @@ def init_db() -> None:
         _ensure_user_role_column(conn)
         _ensure_user_profile_columns(conn)
         _ensure_user_timestamps(conn)
-        _rebuild_users_table_without_unique_internships_id(conn)
+        _rebuild_users_table_without_unique_internship_id(conn)
         
         def _ensure_internship_columns(conn) -> None:
             columns = conn.execute(text("PRAGMA table_info(internships)")).fetchall()

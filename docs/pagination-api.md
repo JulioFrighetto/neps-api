@@ -31,7 +31,7 @@ Parâmetros de query:
 | GET    | `/api/v1/students/by-institute/{institute_id}`  | `Page[StudentResponse]`            |
 | GET    | `/api/v1/internshipss/`                             | `Page[InternshipsResponse]`            |
 | GET    | `/api/v1/internships-rooms/`                        | `Page[InternshipsRoomResponse]`        |
-| GET    | `/api/v1/internships-rooms/by-internships/{internships_id}` | `Page[InternshipsRoomResponse]`        |
+| GET    | `/api/v1/internships-rooms/by-internships/{internship_id}` | `Page[InternshipsRoomResponse]`        |
 | GET    | `/api/v1/internships-schedules/`                    | `Page[InternshipsScheduleResponse]`    |
 | GET    | `/api/v1/education-institutes/`                 | `Page[EducationInstituteResponse]` |
 

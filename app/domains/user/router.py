@@ -210,7 +210,7 @@ def replace_user(
     user.name = data.name
     user.email = data.email
     user.role = data.role
-    user.internships_id = data.internship_id
+    user.internship_id = data.internship_id
     user.education_institute_id = data.education_institute_id
     user.is_active = data.is_active
 

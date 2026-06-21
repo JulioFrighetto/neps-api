@@ -16,33 +16,33 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str | None = None
     role: UserRole
-    internships_id: int | None = Field(default=None, alias="internship_id")
+    internship_id: int | None = Field(default=None, alias="internship_id")
     education_institute_id: int | None = None
 
     @model_validator(mode="after")
     def validate_profile_links(self):
         if self.role == "admin":
             if (
-                self.internships_id is not None
+                self.internship_id is not None
                 or self.education_institute_id is not None
             ):
                 raise ValueError("Admin não deve ser vinculado a instituição de ensino ou unidade")
         elif self.role == "internships":
-            if self.internships_id is None:
+            if self.internship_id is None:
                 raise ValueError("Usuário de internships precisa de internships vinculada")
             if self.education_institute_id is not None:
                 raise ValueError("Usuário de internships não pode ser vinculado a instituição de ensino")
         elif self.role == "education_institute":
             if self.education_institute_id is None:
                 raise ValueError("Usuário de entidade de ensino precisa de instituição vinculada")
-            if self.internships_id is not None:
+            if self.internship_id is not None:
                 raise ValueError("Usuário de entidade de ensino não pode ser vinculado a unidade")
         return self
 
 
 class UserUpdate(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
-    internships_id: int | None = Field(default=None, alias="internship_id")
+    internship_id: int | None = Field(default=None, alias="internship_id")
     name: str | None = None
     email: EmailStr | None = None
     is_active: bool | None = None
@@ -58,8 +58,8 @@ class UserResponse(UserBase):
 
     id: int
     role: str
-    # Expose alias directly in response, mapping to the model's internships_id column
-    internship_id: int | None = Field(default=None, alias="internships_id")
+    # Expose alias directly in response, mapping to the model's internship_id column
+    internship_id: int | None = Field(default=None, alias="internship_id")
     created_at: datetime
     updated_at: datetime
 

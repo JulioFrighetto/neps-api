@@ -149,7 +149,7 @@ def test_create_internships_creates_user(client, db, monkeypatch):
     assert response.status_code == 201
     internships = db.query(Internships).filter(Internships.name == "Serviço Centro").first()
     assert internships is not None
-    user = db.query(User).filter(User.internships_id == internships.id).first()
+    user = db.query(User).filter(User.internship_id == internships.id).first()
     assert user is not None
     assert user.role == "internships"
     assert user.email == "internships-centro@neps.com"
@@ -160,14 +160,14 @@ def test_create_internships_room(client):
     response = client.post(
         "/api/v1/internships-rooms",
         json={
-            "internships_id": internships["id"],
+            "internship_id": internships["id"],
             "name": "Sala 01",
             "room_capacity": 6,
             "has_gurney": True,
         },
     )
     assert response.status_code == 201
-    assert response.json()["internships_id"] == internships["id"]
+    assert response.json()["internship_id"] == internships["id"]
 
 
 def test_create_internships_schedule(client):
@@ -175,7 +175,7 @@ def test_create_internships_schedule(client):
     room = client.post(
         "/api/v1/internships-rooms",
         json={
-            "internships_id": internships["id"],
+            "internship_id": internships["id"],
             "name": "Sala 02",
             "room_capacity": 4,
             "has_gurney": False,

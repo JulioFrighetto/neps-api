@@ -23,7 +23,7 @@ class InternshipsRoomGetRequest(BaseModel):
 
 
 class InternshipsRoomsByInternshipsRequest(BaseModel):
-    internships_id: int
+    internship_id: int
     page: int = 1
     per_page: int = 10
 
@@ -41,8 +41,8 @@ def list_internships_rooms(
 ):
     if current_user.role == "admin":
         items, total = repository.get_all(db, page=page, per_page=per_page)
-    elif current_user.role == "internships" and current_user.internships_id is not None:
-        items, total = repository.get_by_internships(db, current_user.internships_id, page=page, per_page=per_page)
+    elif current_user.role == "internships" and current_user.internship_id is not None:
+        items, total = repository.get_by_internships(db, current_user.internship_id, page=page, per_page=per_page)
     else:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
     return Page(
@@ -68,7 +68,7 @@ def get_internships_room(data: InternshipsRoomGetRequest, db: Session = Depends(
 
 @router.post("/by-internships", response_model=Page[InternshipsRoomResponse])
 def list_internships_rooms_by_internship(data: InternshipsRoomsByInternshipsRequest, db: Session = Depends(get_db)):
-    items, total = repository.get_by_internships(db, data.internships_id, page=data.page, per_page=data.per_page)
+    items, total = repository.get_by_internships(db, data.internship_id, page=data.page, per_page=data.per_page)
     return Page(
         items=items,
         pagination=PaginationInfo(
@@ -82,7 +82,7 @@ def list_internships_rooms_by_internship(data: InternshipsRoomsByInternshipsRequ
 
 @router.post("/", response_model=InternshipsRoomResponse, status_code=status.HTTP_201_CREATED)
 def create_internships_room(data: InternshipsRoomCreate, db: Session = Depends(get_db)):
-    internships = get_internships_by_id(db, data.internships_id)
+    internships = get_internships_by_id(db, data.internship_id)
     if not internships:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Campo de estágio não encontrado")
     return repository.create(db, data)

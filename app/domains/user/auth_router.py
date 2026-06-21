@@ -34,7 +34,7 @@ def _build_access_token_extra(user) -> dict[str, int | str | None]:
     return {
         "role": user.role,
         "user_name": user.name,
-        "internships_id": user.internships_id,
+        "internship_id": user.internship_id,
         "internships_name": user.internships.name if user.internships else None,
         "education_institute_id": user.education_institute_id,
         "education_institute_name": (

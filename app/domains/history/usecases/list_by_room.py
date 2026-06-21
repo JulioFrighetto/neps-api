@@ -10,7 +10,7 @@ def list_by_room_usecase(db, data, current_user):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sala não encontrada")
 
     if current_user.role == "internships":
-        if current_user.internships_id is None or current_user.internships_id != room.internships_id:
+        if current_user.internship_id is None or current_user.internship_id != room.internship_id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
     elif current_user.role != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")

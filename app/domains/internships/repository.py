@@ -18,11 +18,11 @@ def get_all(db: Session, page: int = 1, per_page: int = 10, filters: dict | None
     return items, total
 
 
-def get_by_id(db: Session, internships_id: int) -> Internship | None:
+def get_by_id(db: Session, internship_id: int) -> Internship | None:
     return (
         db.query(Internship)
         .options(selectinload(Internship.users))
-        .filter(Internship.id == internships_id)
+        .filter(Internship.id == internship_id)
         .first()
     )
 
@@ -39,7 +39,7 @@ def _create_internships_user(
         email=email,
         password=hash_password(secrets.token_urlsafe(16)),
         role="internships",
-        internships_id=internships.id,
+        internship_id=internships.id,
         is_active=True,
     )
     db.add(user)
@@ -73,8 +73,8 @@ def create(db: Session, data: InternshipsCreate) -> Internship:
     return get_by_id(db, internships.id) or internships
 
 
-def update(db: Session, internships_id: int, data: InternshipsUpdate) -> Internship | None:
-    internships = get_by_id(db, internships_id)
+def update(db: Session, internship_id: int, data: InternshipsUpdate) -> Internship | None:
+    internships = get_by_id(db, internship_id)
     if not internships:
         return None
 
@@ -99,8 +99,8 @@ def update(db: Session, internships_id: int, data: InternshipsUpdate) -> Interns
     return get_by_id(db, internships.id) or internships
 
 
-def delete(db: Session, internships_id: int) -> bool:
-    internships = get_by_id(db, internships_id)
+def delete(db: Session, internship_id: int) -> bool:
+    internships = get_by_id(db, internship_id)
     if not internships:
         return False
     db.delete(internships)

@@ -9,6 +9,6 @@ from app.domains.user.model import User
 
 
 def update_internship_usecase(db, data: InternshipsUpdate):
-    updated = repository.update(db, data.internships_id, data)
+    updated = repository.update(db, data.internship_id, data)
     
     return updated

@@ -67,7 +67,7 @@ def vacancies_by_region(
     rows = (
         db.query(Region.id, Region.name, func.sum(Room.room_capacity).label("vacancies"))
         .join(Internship, Internship.region_id == Region.id)
-        .join(Room, Room.internships_id == Internship.id)
+        .join(Room, Room.internship_id == Internship.id)
         .filter(Room.is_active.is_(True), Internship.is_active.is_(True))
         .group_by(Region.id, Region.name)
         .order_by(func.sum(Room.room_capacity).desc())
@@ -204,11 +204,11 @@ def capacity_by_internship(
             Internship.name,
             func.coalesce(func.sum(Room.room_capacity), 0).label("total"),
         )
-        .outerjoin(Room, (Room.internships_id == Internship.id) & Room.is_active.is_(True))
+        .outerjoin(Room, (Room.internship_id == Internship.id) & Room.is_active.is_(True))
         .filter(Internship.is_active.is_(True))
     )
-    if current_user.role == "internships" and current_user.internships_id:
-        capacity_query = capacity_query.filter(Internship.id == current_user.internships_id)
+    if current_user.role == "internships" and current_user.internship_id:
+        capacity_query = capacity_query.filter(Internship.id == current_user.internship_id)
 
     capacity_rows = capacity_query.group_by(Internship.id, Internship.name).all()
     capacity_map = {r.id: (r.name, r.total) for r in capacity_rows}
@@ -218,15 +218,15 @@ def capacity_by_internship(
             Internship.id,
             func.count(schedule_period_students.c.student_id).label("occupied"),
         )
-        .join(Room, Room.internships_id == Internship.id)
+        .join(Room, Room.internship_id == Internship.id)
         .join(Schedule, Schedule.room_id == Room.id)
         .join(ScheduleDay, ScheduleDay.schedule_id == Schedule.id)
         .join(SchedulePeriod, SchedulePeriod.schedule_day_id == ScheduleDay.id)
         .join(schedule_period_students, schedule_period_students.c.schedule_period_id == SchedulePeriod.id)
         .filter(Room.is_active.is_(True), Internship.is_active.is_(True))
     )
-    if current_user.role == "internships" and current_user.internships_id:
-        occupied_query = occupied_query.filter(Internship.id == current_user.internships_id)
+    if current_user.role == "internships" and current_user.internship_id:
+        occupied_query = occupied_query.filter(Internship.id == current_user.internship_id)
 
     occupied_map = {r.id: r.occupied for r in occupied_query.group_by(Internship.id).all()}
 
@@ -256,15 +256,15 @@ def occupied_by_internship(
             Internship.name,
             func.count(schedule_period_students.c.student_id).label("occupied"),
         )
-        .join(Room, Room.internships_id == Internship.id)
+        .join(Room, Room.internship_id == Internship.id)
         .join(Schedule, Schedule.room_id == Room.id)
         .join(ScheduleDay, ScheduleDay.schedule_id == Schedule.id)
         .join(SchedulePeriod, SchedulePeriod.schedule_day_id == ScheduleDay.id)
         .join(schedule_period_students, schedule_period_students.c.schedule_period_id == SchedulePeriod.id)
         .filter(Room.is_active.is_(True), Internship.is_active.is_(True))
     )
-    if current_user.role == "internships" and current_user.internships_id:
-        query = query.filter(Internship.id == current_user.internships_id)
+    if current_user.role == "internships" and current_user.internship_id:
+        query = query.filter(Internship.id == current_user.internship_id)
 
     rows = (
         query
@@ -288,7 +288,7 @@ def occupied_by_region(
     rows = (
         db.query(Region.id, Region.name, func.count(schedule_period_students.c.student_id).label("vacancies"))
         .join(Internship, Internship.region_id == Region.id)
-        .join(Room, Room.internships_id == Internship.id)
+        .join(Room, Room.internship_id == Internship.id)
         .join(Schedule, Schedule.room_id == Room.id)
         .join(ScheduleDay, ScheduleDay.schedule_id == Schedule.id)
         .join(SchedulePeriod, SchedulePeriod.schedule_day_id == ScheduleDay.id)

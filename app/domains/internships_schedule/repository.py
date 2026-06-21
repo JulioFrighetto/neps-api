@@ -12,11 +12,11 @@ def get_all(db: Session, page: int = 1, per_page: int = 10) -> tuple[list[Intern
     return items, total
 
 
-def get_by_internships(db: Session, internships_id: int, page: int = 1, per_page: int = 10) -> tuple[list[InternshipsSchedule], int]:
+def get_by_internships(db: Session, internship_id: int, page: int = 1, per_page: int = 10) -> tuple[list[InternshipsSchedule], int]:
     query = (
         db.query(InternshipsSchedule)
         .join(InternshipsRoom, InternshipsSchedule.internships_room_id == InternshipsRoom.id)
-        .filter(InternshipsRoom.internships_id == internships_id)
+        .filter(InternshipsRoom.internship_id == internship_id)
     )
     total = query.count()
     items = query.offset((page - 1) * per_page).limit(per_page).all()

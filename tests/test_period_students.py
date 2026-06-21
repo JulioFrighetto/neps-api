@@ -233,7 +233,7 @@ def test_period_unlink_removes_student_from_schedule_slot(db):
     db.refresh(internships)
 
     discipline = Discipline(name="Enfermagem", requires_gurney=False)
-    room = Room(internships_id=internships.id, name="Sala 1", room_capacity=2, has_gurney=False, is_active=True)
+    room = Room(internship_id=internships.id, name="Sala 1", room_capacity=2, has_gurney=False, is_active=True)
     db.add_all([discipline, room])
     db.commit()
     db.refresh(discipline)
@@ -299,7 +299,7 @@ def test_list_histories_by_room(client, db):
     db.refresh(internships)
 
     discipline = Discipline(name="Enfermagem", requires_gurney=False)
-    room = Room(internships_id=internships.id, name="Sala 1", room_capacity=2, has_gurney=False, is_active=True)
+    room = Room(internship_id=internships.id, name="Sala 1", room_capacity=2, has_gurney=False, is_active=True)
     db.add_all([discipline, room])
     db.commit()
     db.refresh(discipline)
@@ -359,7 +359,7 @@ def test_list_histories_by_schedule(client, db):
     db.refresh(internships)
 
     discipline = Discipline(name="Enfermagem", requires_gurney=False)
-    room = Room(internships_id=internships.id, name="Sala 1", room_capacity=2, has_gurney=False, is_active=True)
+    room = Room(internship_id=internships.id, name="Sala 1", room_capacity=2, has_gurney=False, is_active=True)
     db.add_all([discipline, room])
     db.commit()
     db.refresh(discipline)
@@ -421,7 +421,7 @@ def test_list_histories_by_student(client, db):
     db.refresh(internships)
 
     discipline = Discipline(name="Enfermagem", requires_gurney=False)
-    room = Room(internships_id=internships.id, name="Sala 1", room_capacity=2, has_gurney=False, is_active=True)
+    room = Room(internship_id=internships.id, name="Sala 1", room_capacity=2, has_gurney=False, is_active=True)
     db.add_all([discipline, room])
     db.commit()
     db.refresh(discipline)

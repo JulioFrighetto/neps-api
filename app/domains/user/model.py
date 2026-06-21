@@ -14,7 +14,7 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(150), nullable=False, unique=True, index=True)
     password: Mapped[str] = mapped_column(String(255), nullable=True)
     role: Mapped[str] = mapped_column(String(20), nullable=False, default="user")
-    internships_id: Mapped[int | None] = mapped_column(ForeignKey("internships.id"), nullable=True)
+    internship_id: Mapped[int | None] = mapped_column(ForeignKey("internships.id"), nullable=True)
     education_institute_id: Mapped[int | None] = mapped_column(
         ForeignKey("education_institutes.id"), nullable=True
     )

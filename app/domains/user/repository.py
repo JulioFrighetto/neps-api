@@ -49,7 +49,7 @@ def create(db: Session, data: UserCreate) -> User:
         email=data.email,
         password=hash_password(password),
         role=data.role,
-        internships_id=data.internships_id,
+        internship_id=data.internship_id,
         education_institute_id=data.education_institute_id,
         is_active=data.is_active,
     )

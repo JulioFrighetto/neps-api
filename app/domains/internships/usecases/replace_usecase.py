@@ -14,7 +14,7 @@ def replace_internship_usecase(db, data: InternshipsCreate):
     """Replace (or create) an internship and optionally a linked user.
     Replicates the router logic, moving all validation and side‑effects here.
     """
-    internship = repository.get_by_id(db, data.internships_id)
+    internship = repository.get_by_id(db, data.internship_id)
     if not internship:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Campo de estágio não encontrado")
 
@@ -40,7 +40,7 @@ def replace_internship_usecase(db, data: InternshipsCreate):
             email=data.user_email,
             password=hash_password(temp_password),
             role="internships",
-            internships_id=internship.id,
+            internship_id=internship.id,
             is_active=True,
         )
         db.add(user)
@@ -58,4 +58,4 @@ def replace_internship_usecase(db, data: InternshipsCreate):
             raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc))
 
     # retorna o estágio atualizado (ou recém‑criado)
-    return repository.get_by_id(db, data.internships_id) or internship
+    return repository.get_by_id(db, data.internship_id) or internship

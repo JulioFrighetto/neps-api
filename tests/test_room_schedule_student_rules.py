@@ -67,7 +67,7 @@ def _create_basic_entities(client, *, requires_gurney: bool = False, has_gurney:
     room = client.post(
         "/api/v1/rooms",
         json={
-            "internships_id": internships["id"],
+            "internship_id": internships["id"],
             "name": "Sala 01",
             "room_capacity": 10,
             "has_gurney": has_gurney,
@@ -98,7 +98,7 @@ def test_prevents_student_conflict_in_other_room(client, db):
     room2 = client.post(
         "/api/v1/rooms",
         json={
-            "internships_id": internships["id"],
+            "internship_id": internships["id"],
             "name": "Sala 02",
             "room_capacity": 10,
             "has_gurney": True,
