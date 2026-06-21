@@ -62,6 +62,8 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
         access_token=create_access_token(
             user.id,
             role=user.role,
+            internship_id=user.internship_id,
+            education_institute_id=user.education_institute_id,
             extra=_build_access_token_extra(user),
         ),
         refresh_token=create_refresh_token(user.id),
@@ -92,6 +94,8 @@ def refresh(data: RefreshRequest, db: Session = Depends(get_db)):
         access_token=create_access_token(
             user.id,
             role=user.role,
+            internship_id=user.internship_id,
+            education_institute_id=user.education_institute_id,
             extra=_build_access_token_extra(user),
         ),
         refresh_token=create_refresh_token(user.id),
