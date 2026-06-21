@@ -166,9 +166,11 @@ def update_user(
     # Admins may update any user (including toggling is_active). Regular users may update only themselves.
     if current_user.role != "admin" and current_user.id != data.user_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
-    user = repository.update(db, data.user_id, data)
-    if not user:
+    updated = repository.update(db, data.user_id, data)
+    if not updated:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado")
+    # Re-fetch the user to ensure all related fields (e.g., internship) are loaded correctly
+    user = repository.get_by_id(db, data.user_id)
     return user
 
 
