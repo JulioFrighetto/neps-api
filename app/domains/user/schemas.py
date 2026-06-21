@@ -41,6 +41,7 @@ class UserCreate(UserBase):
 
 
 class UserUpdate(BaseModel):
+    internships_id: int | None = Field(default=None, alias="internship_id")
     name: str | None = None
     email: EmailStr | None = None
     is_active: bool | None = None
