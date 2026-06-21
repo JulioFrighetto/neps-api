@@ -22,7 +22,7 @@ def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def create_access_token(subject: int, extra: dict[str, Any] | None = None) -> str:
+def create_access_token(subject: int, role: str | None = None, extra: dict[str, Any] | None = None) -> str:
     expire = _utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     payload = {"sub": str(subject), "type": "access", "exp": expire}
     if extra:
