@@ -58,8 +58,8 @@ class UserResponse(UserBase):
 
     id: int
     role: str
-    # Expose alias directly in response
-    internship_id: int | None = Field(default=None, alias="internship_id")
+    # Expose alias directly in response, mapping to the model's internships_id column
+    internship_id: int | None = Field(default=None, alias="internships_id")
     created_at: datetime
     updated_at: datetime
 
