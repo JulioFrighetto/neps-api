@@ -46,6 +46,7 @@ class UserUpdate(BaseModel):
     name: str | None = None
     email: EmailStr | None = None
     is_active: bool | None = None
+    password: str | None = None
 
 
 class UserChangePassword(BaseModel):
