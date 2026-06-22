@@ -13,9 +13,6 @@ class DisciplineItem(BaseModel):
 
 class CourseBase(BaseModel):
     name: str
-    area: str | None = None
-    workload: int | None = None
-    semester: int | None = None
     is_active: bool = True
 
 
@@ -26,9 +23,6 @@ class CourseCreate(CourseBase):
 
 class CourseUpdate(BaseModel):
     name: str | None = None
-    area: str | None = None
-    workload: int | None = None
-    semester: int | None = None
     is_active: bool | None = None
     disciplines: list[DisciplineItem] | None = None
     education_institute_id: int | None = None
