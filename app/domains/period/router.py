@@ -63,9 +63,14 @@ def list_periods(
 
     institute_priority = None
     if current_user.role == "education_institute":
-        if current_user.education_institute_id is None or current_user.education_institute is None:
+        if current_user.education_institute_id is None:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
-        institute_priority = current_user.education_institute.priority
+        institute = current_user.education_institute or db.query(EducationInstitute).filter_by(
+            id=current_user.education_institute_id
+        ).first()
+        if not institute:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
+        institute_priority = institute.priority
     elif current_user.role != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
 
@@ -96,9 +101,14 @@ def get_period(
 ):
     institute_priority = None
     if current_user.role == "education_institute":
-        if current_user.education_institute_id is None or current_user.education_institute is None:
+        if current_user.education_institute_id is None:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
-        institute_priority = current_user.education_institute.priority
+        institute = current_user.education_institute or db.query(EducationInstitute).filter_by(
+            id=current_user.education_institute_id
+        ).first()
+        if not institute:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
+        institute_priority = institute.priority
     elif current_user.role != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
 
@@ -238,9 +248,9 @@ def unlink_student_from_period(
     if current_user.role == "education_institute":
         if current_user.education_institute_id is None:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
-        institute = current_user.education_institute or db.query(
-            __import__("app.domains.education_institute.model", fromlist=["EducationInstitute"]).EducationInstitute
-        ).filter_by(id=current_user.education_institute_id).first()
+        institute = current_user.education_institute or db.query(EducationInstitute).filter_by(
+            id=current_user.education_institute_id
+        ).first()
         if not institute:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
         institute_priority = institute.priority
