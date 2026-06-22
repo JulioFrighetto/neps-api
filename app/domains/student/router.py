@@ -146,7 +146,7 @@ def list_students(
     discipline_id: int | None = Query(None),
     institution_id: int | None = Query(None),
     semester: int | None = Query(None),
-    status: str | None = Query(None),
+    student_status: str | None = Query(None, alias="status"),
     internship_id: int | None = Query(None),
     internship_id_null: bool | None = Query(None, description="Filtrar alunos sem vínculo com campo de estágio"),
     include: str | None = Query(None, description="Relacionamentos a incluir: discipline,institution"),
@@ -170,8 +170,8 @@ def list_students(
         filters["edu_institute_id"] = institution_id
     if semester is not None:
         filters["semester"] = semester
-    if status is not None:
-        filters["status"] = status
+    if student_status is not None:
+        filters["status"] = student_status
     if internship_id is not None:
         filters["internship_id"] = internship_id
     if internship_id_null is not None:
