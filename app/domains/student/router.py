@@ -184,8 +184,8 @@ def list_students(
     elif current_user.role == "education_institute" and current_user.education_institute_id is not None:
         filters["edu_institute_id"] = current_user.education_institute_id
         items, total = repository.get_by_institute(db, current_user.education_institute_id, page=page, per_page=per_page, filters=filters)
-    elif current_user.role == "internships" and current_user.internships_id is not None:
-        filters["internship_id"] = current_user.internships_id
+    elif current_user.role == "internships" and current_user.internship_id is not None:
+        filters["internship_id"] = current_user.internship_id
         items, total = repository.get_all(db, page=page, per_page=per_page, filters=filters)
     else:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
