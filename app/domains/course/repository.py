@@ -4,6 +4,7 @@ from app.core.filters import apply_filters
 from app.domains.course.model import Course
 from app.domains.course.schemas import CourseCreate, CourseUpdate
 from app.domains.discipline.model import Discipline
+from app.domains.education_institute.model import EducationInstitute
 
 
 def _sync_disciplines(db: Session, course: Course, items: list) -> None:
@@ -42,12 +43,20 @@ def get_by_id(db: Session, course_id: int) -> Course | None:
     )
 
 
+def _sync_education_institute(db: Session, course: Course, education_institute_id: int) -> None:
+    institute = db.query(EducationInstitute).filter(EducationInstitute.id == education_institute_id).first()
+    if institute and institute not in course.education_institutes:
+        course.education_institutes.append(institute)
+
+
 def create(db: Session, data: CourseCreate) -> Course:
-    values = data.model_dump(exclude={"disciplines"})
+    values = data.model_dump(exclude={"disciplines", "education_institute_id"})
     course = Course(**values)
     db.add(course)
     db.flush()
     _sync_disciplines(db, course, data.disciplines)
+    if data.education_institute_id:
+        _sync_education_institute(db, course, data.education_institute_id)
     db.commit()
     db.refresh(course)
     return course
@@ -57,11 +66,13 @@ def update(db: Session, course_id: int, data: CourseUpdate) -> Course | None:
     course = get_by_id(db, course_id)
     if not course:
         return None
-    values = data.model_dump(exclude_unset=True, exclude={"disciplines"})
+    values = data.model_dump(exclude_unset=True, exclude={"disciplines", "education_institute_id"})
     for field, value in values.items():
         setattr(course, field, value)
     if data.disciplines is not None:
         _sync_disciplines(db, course, data.disciplines)
+    if data.education_institute_id:
+        _sync_education_institute(db, course, data.education_institute_id)
     db.commit()
     db.refresh(course)
     return course

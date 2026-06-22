@@ -97,6 +97,8 @@ def get_course(data: CourseGetRequest, db: Session = Depends(get_db), current_us
 def create_course(data: CourseCreate, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     if current_user.role not in ("admin", "education_institute"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
+    if current_user.role != "admin":
+        data.education_institute_id = current_user.education_institute_id
     return repository.create(db, data)
 
 
@@ -105,6 +107,8 @@ def create_course(data: CourseCreate, db: Session = Depends(get_db), current_use
 def update_course(data: CourseUpdateRequest, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     if current_user.role not in ("admin", "education_institute"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
+    if current_user.role != "admin":
+        data.education_institute_id = current_user.education_institute_id
     course = repository.update(db, data.course_id, data)
     if not course:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Curso não encontrado")

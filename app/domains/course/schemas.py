@@ -21,6 +21,7 @@ class CourseBase(BaseModel):
 
 class CourseCreate(CourseBase):
     disciplines: list[DisciplineItem] = []
+    education_institute_id: int | None = None
 
 
 class CourseUpdate(BaseModel):
@@ -30,6 +31,7 @@ class CourseUpdate(BaseModel):
     semester: int | None = None
     is_active: bool | None = None
     disciplines: list[DisciplineItem] | None = None
+    education_institute_id: int | None = None
 
 
 class DisciplineBrief(BaseModel):
