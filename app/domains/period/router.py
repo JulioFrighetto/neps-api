@@ -17,6 +17,7 @@ from app.domains.period.schemas import (
     StudentLinkRequest,
     StudentSummary,
 )
+from app.domains.education_institute.model import EducationInstitute
 from app.domains.student import repository as student_repository
 from app.domains.student.model import Student
 
