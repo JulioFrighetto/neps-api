@@ -18,12 +18,13 @@ router = APIRouter(prefix="/courses", tags=["Courses"])
 AVAILABLE_FILTERS = ["name_like"]
 
 
-def _get_page(db, page, per_page, filters):
+def _get_page(db, page, per_page, filters, education_institute_id=None):
     items, total = repository.get_all(
         db,
         page=page,
         per_page=per_page,
         filters=filters,
+        education_institute_id=education_institute_id,
     )
     return Page(
         items=items,
@@ -51,11 +52,15 @@ def list_courses(
 ):
     if current_user.role == "internships":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
+    education_institute_id = (
+        current_user.education_institute_id if current_user.role == "education_institute" else None
+    )
     return _get_page(
         db,
         page=page,
         per_page=per_page,
         filters=filters.model_dump(exclude_none=True),
+        education_institute_id=education_institute_id,
     )
 
 
@@ -69,11 +74,15 @@ def list_courses_brief(
 ):
     if current_user.role == "internships":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
+    education_institute_id = (
+        current_user.education_institute_id if current_user.role == "education_institute" else None
+    )
     page_obj = _get_page(
         db,
         page=page,
         per_page=per_page,
         filters=filters.model_dump(exclude_none=True),
+        education_institute_id=education_institute_id,
     )
     brief_items = [{"id": d.id, "name": d.name} for d in page_obj.items]
     return Page(

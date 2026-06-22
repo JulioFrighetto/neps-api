@@ -25,8 +25,18 @@ def _sync_disciplines(db: Session, course: Course, items: list) -> None:
             course.disciplines.append(disc)
 
 
-def get_all(db: Session, page: int = 1, per_page: int = 10, filters: dict | None = None) -> tuple[list[Course], int]:
+def get_all(
+    db: Session,
+    page: int = 1,
+    per_page: int = 10,
+    filters: dict | None = None,
+    education_institute_id: int | None = None,
+) -> tuple[list[Course], int]:
     query = db.query(Course).options(selectinload(Course.disciplines))
+    if education_institute_id is not None:
+        query = query.join(Course.education_institutes).filter(
+            EducationInstitute.id == education_institute_id
+        )
     if filters:
         query, _ = apply_filters(query, Course, filters)
     total = query.count()
