@@ -1,11 +1,10 @@
 from typing import Literal
 
-from fastapi import APIRouter, Body, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.domains.period import repository as period_repository
 from app.domains.room.repository import get_by_id as get_room_by_id
 from app.domains.room_schedule import repository_nested as schedule_repository
 
@@ -19,7 +18,7 @@ class AssignStudentToPeriodRequest(BaseModel):
     room_id: int
     day_of_week: DayOfWeek
     period: PeriodName
-    period_id: int
+    period_id: int | None = None
     student_id: int
 
 
@@ -72,10 +71,6 @@ def assign_student_to_period(
     if not room:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sala não encontrada")
 
-    period_model = period_repository.get_by_id(db, payload.period_id)
-    if not period_model:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Período não encontrado")
-
     try:
         updated_period = schedule_repository.assign_student_to_period(
             db=db,
@@ -107,10 +102,6 @@ def remove_student_from_period(
     room = get_room_by_id(db, payload.room_id)
     if not room:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sala não encontrada")
-
-    period_model = period_repository.get_by_id(db, payload.period_id)
-    if not period_model:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Período não encontrado")
 
     updated_period = schedule_repository.remove_student_from_period(
         db=db,
