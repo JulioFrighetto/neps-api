@@ -23,13 +23,11 @@ TEST_DATABASE_URL = "sqlite:///./test_periods.db"
 engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-
 @pytest.fixture(autouse=True)
 def setup_db():
     Base.metadata.create_all(bind=engine)
     yield
     Base.metadata.drop_all(bind=engine)
-
 
 @pytest.fixture
 def db():
@@ -38,7 +36,6 @@ def db():
         yield session
     finally:
         session.close()
-
 
 @pytest.fixture
 def client(db):
@@ -52,7 +49,6 @@ def client(db):
     finally:
         c.close()
         app.dependency_overrides.clear()
-
 
 def _create_institute_discipline_student(client, institute_name="Inst X"):
     inst = client.post("/api/v1/education-institutes", json={"name": institute_name}).json()
@@ -71,7 +67,6 @@ def _create_institute_discipline_student(client, institute_name="Inst X"):
     ).json()
     return inst, discipline, student
 
-
 def _create_priority_period(client):
     today = date.today()
     return client.post(
@@ -85,7 +80,6 @@ def _create_priority_period(client):
             "is_active": True,
         },
     ).json()
-
 
 def _make_institute_headers(client, db, institute_id, email="inst@test.com"):
     from app.domains.user.repository import create as create_user
@@ -104,7 +98,6 @@ def _make_institute_headers(client, db, institute_id, email="inst@test.com"):
     tokens = client.post("/api/v1/auth/login", json={"email": email, "password": "pass"}).json()
     return {"Authorization": f"Bearer {tokens['access_token']}"}
 
-
 def _make_role_headers(client, db, role, email):
     user = User(
         name=role.title(),
@@ -118,22 +111,18 @@ def _make_role_headers(client, db, role, email):
     tokens = client.post("/api/v1/auth/login", json={"email": email, "password": "pass"}).json()
     return {"Authorization": f"Bearer {tokens['access_token']}"}
 
-
 def test_link_and_unlink_student_to_period(client, db):
     inst, _discipline, student = _create_institute_discipline_student(client)
     period = _create_priority_period(client)
     headers = _make_institute_headers(client, db, inst["id"])
 
-    # link student
     resp = client.post("/api/v1/periods/students", json={"period_id": period["id"], "student_id": student["id"]}, headers=headers)
     assert resp.status_code == 201
     assert resp.json()["message"] == "Aluno vinculado com sucesso"
 
-    # linking again should return conflict
     resp_dup = client.post("/api/v1/periods/students", json={"period_id": period["id"], "student_id": student["id"]}, headers=headers)
     assert resp_dup.status_code == 409
 
-    # get period with students
     resp_get = client.post("/api/v1/periods/detail", json={"period_id": period["id"], "include": "students"}, headers=headers)
     assert resp_get.status_code == 200
     body = resp_get.json()
@@ -148,7 +137,6 @@ def test_link_and_unlink_student_to_period(client, db):
     assert histories_body["items"][0]["period_id"] == period["id"]
     assert histories_body["items"][0]["end_date"] is None
 
-    # unlink student
     resp_unlink = client.request("DELETE", "/api/v1/periods/students", json={"period_id": period["id"], "student_id": student["id"]}, headers=headers)
     assert resp_unlink.status_code == 200
     assert resp_unlink.json()["message"] == "Aluno desvinculado com sucesso"
@@ -159,11 +147,9 @@ def test_link_and_unlink_student_to_period(client, db):
     assert histories_after_unlink["pagination"]["total"] == 1
     assert histories_after_unlink["items"][0]["end_date"] is not None
 
-    # unlink again is idempotent
     resp_unlink2 = client.request("DELETE", "/api/v1/periods/students", json={"period_id": period["id"], "student_id": student["id"]}, headers=headers)
     assert resp_unlink2.status_code == 200
     assert resp_unlink2.json()["message"] == "Aluno desvinculado com sucesso"
-
 
 def test_admin_can_unlink_student_from_period(client, db):
     inst, _discipline, student = _create_institute_discipline_student(client)
@@ -187,7 +173,6 @@ def test_admin_can_unlink_student_from_period(client, db):
     assert resp_unlink.status_code == 200
     assert resp_unlink.json()["message"] == "Aluno desvinculado com sucesso"
 
-
 def test_internships_cannot_unlink_student_from_period(client, db):
     _inst, _discipline, student = _create_institute_discipline_student(client)
     period = _create_priority_period(client)
@@ -200,7 +185,6 @@ def test_internships_cannot_unlink_student_from_period(client, db):
         headers=internships_headers,
     )
     assert resp.status_code == 403
-
 
 def test_institute_cannot_unlink_student_from_other_institute(client, db):
     inst, _discipline, _student = _create_institute_discipline_student(client, "Inst A")
@@ -221,7 +205,6 @@ def test_institute_cannot_unlink_student_from_other_institute(client, db):
         headers=headers,
     )
     assert resp.status_code == 403
-
 
 def test_period_unlink_removes_student_from_schedule_slot(db):
     today = date.today()
@@ -288,7 +271,6 @@ def test_period_unlink_removes_student_from_schedule_slot(db):
     assert updated_period is not None
     assert all(existing.id != student.id for existing in updated_period.students)
 
-
 def test_list_histories_by_room(client, db):
     today = date.today()
     institute = EducationInstitute(name="Inst X", priority=0, is_active=True)
@@ -347,7 +329,6 @@ def test_list_histories_by_room(client, db):
     assert body["pagination"]["total"] == 1
     assert body["items"][0]["room_id"] == room.id
     assert body["items"][0]["student_id"] == student.id
-
 
 def test_list_histories_by_schedule(client, db):
     today = date.today()
@@ -409,7 +390,6 @@ def test_list_histories_by_schedule(client, db):
     assert body["pagination"]["total"] == 1
     assert body["items"][0]["schedule_id"] == schedule.id
     assert body["items"][0]["room_id"] == room.id
-
 
 def test_list_histories_by_student(client, db):
     today = date.today()

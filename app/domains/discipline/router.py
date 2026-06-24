@@ -18,11 +18,9 @@ from app.domains.discipline.usecases.update import update_usecase
 
 router = APIRouter(prefix="/disciplines", tags=["Disciplines"])
 
-
 def _require_not_internships(current_user):
     if current_user.role == "internships":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
-
 
 @router.get("/list", response_model=Page[DisciplineBrief])
 def list_disciplines_brief(
@@ -46,7 +44,6 @@ def list_disciplines_brief(
         filters=page_obj.filters,
     )
 
-
 @router.get("/", response_model=Page[DisciplineResponse])
 def list_disciplines(
     filters: DisciplineFilters = Depends(),
@@ -63,7 +60,6 @@ def list_disciplines(
         filters=filters.model_dump(exclude_none=True),
     )
 
-
 @router.post("/detail", response_model=DisciplineResponse)
 def get_discipline(data: DisciplineGetRequest, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     _require_not_internships(current_user)
@@ -72,13 +68,11 @@ def get_discipline(data: DisciplineGetRequest, db: Session = Depends(get_db), cu
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Disciplina não encontrada")
     return discipline
 
-
 @router.post("/", response_model=DisciplineResponse, status_code=status.HTTP_201_CREATED)
 def create_discipline(data: DisciplineCreate, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     if current_user.role not in ("admin", "education_institute"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
     return create_usecase(db, data)
-
 
 @router.put("/", response_model=DisciplineResponse)
 @router.patch("/", response_model=DisciplineResponse)

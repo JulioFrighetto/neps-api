@@ -9,7 +9,6 @@ if TYPE_CHECKING:
     from app.domains.education_institute.model import EducationInstitute
     from app.domains.internships.model import Internship
 
-
 class Region(Base):
     __tablename__ = "regions"
 
@@ -21,8 +20,6 @@ class Region(Base):
         DateTime, server_default=func.now(), onupdate=func.now()
     )
 
-    # Relationships
-    # Backref to education institutes (many-to-many)
     education_institutes: Mapped[list["EducationInstitute"]] = relationship(
         "EducationInstitute", secondary="education_institute_regions", back_populates="regions"
     )

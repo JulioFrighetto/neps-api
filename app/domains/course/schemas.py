@@ -2,7 +2,6 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
-
 class DisciplineItem(BaseModel):
     id: int | None = None
     name: str | None = None
@@ -10,23 +9,19 @@ class DisciplineItem(BaseModel):
     region_id: int | None = None
     requires_gurney: bool = False
 
-
 class CourseBase(BaseModel):
     name: str
     is_active: bool = True
 
-
 class CourseCreate(CourseBase):
     disciplines: list[DisciplineItem] = []
     education_institute_id: int | None = None
-
 
 class CourseUpdate(BaseModel):
     name: str | None = None
     is_active: bool | None = None
     disciplines: list[DisciplineItem] | None = None
     education_institute_id: int | None = None
-
 
 class DisciplineBrief(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -36,14 +31,12 @@ class DisciplineBrief(BaseModel):
     code: str | None = None
     requires_gurney: bool = False
 
-
 class CourseResponse(CourseBase):
     model_config = ConfigDict(from_attributes=True)
     id: int
     created_at: datetime
     updated_at: datetime
     disciplines: list[DisciplineBrief] = []
-
 
 class CourseFilters(BaseModel):
     name_like: str | None = None
@@ -52,15 +45,12 @@ class CourseFilters(BaseModel):
     def available_filters(cls):
         return list(cls.model_fields.keys())
 
-
 class CourseGetRequest(BaseModel):
     course_id: int
-
 
 class CourseBrief(BaseModel):
     id: int
     name: str
-
 
 class CourseUpdateRequest(CourseUpdate):
     course_id: int

@@ -25,14 +25,11 @@ router = APIRouter(prefix="/education-institutes", tags=["Education Institutes"]
 
 AVAILABLE_FILTERS = ["name_like", "cnpj", "is_active", "priority"]
 
-
 class InstituteGetRequest(BaseModel):
     institute_id: int
 
-
 class InstituteUpdateRequest(EducationInstituteUpdate):
     institute_id: int
-
 
 @router.get("/list", response_model=Page[EducationInstituteBrief])
 def list_institutes_brief(
@@ -56,8 +53,6 @@ def list_institutes_brief(
         filters=page_obj.filters,
     )
 
-
-
 @router.get("/", response_model=Page[EducationInstituteResponse])
 def list_institutes(
     page: int = Query(1, ge=1),
@@ -78,7 +73,6 @@ def list_institutes(
         current_user=current_user,
         )
 
-
 @router.post("/detail", response_model=EducationInstituteResponse)
 def get_institute(data: InstituteGetRequest, db: Session = Depends(get_db)):
     institute = find_one.find_one_usecase(db, data.institute_id)
@@ -86,12 +80,10 @@ def get_institute(data: InstituteGetRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Instituição não encontrada")
     return institute
 
-
 @router.post("/", response_model=EducationInstituteResponse, status_code=status.HTTP_201_CREATED)
 def create_institute(data: EducationInstituteCreate, db: Session = Depends(get_db)):
     institute = create_usecase(db, data)
     return institute
-
 
 @router.patch("/", response_model=EducationInstituteResponse)
 def update_institute(data: InstituteUpdateRequest, db: Session = Depends(get_db)):
@@ -100,7 +92,6 @@ def update_institute(data: InstituteUpdateRequest, db: Session = Depends(get_db)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Instituição não encontrada")
     return institute
 
-
 @router.put("/", response_model=EducationInstituteResponse)
 def replace_institute(data: InstituteUpdateRequest, db: Session = Depends(get_db)):
     institute = update_usecase(db, data.institute_id, data)
@@ -108,11 +99,9 @@ def replace_institute(data: InstituteUpdateRequest, db: Session = Depends(get_db
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Instituição não encontrada")
     return institute
 
-
 class InstituteCourseRequest(BaseModel):
     institute_id: int
     course_id: int
-
 
 @router.get("/courses", response_model=list[dict])
 def list_institute_courses(
@@ -125,7 +114,6 @@ def list_institute_courses(
     if not institute:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Instituição não encontrada")
     return [{"id": c.id, "name": c.name} for c in institute.courses]
-
 
 @router.post("/courses/link", response_model=EducationInstituteResponse)
 def link_course_to_institute(data: InstituteCourseRequest, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
@@ -142,7 +130,6 @@ def link_course_to_institute(data: InstituteCourseRequest, db: Session = Depends
         db.commit()
         db.refresh(institute)
     return institute
-
 
 @router.delete("/courses", response_model=EducationInstituteResponse)
 def unlink_course_from_institute(data: InstituteCourseRequest, db: Session = Depends(get_db), current_user=Depends(get_current_user)):

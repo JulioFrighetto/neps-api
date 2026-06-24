@@ -25,19 +25,15 @@ router = APIRouter(prefix="/periods", tags=["Periods"])
 
 AVAILABLE_FILTERS = ["name_like", "is_active", "start_date_from", "start_date_to", "end_date_from", "end_date_to"]
 
-
 class PeriodDetailRequest(BaseModel):
     period_id: int
     include: str | None = None
 
-
 class PeriodStudentLinkRequest(StudentLinkRequest):
     period_id: int
 
-
 class PeriodUpdateRequest(PeriodUpdate):
     period_id: int
-
 
 @router.get("/", response_model=Page[PeriodResponse])
 def list_periods(
@@ -92,7 +88,6 @@ def list_periods(
         filters=FilterInfo(applied=list(filters.keys()), available=AVAILABLE_FILTERS),
     )
 
-
 @router.post("/detail", response_model=PeriodDetailResponse)
 def get_period(
     data: PeriodDetailRequest,
@@ -122,7 +117,6 @@ def get_period(
     if not period:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Período não encontrado")
 
-    # Build response dict
     base = {
         "id": period.id,
         "name": period.name,
@@ -140,7 +134,7 @@ def get_period(
         from app.domains.room_schedule.models_nested import SchedulePeriod, ScheduleDay, Schedule
         from app.domains.room_schedule.models_nested import schedule_period_students
         from app.domains.room.model import Room
-        
+
         from app.domains.education_institute.model import EducationInstitute
         student_query = db.query(Student).options(
             selectinload(Student.discipline),
@@ -153,7 +147,7 @@ def get_period(
         student_query = student_query.filter(Student.is_active.is_(True))
 
         for s in student_query.all():
-            # Check if student has a slot assigned (schedule)
+
             slot_query = (
                 db.query(SchedulePeriod, ScheduleDay, Schedule)
                 .outerjoin(ScheduleDay, SchedulePeriod.schedule_day_id == ScheduleDay.id)
@@ -166,7 +160,7 @@ def get_period(
             has_slot = False
             if slot_query:
                 schedule_period, schedule_day, schedule = slot_query
-                # only consider a slot if a schedule (and its room) exists
+
                 if schedule is not None:
                     has_slot = True
                     room = db.query(Room).filter(Room.id == schedule.room_id).first()
@@ -176,7 +170,7 @@ def get_period(
                         "day_of_week": schedule_day.day_of_week,
                         "period": schedule_period.period,
                     }
-            
+
             students_list.append(
                 {
                     "id": s.id,
@@ -200,33 +194,28 @@ def get_period(
 
     return PeriodDetailResponse(**base)
 
-
-
 @router.post("/students", status_code=status.HTTP_201_CREATED)
 def link_student_to_period(
     data: PeriodStudentLinkRequest,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    # permission
+
     if current_user.role != "education_institute":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
     if current_user.education_institute_id is None:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
 
-    # validate period visibility
     period = repository.get_by_id(db, data.period_id, institute_priority=current_user.education_institute.priority)
     if not period:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Período não encontrado ou não visível")
 
-    # validate student
     student = student_repository.get_by_id(db, data.student_id)
     if not student or not student.is_active:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Aluno não encontrado ou inativo")
     if student.edu_institute_id != current_user.education_institute_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Aluno não pertence à instituição")
 
-    # check already linked
     if any(s.id == student.id for s in getattr(period, "students", [])):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Aluno já está vinculado ao período")
 
@@ -236,7 +225,6 @@ def link_student_to_period(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
 
     return {"message": "Aluno vinculado com sucesso"}
-
 
 @router.delete("/students", status_code=status.HTTP_200_OK)
 def unlink_student_from_period(
@@ -283,11 +271,9 @@ def unlink_student_from_period(
 
     return {"message": "Aluno desvinculado com sucesso"}
 
-
 @router.post("/", response_model=PeriodResponse, status_code=status.HTTP_201_CREATED)
 def create_period(data: PeriodCreate, db: Session = Depends(get_db)):
     return repository.create(db, data)
-
 
 @router.patch("/", response_model=PeriodResponse)
 def update_period(data: PeriodUpdateRequest, db: Session = Depends(get_db)):

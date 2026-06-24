@@ -10,7 +10,6 @@ if TYPE_CHECKING:
 if TYPE_CHECKING:
     from app.domains.student.model import Student
 
-
 class InternshipsSchedule(Base):
     __tablename__ = "internships_schedules"
     __table_args__ = (
@@ -28,9 +27,9 @@ class InternshipsSchedule(Base):
         DateTime, server_default=func.now(), onupdate=func.now()
     )
 
-    internships_room: Mapped["InternshipsRoom"] = relationship(  # noqa: F821
+    internships_room: Mapped["InternshipsRoom"] = relationship(
         "InternshipsRoom", back_populates="internships_schedules"
     )
-    student: Mapped["Student | None"] = relationship(  # noqa: F821
+    student: Mapped["Student | None"] = relationship(
         "Student", back_populates="internships_schedules"
     )

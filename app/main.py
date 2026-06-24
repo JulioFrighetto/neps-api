@@ -9,7 +9,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 from app.core.database import init_db
-from app.core.models import *  # noqa: F401, F403 — registers all models with Base.metadata
+from app.core.models import *
 from app.core.settings import settings
 from app.domains.course.router import router as course_router
 from app.domains.discipline.router import router as discipline_router
@@ -34,7 +34,6 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception):
     tb = traceback.format_exc()
@@ -43,7 +42,6 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
         status_code=500,
         content={"detail": str(exc), "type": type(exc).__name__, "traceback": tb},
     )
-
 
 @app.on_event("startup")
 def on_startup() -> None:
@@ -57,7 +55,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ── Routers ───────────────────────────────────────────────────────────────────
 API_PREFIX = "/api/v1"
 
 app.include_router(auth_router, prefix=API_PREFIX)
@@ -75,7 +72,6 @@ app.include_router(history_router, prefix=API_PREFIX)
 app.include_router(student_router, prefix=API_PREFIX)
 app.include_router(dashboard_router, prefix=API_PREFIX)
 app.include_router(period_router, prefix=API_PREFIX)
-
 
 @app.get("/", tags=["Health"])
 def root():

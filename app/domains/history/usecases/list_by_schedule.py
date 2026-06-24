@@ -3,7 +3,6 @@ from app.domains.history import repository
 from app.domains.room_schedule.repository_nested import get_by_id as get_schedule_by_id
 from app.domains.room.repository import get_by_id as get_room_by_id
 
-
 def list_by_schedule_usecase(db, data, current_user):
     """Return (items, total) for histories filtered by schedule with permission checks."""
     schedule = get_schedule_by_id(db, data.id)

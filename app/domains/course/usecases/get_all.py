@@ -5,7 +5,6 @@ from app.domains.course import repository
 from app.domains.course.constants import AVAILABLE_FILTERS
 from app.domains.course.schemas import CourseFilters
 
-
 def get_all_usecase(db, page, per_page, filters):
     items, total = repository.get_all(
         db,

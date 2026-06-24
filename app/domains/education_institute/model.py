@@ -15,7 +15,6 @@ education_institute_courses = Table(
     Column("course_id", Integer, ForeignKey("courses.id"), primary_key=True),
 )
 
-
 class EducationInstitute(Base):
     __tablename__ = "education_institutes"
 
@@ -47,7 +46,7 @@ class EducationInstitute(Base):
     regions: Mapped[list["Region"]] = relationship(
         "Region", secondary="education_institute_regions", back_populates="education_institutes"
     )
-    courses: Mapped[list["Course"]] = relationship(  # noqa: F821
+    courses: Mapped[list["Course"]] = relationship(
         "Course", secondary=education_institute_courses, back_populates="education_institutes"
     )
 

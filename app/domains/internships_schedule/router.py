@@ -18,23 +18,18 @@ from app.domains.student.repository import get_by_id as get_student_by_id
 
 router = APIRouter(prefix="/internship-schedules", tags=["Internships Schedules"])
 
-
 class InternshipsScheduleGetRequest(BaseModel):
     internships_schedule_id: int
 
-
 class InternshipsSchedulesByRoomRequest(BaseModel):
     internships_room_id: int
-
 
 class InternshipsSchedulesByRoomDayRequest(BaseModel):
     internships_room_id: int
     week_day: str
 
-
 class InternshipsScheduleUpdateRequest(InternshipsScheduleUpdate):
     internships_schedule_id: int
-
 
 @router.get("/", response_model=Page[InternshipsScheduleResponse])
 def list_internships_schedules(
@@ -59,7 +54,6 @@ def list_internships_schedules(
         ),
     )
 
-
 @router.post("/detail", response_model=InternshipsScheduleResponse)
 def get_internships_schedule(data: InternshipsScheduleGetRequest, db: Session = Depends(get_db)):
     schedule = repository.get_by_id(db, data.internships_schedule_id)
@@ -67,23 +61,20 @@ def get_internships_schedule(data: InternshipsScheduleGetRequest, db: Session = 
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agenda não encontrada")
     return schedule
 
-
 @router.post("/by-room", response_model=list[InternshipsScheduleResponse])
 def list_internships_schedules_by_room(data: InternshipsSchedulesByRoomRequest, db: Session = Depends(get_db)):
-    # First, check if it's a InternshipsRoom ID
+
     internships_schedules = repository.get_by_room(db, data.internships_room_id)
     if internships_schedules:
         return internships_schedules
-    
-    # If not found, check if it's a Room ID
+
     from app.domains.room_schedule import repository as room_schedule_repository
     room_schedules = room_schedule_repository.get_by_room(db, data.internships_room_id)
     if room_schedules:
-        # Map RoomSchedule to InternshipsScheduleResponse format
-        # Convert day and shift from lowercase to uppercase
+
         day_map = {"seg": "SEG", "ter": "TER", "qua": "QUA", "qui": "QUI", "sex": "SEX", "sab": "SAB", "dom": "DOM"}
         shift_map = {"manhã": "MAN", "tarde": "TRD", "noite": "VSP"}
-        
+
         from app.domains.internships_schedule.schemas import InternshipsScheduleResponse
         result = []
         for rs in room_schedules:
@@ -99,16 +90,14 @@ def list_internships_schedules_by_room(data: InternshipsSchedulesByRoomRequest, 
                 )
             )
         return result
-    
-    return []
 
+    return []
 
 @router.post("/by-room/by-day", response_model=list[InternshipsScheduleResponse])
 def list_internships_schedules_by_room_and_day(
     data: InternshipsSchedulesByRoomDayRequest, db: Session = Depends(get_db)
 ):
     return repository.get_by_room_and_day(db, data.internships_room_id, data.week_day)
-
 
 @router.post("/", response_model=InternshipsScheduleResponse, status_code=status.HTTP_201_CREATED)
 def create_internships_schedule(data: InternshipsScheduleCreate, db: Session = Depends(get_db)):
@@ -125,7 +114,6 @@ def create_internships_schedule(data: InternshipsScheduleCreate, db: Session = D
             detail="Já existe agenda para esta sala, dia e turno",
         )
     return repository.create(db, data)
-
 
 @router.patch("/", response_model=InternshipsScheduleResponse)
 def update_internships_schedule(

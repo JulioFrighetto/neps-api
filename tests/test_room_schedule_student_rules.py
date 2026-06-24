@@ -16,13 +16,11 @@ TEST_DATABASE_URL = "sqlite:///./test_room_schedule_student_rules.db"
 engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-
 @pytest.fixture(autouse=True)
 def setup_db():
     Base.metadata.create_all(bind=engine)
     yield
     Base.metadata.drop_all(bind=engine)
-
 
 @pytest.fixture
 def db():
@@ -31,7 +29,6 @@ def db():
         yield session
     finally:
         session.close()
-
 
 @pytest.fixture
 def client(db):
@@ -42,7 +39,6 @@ def client(db):
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()
-
 
 def _create_basic_entities(client, *, requires_gurney: bool = False, has_gurney: bool = True):
     internships = client.post("/api/v1/internshipss", json={"name": "Serviço Teste"}).json()
@@ -75,7 +71,6 @@ def _create_basic_entities(client, *, requires_gurney: bool = False, has_gurney:
     ).json()
     return internships, institute, discipline, student, room
 
-
 def _create_period(db):
     today = date.today()
     period = Period(
@@ -90,7 +85,6 @@ def _create_period(db):
     db.commit()
     db.refresh(period)
     return period
-
 
 def test_prevents_student_conflict_in_other_room(client, db):
     internships, _institute, _discipline, student, room1 = _create_basic_entities(client)
@@ -130,7 +124,6 @@ def test_prevents_student_conflict_in_other_room(client, db):
     assert resp_conflict.status_code == 409
     assert "outra sala" in resp_conflict.json()["detail"].lower()
 
-
 def test_requires_gurney_when_discipline_needs_it(client, db):
     _, _institute, _discipline, student, room = _create_basic_entities(client, requires_gurney=True, has_gurney=False)
     period = _create_period(db)
@@ -147,7 +140,6 @@ def test_requires_gurney_when_discipline_needs_it(client, db):
     )
     assert resp.status_code == 409
     assert "maca" in resp.json()["detail"].lower()
-
 
 def test_room_schedule_link_updates_history_and_unlink_closes_it(client, db):
     _internships, _institute, _discipline, student, room = _create_basic_entities(client)
@@ -212,7 +204,6 @@ def test_room_schedule_link_updates_history_and_unlink_closes_it(client, db):
     assert len(history_after_unlink) == 1
     assert history_after_unlink[0].end_date == date.today()
 
-
 def test_get_room_schedule_receives_room_id_in_body(client):
     _internships, _institute, _discipline, _student, room = _create_basic_entities(client)
 
@@ -225,7 +216,6 @@ def test_get_room_schedule_receives_room_id_in_body(client):
     body = response.json()
     assert body["roomId"] == room["id"]
     assert len(body["days"]) == 7
-
 
 def test_available_slots_receives_filters_in_body(client):
     _internships, _institute, _discipline, student, room = _create_basic_entities(client)

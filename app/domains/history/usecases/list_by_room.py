@@ -2,7 +2,6 @@ from fastapi import HTTPException, status
 from app.domains.history import repository
 from app.domains.room.repository import get_by_id as get_room_by_id
 
-
 def list_by_room_usecase(db, data, current_user):
     """Return (items, total) for histories filtered by room with permission checks."""
     room = get_room_by_id(db, data.id)

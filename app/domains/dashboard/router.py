@@ -16,14 +16,12 @@ from app.domains.student.model import Student
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
-
 class DashboardResponse(BaseModel):
     total_students: int
     total_internships: int
     total_periods: int
     total_institutions: int
     total_rooms: int
-
 
 @router.get("/", response_model=DashboardResponse)
 def get_dashboard(
@@ -48,16 +46,13 @@ def get_dashboard(
         total_rooms=total_rooms,
     )
 
-
 class RegionSlotItem(BaseModel):
     region_id: int
     region_name: str
     vacancies: int
 
-
 class RegionSlotResponse(BaseModel):
     items: list[RegionSlotItem]
-
 
 @router.get("/vacancies-by-region", response_model=RegionSlotResponse)
 def vacancies_by_region(
@@ -80,16 +75,13 @@ def vacancies_by_region(
         ]
     )
 
-
 class StudentsByInstitutionItem(BaseModel):
     institution_id: int
     institution_name: str
     student_count: int
 
-
 class StudentsByInstitutionResponse(BaseModel):
     items: list[StudentsByInstitutionItem]
-
 
 @router.get("/students-by-institution", response_model=StudentsByInstitutionResponse)
 def students_by_institution(
@@ -116,20 +108,16 @@ def students_by_institution(
         ]
     )
 
-
 class InstitutionCount(BaseModel):
     institution_name: str
     student_count: int
-
 
 class StudentsByRegionInstitutionItem(BaseModel):
     region_name: str
     institutions: list[InstitutionCount]
 
-
 class StudentsByRegionInstitutionResponse(BaseModel):
     items: list[StudentsByRegionInstitutionItem]
-
 
 @router.get("/students-by-region-institution", response_model=StudentsByRegionInstitutionResponse)
 def students_by_region_institution(
@@ -170,16 +158,13 @@ def students_by_region_institution(
         ]
     )
 
-
 class OccupiedByInternshipItem(BaseModel):
     internship_id: int
     internship_name: str
     occupied: int
 
-
 class OccupiedByInternshipResponse(BaseModel):
     items: list[OccupiedByInternshipItem]
-
 
 class InternshipCapacityItem(BaseModel):
     internship_id: int
@@ -188,10 +173,8 @@ class InternshipCapacityItem(BaseModel):
     occupied: int
     free: int
 
-
 class InternshipCapacityResponse(BaseModel):
     items: list[InternshipCapacityItem]
-
 
 @router.get("/capacity-by-internship", response_model=InternshipCapacityResponse)
 def capacity_by_internship(
@@ -244,7 +227,6 @@ def capacity_by_internship(
     items.sort(key=lambda x: x.total, reverse=True)
     return InternshipCapacityResponse(items=items)
 
-
 @router.get("/occupied-by-internship", response_model=OccupiedByInternshipResponse)
 def occupied_by_internship(
     db: Session = Depends(get_db),
@@ -278,7 +260,6 @@ def occupied_by_internship(
             for r in rows
         ]
     )
-
 
 @router.get("/occupied-by-region", response_model=RegionSlotResponse)
 def occupied_by_region(

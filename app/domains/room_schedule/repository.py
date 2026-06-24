@@ -3,16 +3,14 @@ from sqlalchemy.orm import Session
 from app.domains.room.model import Room
 from app.domains.room_schedule.model import RoomSchedule, RoomScheduleStudent
 
-
 WEEK_DAYS = ["seg", "ter", "qua", "qui", "sex", "sab", "dom"]
 SHIFTS = ["manhã", "tarde", "noite"]
-
 
 def create_schedule_for_room(db: Session, room_id: int) -> list[RoomSchedule]:
     room = db.query(Room).filter(Room.id == room_id).first()
     if not room:
         return []
-    # If schedules already exist for this room, return them (prevent duplicates)
+
     existing = db.query(RoomSchedule).filter(RoomSchedule.room_id == room_id).all()
     if existing:
         return existing
@@ -33,10 +31,8 @@ def create_schedule_for_room(db: Session, room_id: int) -> list[RoomSchedule]:
         db.refresh(schedule)
     return schedules
 
-
 def get_by_room(db: Session, room_id: int) -> list[RoomSchedule]:
     return db.query(RoomSchedule).filter(RoomSchedule.room_id == room_id).all()
-
 
 def add_student_to_schedule(db: Session, schedule_id: int, student_id: int) -> RoomScheduleStudent | None:
     schedule = db.query(RoomSchedule).filter(RoomSchedule.id == schedule_id).first()
@@ -50,7 +46,6 @@ def add_student_to_schedule(db: Session, schedule_id: int, student_id: int) -> R
     db.commit()
     db.refresh(link)
     return link
-
 
 def remove_student_from_schedule(db: Session, schedule_id: int, student_id: int) -> bool:
     link = db.query(RoomScheduleStudent).filter(

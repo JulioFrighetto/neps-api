@@ -6,7 +6,6 @@ from app.core.jwt import create_reset_token
 from app.core.settings import settings
 from app.domains.internships.schemas import InternshipsCreate
 
-
 def create_internship_usecase(db, data: InternshipsCreate):
     """Create internship with optional welcome email.
     Mirrors router validation and side‑effects.
@@ -30,6 +29,6 @@ def create_internship_usecase(db, data: InternshipsCreate):
         try:
             send_email(data.user_email, "Bem-vindo ao NEPS", body)
         except EmailDeliveryError:
-            # ignore email failures in dev/test environments
+
             pass
     return internship

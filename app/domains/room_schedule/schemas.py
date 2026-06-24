@@ -2,7 +2,6 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
-
 class RoomScheduleBase(BaseModel):
     room_id: int
     week_day: str
@@ -10,10 +9,8 @@ class RoomScheduleBase(BaseModel):
     capacity: int
     is_active: bool = True
 
-
 class RoomScheduleCreate(RoomScheduleBase):
     pass
-
 
 class RoomScheduleUpdate(BaseModel):
     week_day: str | None = None
@@ -21,14 +18,12 @@ class RoomScheduleUpdate(BaseModel):
     capacity: int | None = None
     is_active: bool | None = None
 
-
 class RoomScheduleResponse(RoomScheduleBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
     created_at: datetime
     updated_at: datetime
-
 
 class RoomScheduleQuery(BaseModel):
     room_id: int

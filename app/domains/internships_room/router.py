@@ -17,20 +17,16 @@ from app.domains.internships_room.schemas import (
 
 router = APIRouter(prefix="/internships-rooms", tags=["Internships Rooms"])
 
-
 class InternshipsRoomGetRequest(BaseModel):
     internships_room_id: int
-
 
 class InternshipsRoomsByInternshipsRequest(BaseModel):
     internship_id: int
     page: int = 1
     per_page: int = 10
 
-
 class InternshipsRoomUpdateRequest(InternshipsRoomUpdate):
     internships_room_id: int
-
 
 @router.get("/", response_model=Page[InternshipsRoomResponse])
 def list_internships_rooms(
@@ -55,16 +51,12 @@ def list_internships_rooms(
         ),
     )
 
-
 @router.post("/detail", response_model=InternshipsRoomResponse)
 def get_internships_room(data: InternshipsRoomGetRequest, db: Session = Depends(get_db)):
     internships_room = repository.get_by_id(db, data.internships_room_id)
     if not internships_room:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sala não encontrada")
     return internships_room
-
-
-
 
 @router.post("/by-internships", response_model=Page[InternshipsRoomResponse])
 def list_internships_rooms_by_internship(data: InternshipsRoomsByInternshipsRequest, db: Session = Depends(get_db)):
@@ -79,14 +71,12 @@ def list_internships_rooms_by_internship(data: InternshipsRoomsByInternshipsRequ
         ),
     )
 
-
 @router.post("/", response_model=InternshipsRoomResponse, status_code=status.HTTP_201_CREATED)
 def create_internships_room(data: InternshipsRoomCreate, db: Session = Depends(get_db)):
     internships = get_internships_by_id(db, data.internship_id)
     if not internships:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Campo de estágio não encontrado")
     return repository.create(db, data)
-
 
 @router.patch("/", response_model=InternshipsRoomResponse)
 def update_internships_room(data: InternshipsRoomUpdateRequest, db: Session = Depends(get_db)):

@@ -15,12 +15,10 @@ from app.domains.room.repository import get_by_id as get_room_by_id
 
 router = APIRouter(prefix="/histories", tags=["Histories"])
 
-
 class HistoryFilterRequest(BaseModel):
     id: int
     page: int = 1
     per_page: int = 10
-
 
 def _to_response(history) -> HistoryResponse:
     if history.created_at is None or history.updated_at is None:
@@ -42,7 +40,6 @@ def _to_response(history) -> HistoryResponse:
         student=history.student,
         period=history.period,
     )
-
 
 @router.post("/by-period", response_model=Page[HistoryResponse])
 def list_histories_by_period(
@@ -73,7 +70,6 @@ def list_histories_by_period(
         ),
     )
 
-
 @router.post("/by-room", response_model=Page[HistoryResponse])
 def list_histories_by_room(
     data: HistoryFilterRequest,
@@ -100,7 +96,6 @@ def list_histories_by_room(
             total_pages=max(1, math.ceil(total / data.per_page)) if total > 0 else 0,
         ),
     )
-
 
 @router.post("/by-schedule", response_model=Page[HistoryResponse])
 def list_histories_by_schedule(
@@ -134,7 +129,6 @@ def list_histories_by_schedule(
             total_pages=max(1, math.ceil(total / data.per_page)) if total > 0 else 0,
         ),
     )
-
 
 @router.post("/by-student", response_model=Page[HistoryResponse])
 def list_histories_by_student(

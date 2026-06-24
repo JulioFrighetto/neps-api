@@ -3,7 +3,6 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
-
 class EducationInstituteBase(BaseModel):
     name: str
     is_active: bool = True
@@ -13,12 +12,10 @@ class EducationInstituteBase(BaseModel):
     email: str | None = None
     priority: int = Field(0, ge=0, le=1, description="0 = prioritário, 1 = não prioritário")
 
-
 class EducationInstituteCreate(EducationInstituteBase):
     user_name: str | None = None
     user_email: EmailStr | None = None
     region_ids: list[int] | None = None
-
 
 class EducationInstituteUpdate(BaseModel):
     name: str | None = None
@@ -29,7 +26,6 @@ class EducationInstituteUpdate(BaseModel):
     email: str | None = None
     priority: int | None = Field(None, ge=0, le=1, description="0 = prioritário, 1 = não prioritário")
     region_ids: list[int] | None = None
-
 
 class EducationInstituteResponse(EducationInstituteBase):
     model_config = ConfigDict(from_attributes=True)
@@ -80,7 +76,4 @@ class EducationInstituteFilters(BaseModel):
     cnpj: Optional[str] = None
     is_active: Optional[bool] = None
     priority: Optional[int] = None
-
-
-
 

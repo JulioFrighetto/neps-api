@@ -8,7 +8,6 @@ if os.path.exists(db_path):
 else:
     print(f"Banco de dados '{db_path}' não encontrado")
 
-# Now reinit
 from app.core.database import init_db
 print("Reinicializando banco de dados...")
 init_db()

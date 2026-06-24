@@ -18,7 +18,6 @@ from app.domains.history.model import History
 
 StudentStatus = Literal["PENDING", "PLACED", "COMPLETED"]
 
-
 class Student(Base):
     __tablename__ = "students"
 
@@ -47,15 +46,14 @@ class Student(Base):
         DateTime, server_default=func.now(), onupdate=func.now()
     )
 
-    # Relationships
-    education_institute: Mapped["EducationInstitute"] = relationship(  # noqa: F821
+    education_institute: Mapped["EducationInstitute"] = relationship(
         "EducationInstitute", back_populates="students"
     )
-    discipline: Mapped["Discipline"] = relationship("Discipline", back_populates="students")  # noqa: F821
-    internship: Mapped["Internship | None"] = relationship(  # noqa: F821
+    discipline: Mapped["Discipline"] = relationship("Discipline", back_populates="students")
+    internship: Mapped["Internship | None"] = relationship(
         "Internship", back_populates="students"
     )
-    internships_schedules: Mapped[list["InternshipsSchedule"]] = relationship(  # noqa: F821
+    internships_schedules: Mapped[list["InternshipsSchedule"]] = relationship(
         "InternshipsSchedule", back_populates="student"
     )
 
@@ -64,4 +62,4 @@ class Student(Base):
         secondary="period_students",
         back_populates="students",
     )
-    histories: Mapped[list["History"]] = relationship("History", back_populates="student")  # noqa: F821
+    histories: Mapped[list["History"]] = relationship("History", back_populates="student")

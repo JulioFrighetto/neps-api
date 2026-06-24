@@ -5,14 +5,12 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
 
-
 period_students = Table(
     "period_students",
     Base.metadata,
     Column("period_id", Integer, ForeignKey("periods.id")),
     Column("student_id", Integer, ForeignKey("students.id")),
 )
-
 
 class Period(Base):
     __tablename__ = "periods"
@@ -32,4 +30,4 @@ class Period(Base):
     students: Mapped[list["Student"]] = relationship(
         "Student", secondary=period_students, back_populates="periods"
     )
-    histories: Mapped[list["History"]] = relationship("History", back_populates="period")  # noqa: F821
+    histories: Mapped[list["History"]] = relationship("History", back_populates="period")

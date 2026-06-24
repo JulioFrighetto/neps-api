@@ -3,17 +3,14 @@ from typing import Any
 
 from sqlalchemy.orm import Query
 
-
 def _parse_bool(v: str) -> bool | None:
     return v.lower() in ("true", "1", "yes") if v is not None else None
-
 
 def _parse_date(v: str) -> date | None:
     try:
         return date.fromisoformat(v)
     except (ValueError, TypeError):
         return None
-
 
 def apply_filters(
     query: Query,

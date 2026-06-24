@@ -3,15 +3,12 @@ from typing import Literal
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, EmailStr, Field, model_validator
 
-
 UserRole = Literal["admin", "education_institute", "internships"]
-
 
 class UserBase(BaseModel):
     name: str
     email: EmailStr
     is_active: bool = True
-
 
 class UserCreate(UserBase):
     password: str | None = None
@@ -39,7 +36,6 @@ class UserCreate(UserBase):
                 raise ValueError("Usuário de entidade de ensino não pode ser vinculado a unidade")
         return self
 
-
 class UserUpdate(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     internship_id: int | None = Field(default=None, alias="internship_id")
@@ -49,11 +45,9 @@ class UserUpdate(BaseModel):
     is_active: bool | None = None
     password: str | None = None
 
-
 class UserChangePassword(BaseModel):
     current_password: str
     new_password: str
-
 
 class UserResponse(UserBase):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
@@ -65,27 +59,20 @@ class UserResponse(UserBase):
     created_at: datetime
     updated_at: datetime
 
-
-# ── Auth ──────────────────────────────────────────────────────────────────────
-
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
-
 
 class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
 
-
 class RefreshRequest(BaseModel):
     refresh_token: str
 
-
 class PasswordResetRequest(BaseModel):
     email: EmailStr
-
 
 class PasswordResetConfirmRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
@@ -95,7 +82,6 @@ class PasswordResetConfirmRequest(BaseModel):
         serialization_alias="hash",
     )
     new_password: str
-
 
 class TestEmailRequest(BaseModel):
     email: EmailStr

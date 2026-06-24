@@ -2,7 +2,6 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, field_serializer
 
-
 class PeriodBase(BaseModel):
     name: str
     priority_start_date: date
@@ -11,10 +10,8 @@ class PeriodBase(BaseModel):
     end_date: date
     is_active: bool = True
 
-
 class PeriodCreate(PeriodBase):
     pass
-
 
 class PeriodUpdate(BaseModel):
     name: str | None = None
@@ -23,7 +20,6 @@ class PeriodUpdate(BaseModel):
     start_date: date | None = None
     end_date: date | None = None
     is_active: bool | None = None
-
 
 class PeriodResponse(PeriodBase):
     model_config = ConfigDict(from_attributes=True)
@@ -36,7 +32,6 @@ class PeriodResponse(PeriodBase):
     def serialize_date(self, value: date) -> str:
         return value.isoformat() + "T00:00:00"
 
-
 class StudentSummary(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -45,7 +40,7 @@ class StudentSummary(BaseModel):
     cpf: str | None
     semester: int | None = None
     has_slot: bool = False
-    
+
     class Discipline(BaseModel):
         model_config = ConfigDict(from_attributes=True)
         id: int
@@ -56,7 +51,7 @@ class StudentSummary(BaseModel):
         id: int
         name: str
         region_id: int | None = None
-    
+
     class Slot(BaseModel):
         model_config = ConfigDict(from_attributes=True)
         room_id: int
@@ -68,11 +63,9 @@ class StudentSummary(BaseModel):
     institution: Institution | None = None
     slot: Slot | None = None
 
-
 class PeriodDetailResponse(PeriodResponse):
     students: list[StudentSummary] = []
     student_ids: list[int] = []
-
 
 class StudentLinkRequest(BaseModel):
     student_id: int

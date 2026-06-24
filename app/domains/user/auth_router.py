@@ -29,7 +29,6 @@ from app.domains.user.schemas import (
 router = APIRouter(prefix="/auth", tags=["Auth"])
 logger = logging.getLogger(__name__)
 
-
 def _build_access_token_extra(user) -> dict[str, int | str | None]:
     return {
         "role": user.role,
@@ -41,7 +40,6 @@ def _build_access_token_extra(user) -> dict[str, int | str | None]:
             user.education_institute.name if user.education_institute else None
         ),
     }
-
 
 @router.post("/login", response_model=TokenResponse)
 def login(data: LoginRequest, db: Session = Depends(get_db)):
@@ -68,7 +66,6 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
         ),
         refresh_token=create_refresh_token(user.id),
     )
-
 
 @router.post("/refresh", response_model=TokenResponse)
 def refresh(data: RefreshRequest, db: Session = Depends(get_db)):
@@ -101,7 +98,6 @@ def refresh(data: RefreshRequest, db: Session = Depends(get_db)):
         refresh_token=create_refresh_token(user.id),
     )
 
-
 @router.post("/reset-password", status_code=status.HTTP_204_NO_CONTENT)
 def request_password_reset(
     data: PasswordResetRequest,
@@ -130,7 +126,6 @@ def request_password_reset(
             detail=str(exc),
         )
 
-
 @router.post("/reset-password-confirm", status_code=status.HTTP_204_NO_CONTENT)
 @router.post("/reset-password/confirm", status_code=status.HTTP_204_NO_CONTENT)
 def confirm_password_reset(data: PasswordResetConfirmRequest, db: Session = Depends(get_db)):
@@ -150,7 +145,6 @@ def confirm_password_reset(data: PasswordResetConfirmRequest, db: Session = Depe
         )
 
     repository.reset_password(db, user.id, data.new_password)
-
 
 @router.post("/test-email", status_code=status.HTTP_204_NO_CONTENT)
 def test_email(data: TestEmailRequest):

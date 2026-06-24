@@ -18,20 +18,16 @@ router = APIRouter(prefix="/rooms", tags=["Rooms"])
 
 AVAILABLE_FILTERS = ["name_like", "internship_id", "has_gurney", "capacity_min", "capacity_max"]
 
-
 class RoomGetRequest(BaseModel):
     room_id: int
-
 
 class RoomsByInternshipsRequest(BaseModel):
     internship_id: int
     page: int = 1
     per_page: int = 10
 
-
 class RoomUpdateRequest(RoomUpdate):
     room_id: int
-
 
 @router.get("/", response_model=Page[RoomResponse])
 def list_rooms(
@@ -76,14 +72,12 @@ def list_rooms(
         filters=FilterInfo(applied=list(filters.keys()), available=AVAILABLE_FILTERS),
     )
 
-
 @router.post("/detail", response_model=RoomResponse)
 def get_room(data: RoomGetRequest, db: Session = Depends(get_db)):
     room = repository.get_by_id(db, data.room_id)
     if not room:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sala não encontrada")
     return room
-
 
 @router.post("/by-internships", response_model=Page[RoomResponse])
 def list_rooms_by_internships(data: RoomsByInternshipsRequest, db: Session = Depends(get_db)):
@@ -98,24 +92,20 @@ def list_rooms_by_internships(data: RoomsByInternshipsRequest, db: Session = Dep
         ),
     )
 
-
 @router.post("/", response_model=RoomResponse, status_code=status.HTTP_201_CREATED)
 def create_room(data: RoomCreate, db: Session = Depends(get_db)):
     try:
         return repository.create(db, data)
     except Exception as exc:
-        # Erro genérico capturado para melhorar a mensagem ao usuário.
-        # Caso a falha seja por violação de chave estrangeira (internship_id inexistente),
-        # retornamos um erro 400 com explicação clara.
+
         from sqlalchemy.exc import IntegrityError
         if isinstance(exc, IntegrityError) and "foreign key" in str(exc).lower():
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="O internship_id informado não existe. Verifique se o estágio está cadastrado antes de criar a sala."
             )
-        # Para outros erros inesperados, propagamos um 500 genérico.
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro inesperado ao criar a sala: {exc}")
 
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro inesperado ao criar a sala: {exc}")
 
 @router.patch("/", response_model=RoomResponse)
 def update_room(data: RoomUpdateRequest, db: Session = Depends(get_db)):

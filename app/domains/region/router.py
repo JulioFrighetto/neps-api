@@ -14,14 +14,11 @@ router = APIRouter(tags=["Region"])
 
 AVAILABLE_FILTERS = ["name_like", "is_active"]
 
-
 class RegionGetRequest(BaseModel):
     region_id: int
 
-
 class RegionUpdateRequest(RegionUpdate):
     region_id: int
-
 
 @router.get("/regions", response_model=Page[RegionResponse])
 def list_regions(
@@ -44,7 +41,6 @@ def list_regions(
         filters=FilterInfo(applied=list(filters.keys()), available=AVAILABLE_FILTERS),
     )
 
-
 @router.post("/regions/detail", response_model=RegionResponse)
 def get_region(data: RegionGetRequest, db: Session = Depends(get_db)):
     region = repository.get_region_by_id(db, data.region_id)
@@ -52,11 +48,9 @@ def get_region(data: RegionGetRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Território não encontrado")
     return region
 
-
 @router.post("/regions", response_model=RegionResponse, status_code=status.HTTP_201_CREATED)
 def create_region(data: RegionCreate, db: Session = Depends(get_db)):
     return repository.create_region(db, data)
-
 
 @router.patch("/regions", response_model=RegionResponse)
 def update_region(data: RegionUpdateRequest, db: Session = Depends(get_db)):

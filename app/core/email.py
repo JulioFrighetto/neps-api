@@ -8,20 +8,15 @@ import requests
 
 from app.core.settings import settings
 
-
-
 logger = logging.getLogger(__name__)
-
 
 class EmailDeliveryError(RuntimeError):
     pass
-
 
 def send_email(to_email: str, subject: str, body: str) -> None:
     """Send email via MailerSend (preferred) or SMTP (fallback)."""
     mailersend_error: str | None = None
 
-    # Try MailerSend first (preferred)
     if settings.MAILERSEND_API_TOKEN and settings.MAILERSEND_FROM_EMAIL:
         try:
             return _send_via_mailersend(to_email, subject, body)
@@ -29,7 +24,6 @@ def send_email(to_email: str, subject: str, body: str) -> None:
             mailersend_error = str(exc)
             logger.warning("MailerSend failed, attempting SMTP fallback", extra={"error": mailersend_error})
 
-    # Try SMTP, and if it fails try SendGrid as fallback
     if settings.SMTP_HOST:
         try:
             return _send_via_smtp(to_email, subject, body)
@@ -43,7 +37,6 @@ def send_email(to_email: str, subject: str, body: str) -> None:
                     raise EmailDeliveryError(f"MailerSend: {mailersend_error}; SMTP: {smtp_exc}; SendGrid: {sg_exc}") from sg_exc
             raise
 
-    # No email provider configured (MailerSend was tried but failed, SMTP not available)
     if settings.DEBUG:
         logger.warning(
             "Email não configurado (MailerSend ou SMTP)",
@@ -53,7 +46,6 @@ def send_email(to_email: str, subject: str, body: str) -> None:
 
     raise EmailDeliveryError("Nenhum serviço de email configurado (MailerSend ou SMTP)")
 
-
 def _send_via_mailersend(to_email: str, subject: str, body: str) -> None:
     """Send email using MailerSend REST API."""
     try:
@@ -62,7 +54,7 @@ def _send_via_mailersend(to_email: str, subject: str, body: str) -> None:
             "Authorization": f"Bearer {settings.MAILERSEND_API_TOKEN}",
             "Content-Type": "application/json",
         }
-        
+
         payload = {
             "from": {
                 "email": settings.MAILERSEND_FROM_EMAIL,
@@ -72,10 +64,10 @@ def _send_via_mailersend(to_email: str, subject: str, body: str) -> None:
             "subject": subject,
             "text": body,
         }
-        
+
         response = requests.post(url, json=payload, headers=headers, timeout=15)
         response.raise_for_status()
-        
+
         logger.info(
             "Email sent via MailerSend",
             extra={"to_email": to_email, "subject": subject, "status": response.status_code},
@@ -87,7 +79,6 @@ def _send_via_mailersend(to_email: str, subject: str, body: str) -> None:
             exc_info=True,
         )
         raise EmailDeliveryError(f"Falha ao enviar e-mail via MailerSend: {exc}") from exc
-
 
 def _send_via_smtp(to_email: str, subject: str, body: str) -> None:
     """Send email using SMTP."""
@@ -115,7 +106,7 @@ def _send_via_smtp(to_email: str, subject: str, body: str) -> None:
             if settings.SMTP_USERNAME and settings.SMTP_PASSWORD:
                 smtp.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
             smtp.send_message(message)
-        
+
         logger.info("Email sent via SMTP", extra={"to_email": to_email, "subject": subject})
     except (smtplib.SMTPException, OSError, socket.timeout) as exc:
         logger.error(
@@ -128,7 +119,6 @@ def _send_via_smtp(to_email: str, subject: str, body: str) -> None:
             exc_info=True,
         )
         raise EmailDeliveryError(f"Falha ao enviar e-mail via SMTP: {exc}") from exc
-
 
 def _send_via_sendgrid(to_email: str, subject: str, body: str) -> None:
     """Send email using SendGrid REST API (used as fallback)."""
@@ -150,14 +140,12 @@ def _send_via_sendgrid(to_email: str, subject: str, body: str) -> None:
         logger.error("SendGrid delivery failed", extra={"to_email": to_email, "error": str(exc)}, exc_info=True)
         raise EmailDeliveryError(f"Falha ao enviar e-mail via SendGrid: {exc}") from exc
 
-
 def build_password_reset_body(reset_link: str) -> str:
     return (
         "Você solicitou a redefinição da senha.\n\n"
         f"Acesse o link abaixo para redefinir sua senha:\n{reset_link}\n\n"
         "Se você não solicitou isso, pode ignorar este e-mail."
     )
-
 
 def build_welcome_body(reset_link: str, name: str) -> str:
     return (

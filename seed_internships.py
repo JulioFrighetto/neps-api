@@ -4,10 +4,8 @@ sys.path.append(str(Path('.').resolve()))
 from app.core.database import init_db, SessionLocal
 from app.domains.internships.model import Internship
 
-# Reset DB (drop all & recreate)
 init_db()
 
-# Seed data
 session = SessionLocal()
 seed = [
     Internship(name='Estágio Saúde', is_active=True),

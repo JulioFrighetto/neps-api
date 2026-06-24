@@ -131,7 +131,7 @@ def _ensure_room_timestamps(conn) -> None:
         if "updated_at" in column_names:
             conn.execute(text("UPDATE rooms SET updated_at = CURRENT_TIMESTAMP WHERE updated_at IS NULL"))
     except Exception:
-        pass 
+        pass
 
 def _rebuild_rooms_table_without_internship_field(conn) -> None:
     columns = conn.execute(text("PRAGMA table_info(rooms)")).fetchall()
@@ -218,7 +218,7 @@ def init_db() -> None:
         _ensure_user_profile_columns(conn)
         _ensure_user_timestamps(conn)
         _rebuild_users_table_without_unique_internship_id(conn)
-        
+
         def _ensure_internship_columns(conn) -> None:
             columns = conn.execute(text("PRAGMA table_info(internships)")).fetchall()
             column_names = {column[1] for column in columns}
@@ -228,8 +228,8 @@ def init_db() -> None:
                 try:
                     conn.execute(text("ALTER TABLE internships ADD COLUMN region_id INTEGER NULL"))
                 except Exception as e:
-                    pass 
-        
+                    pass
+
         def _ensure_student_columns(conn) -> None:
             columns = conn.execute(text("PRAGMA table_info(students)")).fetchall()
             column_names = {column[1] for column in columns}
@@ -266,7 +266,7 @@ def init_db() -> None:
                     conn.execute(text("ALTER TABLE students ADD COLUMN internship_id INTEGER NULL"))
                 except Exception as e:
                     pass
-        
+
         def _rebuild_internships_table(conn) -> None:
             columns = conn.execute(text("PRAGMA table_info(internships)")).fetchall()
             column_names = {column[1] for column in columns}
@@ -401,7 +401,6 @@ def seed_admin():
 
         _ensure_student_columns(conn)
 
-        # education_institute_courses join table
         conn.execute(text("""
             CREATE TABLE IF NOT EXISTS education_institute_courses (
                 education_institute_id INTEGER NOT NULL REFERENCES education_institutes(id),

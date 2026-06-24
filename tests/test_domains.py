@@ -7,7 +7,7 @@ from sqlalchemy.orm import sessionmaker
 
 from app.core.database import Base, get_db
 from app.core.security import hash_password
-from app.core.models import *  # noqa: F401, F403
+from app.core.models import *
 from app.main import app
 from app.domains.education_institute.model import EducationInstitute
 from app.domains.internships.model import Internships
@@ -18,13 +18,11 @@ TEST_DATABASE_URL = "sqlite:///./test.db"
 engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-
 @pytest.fixture(autouse=True)
 def setup_db():
     Base.metadata.create_all(bind=engine)
     yield
     Base.metadata.drop_all(bind=engine)
-
 
 @pytest.fixture
 def db():
@@ -33,7 +31,6 @@ def db():
         yield session
     finally:
         session.close()
-
 
 @pytest.fixture
 def client(db):
@@ -48,9 +45,6 @@ def client(db):
         yield c
     app.dependency_overrides.clear()
 
-
-# ── EducationInstitute ──────────────────────────────────────────────────────
-
 def test_create_education_institute(client):
     response = client.post(
         "/api/v1/education-institutes",
@@ -60,7 +54,6 @@ def test_create_education_institute(client):
     data = response.json()
     assert data["name"] == "UNISINOS"
     assert data["id"] is not None
-
 
 def _make_admin_token(client):
     """Seed an admin user and return a valid access token."""
@@ -79,7 +72,6 @@ def _make_admin_token(client):
     resp = client.post("/api/v1/auth/login", json={"email": "admin@test.com", "password": "secret123"})
     assert resp.status_code == 200
     return resp.json()["access_token"]
-
 
 def _make_institute_token(client, db, *, priority: int = 0, email: str = "inst@test.com", password: str = "secret123"):
     institute = EducationInstitute(name="Instituição Teste", priority=priority, is_active=True)
@@ -102,7 +94,6 @@ def _make_institute_token(client, db, *, priority: int = 0, email: str = "inst@t
     assert resp.status_code == 200
     return resp.json()["access_token"]
 
-
 def test_list_education_institutes_pagination(client):
     token = _make_admin_token(client)
     headers = {"Authorization": f"Bearer {token}"}
@@ -110,14 +101,6 @@ def test_list_education_institutes_pagination(client):
     response = client.get("/api/v1/education-institutes/", headers=headers)
     assert response.status_code == 200
     assert len(response.json()) >= 1
-
-
-# ── Room ──────────────────────────────────────────────────────────────────────
-
-
-
-
-# ── Internshipss ────────────────────────────────────────────────────────────────
 
 def test_create_internships(client):
     response = client.post(
@@ -131,7 +114,6 @@ def test_create_internships(client):
     )
     assert response.status_code == 201
     assert response.json()["name"] == "Serviço Norte"
-
 
 def test_create_internships_creates_user(client, db, monkeypatch):
     monkeypatch.setattr("app.domains.internships.router.send_email", lambda *args, **kwargs: None)
@@ -154,7 +136,6 @@ def test_create_internships_creates_user(client, db, monkeypatch):
     assert user.role == "internships"
     assert user.email == "internships-centro@neps.com"
 
-
 def test_create_internships_room(client):
     internships = client.post("/api/v1/internshipss", json={"name": "Serviço Centro"}).json()
     response = client.post(
@@ -168,7 +149,6 @@ def test_create_internships_room(client):
     )
     assert response.status_code == 201
     assert response.json()["internship_id"] == internships["id"]
-
 
 def test_create_internships_schedule(client):
     internships = client.post("/api/v1/internshipss", json={"name": "Serviço Sul"}).json()
@@ -204,9 +184,6 @@ def test_create_internships_schedule(client):
     assert response.status_code == 201
     assert response.json()["student_id"] == student["id"]
 
-
-# ── Discipline ────────────────────────────────────────────────────────────────────
-
 def test_create_discipline(client):
     inst = client.post("/api/v1/education-institutes", json={"name": "PUCRS"}).json()
     response = client.post(
@@ -219,9 +196,6 @@ def test_create_discipline(client):
     )
     assert response.status_code == 201
     assert response.json()["requires_gurney"] is True
-
-
-# ── Student ───────────────────────────────────────────────────────────────────
 
 def test_create_student(client):
     inst = client.post("/api/v1/education-institutes", json={"name": "FEEVALE"}).json()
@@ -240,7 +214,6 @@ def test_create_student(client):
     )
     assert response.status_code == 201
     assert response.json()["status"] == "PENDING"
-
 
 def test_get_student_returns_discipline_and_institution(client):
     inst = client.post("/api/v1/education-institutes", json={"name": "FEEVALE"}).json()
@@ -268,9 +241,6 @@ def test_get_student_returns_discipline_and_institution(client):
     assert body["institution"]["id"] == inst["id"]
     assert body["institution"]["name"] == inst["name"]
 
-
-# ── Filter Tests ─────────────────────────────────────────────────────────────
-
 def test_disciplines_filter_name_like(client):
     client.post("/api/v1/disciplines", json={"name": "Enfermagem", "requires_gurney": True})
     client.post("/api/v1/disciplines", json={"name": "Fisioterapia", "requires_gurney": False})
@@ -282,7 +252,6 @@ def test_disciplines_filter_name_like(client):
     assert body["pagination"]["total"] == 1
     assert body["items"][0]["name"] == "Enfermagem"
     assert "name_like" in body["filters"]["applied"]
-
 
 def test_disciplines_pagination_page_per_page(client):
     for i in range(5):
@@ -296,7 +265,6 @@ def test_disciplines_pagination_page_per_page(client):
     assert body["pagination"]["per_page"] == 2
     assert body["pagination"]["total"] == 5
     assert body["pagination"]["total_pages"] == 3
-
 
 def test_regions_filter_is_active(client):
     client.post("/api/v1/regions", json={"name": "Norte", "is_active": True})
@@ -314,7 +282,6 @@ def test_regions_filter_is_active(client):
     assert body["pagination"]["total"] == 1
     assert body["items"][0]["name"] == "Sul"
 
-
 def test_regions_filter_name_like(client):
     client.post("/api/v1/regions", json={"name": "Norte", "is_active": True})
     client.post("/api/v1/regions", json={"name": "Nordeste", "is_active": True})
@@ -324,7 +291,6 @@ def test_regions_filter_name_like(client):
     assert response.status_code == 200
     body = response.json()
     assert body["pagination"]["total"] == 2
-
 
 def test_periods_filter_date_range(client):
     client.post("/api/v1/periods", json={
@@ -355,7 +321,6 @@ def test_periods_filter_date_range(client):
     assert response.status_code == 200
     body = response.json()
     assert body["pagination"]["total"] == 1
-
 
 def test_periods_list_for_priority_institute_shows_priority_and_open_periods(client, db, monkeypatch):
     class FixedDate(date):
@@ -409,7 +374,6 @@ def test_periods_list_for_priority_institute_shows_priority_and_open_periods(cli
     names = {item["name"] for item in body["items"]}
     assert names == {"Prioritário", "Aberto"}
 
-
 def test_periods_list_for_non_priority_institute_shows_only_open_periods(client, db, monkeypatch):
     class FixedDate(date):
         @classmethod
@@ -449,7 +413,6 @@ def test_periods_list_for_non_priority_institute_shows_only_open_periods(client,
     body = response.json()
     assert body["pagination"]["total"] == 1
     assert body["items"][0]["name"] == "Aberto"
-
 
 def test_users_roles_endpoint(client):
     response = client.get("/api/v1/users/roles")

@@ -24,34 +24,26 @@ from pydantic import BaseModel
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
-
 class RoleItem(BaseModel):
     label: str
     value: str
 
-
 class RolesResponse(BaseModel):
     items: list[RoleItem]
-
 
 class UserGetRequest(BaseModel):
     user_id: int
 
-
 class UserUpdateRequest(UserUpdate):
     user_id: int
 
-
 class UserReplaceRequest(UserCreate):
     user_id: int
-
 
 class UserChangePasswordRequest(UserChangePassword):
     user_id: int
 
 AVAILABLE_FILTERS = ["name_like", "email_like", "role", "role_in", "is_active"]
-
-
 
 @router.get("/", response_model=Page[UserResponse])
 def list_users(
@@ -65,7 +57,7 @@ def list_users(
     is_active: bool | None = Query(None),
     current_user=Depends(get_current_admin_user),
 ):
-    # Build filter dict based on query params
+
     filter_params = {}
     if name_like:
         filter_params["name_like"] = name_like
@@ -91,9 +83,6 @@ def list_users(
 def me(current_user=Depends(get_current_user)):
     return current_user
 
-
-
-
 @router.get("/roles", response_model=RolesResponse)
 def list_roles():
     return RolesResponse(items=[
@@ -101,7 +90,6 @@ def list_roles():
         RoleItem(label="Instituição de Ensino", value="education_institute"),
         RoleItem(label="Campo de Estágio", value="internships"),
     ])
-
 
 @router.post("/detail", response_model=UserResponse)
 def get_user(
@@ -113,7 +101,6 @@ def get_user(
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado")
     return user
-
 
 @router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def create_user(
@@ -156,23 +143,21 @@ def create_user(
 
     return user
 
-
 @router.patch("/", response_model=UserResponse)
 def update_user(
     data: UserUpdateRequest,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    # Admins may update any user (including toggling is_active). Regular users may update only themselves.
+
     if current_user.role != "admin" and current_user.id != data.user_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
     updated = repository.update(db, data.user_id, data)
     if not updated:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado")
-    # Re-fetch the user to ensure all related fields (e.g., internship) are loaded correctly
+
     user = repository.get_by_id(db, data.user_id)
     return user
-
 
 @router.put("/", response_model=UserResponse)
 def replace_user(
@@ -180,12 +165,11 @@ def replace_user(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_admin_user),
 ):
-    # Admin-only full replace/update of user
+
     user = repository.get_by_id(db, data.user_id)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado")
 
-    # validate linked entities when role requires them
     if data.role == "internships":
         internships = get_internships_by_id(db, data.internship_id) if data.internship_id is not None else None
         if not internships:
@@ -201,12 +185,10 @@ def replace_user(
                 detail="Instituição de ensino não encontrada",
             )
 
-    # ensure email uniqueness
     existing = repository.get_by_email(db, data.email)
     if existing and existing.id != data.user_id:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Já existe um usuário com este e-mail")
 
-    # apply changes (password is NOT updated here — use /change-password endpoint)
     user.name = data.name
     user.email = data.email
     user.role = data.role
@@ -224,7 +206,6 @@ def replace_user(
         )
     db.refresh(user)
     return user
-
 
 @router.post("/change-password", status_code=status.HTTP_204_NO_CONTENT)
 def change_password(

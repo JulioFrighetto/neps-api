@@ -17,7 +17,6 @@ router = APIRouter(prefix="/students", tags=["Students"])
 
 AVAILABLE_FILTERS = ["name_like", "cpf", "email_like", "discipline_id", "institution_id", "semester", "status", "internship_id"]
 
-
 class StudentListResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -61,33 +60,27 @@ class StudentListResponse(BaseModel):
     institution: InstitutionSummary | None = None
     internship: InternshipSummary | None = None
 
-
 class StudentGetRequest(BaseModel):
     student_id: int
     include: str | None = None
-
 
 class StudentsByDisciplineRequest(BaseModel):
     discipline_id: int
     page: int = 1
     per_page: int = 10
 
-
 class StudentsByInstituteRequest(BaseModel):
     institute_id: int
     page: int = 1
     per_page: int = 10
 
-
 class StudentUpdateRequest(StudentUpdate):
     student_id: int
-
 
 class LinkInternshipRequest(BaseModel):
     student_id: int
     internship_id: int
     director_signed_pdf: str | None = None
-
 
 def _to_response(student: Student, include: set[str] | None = None) -> StudentListResponse:
     include = include or set()
@@ -134,7 +127,6 @@ def _to_response(student: Student, include: set[str] | None = None) -> StudentLi
             else None
         ),
     )
-
 
 @router.get("/", response_model=Page[StudentListResponse])
 def list_students(
@@ -200,21 +192,35 @@ def list_students(
         filters=FilterInfo(applied=list(filters.keys()), available=AVAILABLE_FILTERS),
     )
 
-
 @router.post("/detail", response_model=StudentListResponse)
-def get_student(data: StudentGetRequest, db: Session = Depends(get_db)):
+def get_student(
+    data: StudentGetRequest,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
     include_set = {"discipline", "institution"}
     if data.include:
         include_set = {item.strip().lower() for item in data.include.split(",") if item.strip()}
     student = repository.get_by_id(db, data.student_id)
     if not student:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Aluno não encontrado")
+    if (
+        current_user.role == "education_institute"
+        and student.edu_institute_id != current_user.education_institute_id
+    ):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
     return _to_response(student, include_set)
 
-
 @router.post("/by-discipline", response_model=Page[StudentListResponse])
-def list_students_by_discipline(data: StudentsByDisciplineRequest, db: Session = Depends(get_db)):
-    items, total = repository.get_by_discipline(db, data.discipline_id, page=data.page, per_page=data.per_page)
+def list_students_by_discipline(
+    data: StudentsByDisciplineRequest,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    filters = {}
+    if current_user.role == "education_institute":
+        filters["edu_institute_id"] = current_user.education_institute_id
+    items, total = repository.get_by_discipline(db, data.discipline_id, page=data.page, per_page=data.per_page, filters=filters)
     return Page(
         items=[_to_response(item) for item in items],
         pagination=PaginationInfo(
@@ -225,9 +231,17 @@ def list_students_by_discipline(data: StudentsByDisciplineRequest, db: Session =
         ),
     )
 
-
 @router.post("/by-institute", response_model=Page[StudentListResponse])
-def list_students_by_institute(data: StudentsByInstituteRequest, db: Session = Depends(get_db)):
+def list_students_by_institute(
+    data: StudentsByInstituteRequest,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    if (
+        current_user.role == "education_institute"
+        and data.institute_id != current_user.education_institute_id
+    ):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
     items, total = repository.get_by_institute(db, data.institute_id, page=data.page, per_page=data.per_page)
     return Page(
         items=[_to_response(item) for item in items],
@@ -239,12 +253,10 @@ def list_students_by_institute(data: StudentsByInstituteRequest, db: Session = D
         ),
     )
 
-
 @router.post("/", response_model=StudentListResponse, status_code=status.HTTP_201_CREATED)
 def create_student(data: StudentCreate, db: Session = Depends(get_db)):
     student = repository.create(db, data)
     return _to_response(student)
-
 
 @router.patch("/", response_model=StudentListResponse)
 def update_student(data: StudentUpdateRequest, db: Session = Depends(get_db)):
@@ -252,7 +264,6 @@ def update_student(data: StudentUpdateRequest, db: Session = Depends(get_db)):
     if not student:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Aluno não encontrado")
     return _to_response(student)
-
 
 @router.post("/link-internship", response_model=StudentListResponse)
 def link_student_to_internship(

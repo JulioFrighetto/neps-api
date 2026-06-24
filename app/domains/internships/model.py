@@ -14,7 +14,6 @@ if TYPE_CHECKING:
     from app.domains.student.model import Student
 from app.domains.user.model import User
 
-
 class Internship(Base):
     __tablename__ = "internships"
 
@@ -26,15 +25,15 @@ class Internship(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), onupdate=func.now()
     )
-    
-    region: Mapped["Region | None"] = relationship("Region", back_populates="internships")  # noqa: F821
 
-    internships_rooms: Mapped[list["InternshipsRoom"]] = relationship(  # noqa: F821
+    region: Mapped["Region | None"] = relationship("Region", back_populates="internships")
+
+    internships_rooms: Mapped[list["InternshipsRoom"]] = relationship(
         "InternshipsRoom", back_populates="internships", cascade="all, delete-orphan"
     )
-    rooms: Mapped[list["Room"]] = relationship("Room", back_populates="internships")  # noqa: F821
-    students: Mapped[list["Student"]] = relationship("Student", back_populates="internship")  # noqa: F821
-    users: Mapped[list["User"]] = relationship("User", back_populates="internships")  # noqa: F821
+    rooms: Mapped[list["Room"]] = relationship("Room", back_populates="internships")
+    students: Mapped[list["Student"]] = relationship("Student", back_populates="internship")
+    users: Mapped[list["User"]] = relationship("User", back_populates="internships")
 
     @property
     def user_id(self) -> int | None:

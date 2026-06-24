@@ -5,7 +5,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
 
-
 class RoomSchedule(Base):
     __tablename__ = "room_schedules"
     __table_args__ = (
@@ -23,11 +22,9 @@ class RoomSchedule(Base):
         DateTime, server_default=func.now(), onupdate=func.now()
     )
 
-    # room relationship is deferred to avoid circular import
-    students: Mapped[list["RoomScheduleStudent"]] = relationship(  # noqa: F821
+    students: Mapped[list["RoomScheduleStudent"]] = relationship(
         "RoomScheduleStudent", back_populates="schedule"
     )
-
 
 class RoomScheduleStudent(Base):
     __tablename__ = "room_schedule_students"
@@ -38,4 +35,4 @@ class RoomScheduleStudent(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
-    schedule: Mapped["RoomSchedule"] = relationship("RoomSchedule", back_populates="students")  # noqa: F821
+    schedule: Mapped["RoomSchedule"] = relationship("RoomSchedule", back_populates="students")

@@ -24,7 +24,6 @@ def _get_token_payload(
         )
     return payload
 
-
 def get_current_user(
     payload: dict = Depends(_get_token_payload),
     db: Session = Depends(get_db),
@@ -37,7 +36,6 @@ def get_current_user(
             detail="Usuário não encontrado ou inativo",
         )
     return user
-
 
 def get_current_admin_user(
     current_user=Depends(get_current_user),

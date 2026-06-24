@@ -4,7 +4,6 @@ from app.core.schemas import FilterInfo, Page, PaginationInfo
 from app.domains.education_institute import repository
 from app.domains.education_institute.constants import AVAILABLE_FILTERS
 
-
 def get_all_usecase(db: Session, page: int, per_page: int, filters: dict, current_user):
     if current_user.role == "admin":
         items, total = repository.get_all(db, page=page, per_page=per_page, filters=filters)
@@ -31,6 +30,3 @@ def get_all_usecase(db: Session, page: int, per_page: int, filters: dict, curren
         filters=FilterInfo(applied=list(filters.keys()), available=AVAILABLE_FILTERS),
     )
 
-    
-
-    

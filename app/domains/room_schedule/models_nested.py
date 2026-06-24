@@ -17,7 +17,6 @@ schedule_period_students = Table(
     Column("student_id", ForeignKey("students.id"), primary_key=True),
 )
 
-
 class Schedule(Base):
     __tablename__ = "schedules"
 
@@ -29,7 +28,6 @@ class Schedule(Base):
     days: Mapped[list["ScheduleDay"]] = relationship(
         "ScheduleDay", back_populates="schedule", cascade="all, delete-orphan"
     )
-
 
 class ScheduleDay(Base):
     __tablename__ = "schedule_days"
@@ -45,7 +43,6 @@ class ScheduleDay(Base):
     periods: Mapped[list["SchedulePeriod"]] = relationship(
         "SchedulePeriod", back_populates="day", cascade="all, delete-orphan"
     )
-
 
 class SchedulePeriod(Base):
     __tablename__ = "schedule_periods"

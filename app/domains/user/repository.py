@@ -7,7 +7,6 @@ from app.domains.user.model import User
 from app.domains.user.schemas import UserCreate, UserUpdate
 from sqlalchemy.orm import selectinload
 
-
 def get_all(db: Session, page: int = 1, per_page: int = 10, filters: dict | None = None) -> tuple[list[User], int]:
     query = db.query(User)
     if filters:
@@ -16,7 +15,6 @@ def get_all(db: Session, page: int = 1, per_page: int = 10, filters: dict | None
     total = query.count()
     items = query.offset((page - 1) * per_page).limit(per_page).all()
     return items, total
-
 
 def get_by_id(db: Session, user_id: int) -> User | None:
     return (
@@ -29,7 +27,6 @@ def get_by_id(db: Session, user_id: int) -> User | None:
         .first()
     )
 
-
 def get_by_email(db: Session, email: str) -> User | None:
     return (
         db.query(User)
@@ -40,7 +37,6 @@ def get_by_email(db: Session, email: str) -> User | None:
         .filter(User.email == email)
         .first()
     )
-
 
 def create(db: Session, data: UserCreate) -> User:
     password = data.password or secrets.token_urlsafe(16)
@@ -58,7 +54,6 @@ def create(db: Session, data: UserCreate) -> User:
     db.refresh(user)
     return user
 
-
 def update(db: Session, user_id: int, data: UserUpdate) -> User | None:
     user = get_by_id(db, user_id)
     if not user:
@@ -68,7 +63,6 @@ def update(db: Session, user_id: int, data: UserUpdate) -> User | None:
     db.commit()
     db.refresh(user)
     return user
-
 
 def change_password(
     db: Session, user_id: int, current_password: str, new_password: str
@@ -82,7 +76,6 @@ def change_password(
     db.refresh(user)
     return user
 
-
 def reset_password(db: Session, user_id: int, new_password: str) -> User | None:
     user = get_by_id(db, user_id)
     if not user:
@@ -92,10 +85,8 @@ def reset_password(db: Session, user_id: int, new_password: str) -> User | None:
     db.refresh(user)
     return user
 
-
 def has_email(db: Session, email: str) -> bool:
     return get_by_email(db, email) is not None
-
 
 def delete(db: Session, user_id: int) -> bool:
     user = get_by_id(db, user_id)
@@ -105,14 +96,13 @@ def delete(db: Session, user_id: int) -> bool:
     db.commit()
     return True
 
-
 def authenticate(db: Session, email: str, password: str) -> User | None:
     user = get_by_email(db, email)
     if not user or not user.is_active:
         return None
     if not verify_password(password, user.password):
         return None
-    # If user is linked to a internships or education_institute, ensure those entities are active
+
     if getattr(user, "internships", None) is not None and not getattr(user.internships, "is_active", True):
         return None
     if getattr(user, "education_institute", None) is not None and not getattr(user.education_institute, "is_active", True):

@@ -5,7 +5,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
 
-
 class History(Base):
     __tablename__ = "histories"
 
@@ -21,7 +20,7 @@ class History(Base):
         DateTime, server_default=func.now(), onupdate=func.now()
     )
 
-    period: Mapped["Period"] = relationship("Period", back_populates="histories")  # noqa: F821
-    student: Mapped["Student"] = relationship("Student", back_populates="histories")  # noqa: F821
-    schedule: Mapped["Schedule"] = relationship("Schedule")  # noqa: F821
-    room: Mapped["Room"] = relationship("Room")  # noqa: F821
+    period: Mapped["Period"] = relationship("Period", back_populates="histories")
+    student: Mapped["Student"] = relationship("Student", back_populates="histories")
+    schedule: Mapped["Schedule"] = relationship("Schedule")
+    room: Mapped["Room"] = relationship("Room")

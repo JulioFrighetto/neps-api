@@ -2,7 +2,6 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
-
 class DisciplineBase(BaseModel):
     name: str
     requires_gurney: bool = False

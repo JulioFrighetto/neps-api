@@ -2,17 +2,14 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
-
 class InternshipsBase(BaseModel):
     name: str
     region_id: int | None = None
     is_active: bool = True
 
-
 class InternshipsCreate(InternshipsBase):
     user_name: str | None = None
     user_email: EmailStr | None = None
-
 
 class InternshipsUpdate(BaseModel):
     name: str | None = None
@@ -21,14 +18,12 @@ class InternshipsUpdate(BaseModel):
     user_name: str | None = None
     user_email: EmailStr | None = None
 
-
 class InternshipsUserSummary(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
     name: str
     email: EmailStr
-
 
 class InternshipsResponse(InternshipsBase):
     model_config = ConfigDict(from_attributes=True)

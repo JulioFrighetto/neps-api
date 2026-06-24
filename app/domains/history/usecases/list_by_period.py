@@ -2,7 +2,6 @@ from fastapi import HTTPException, status
 from app.domains.history import repository
 from app.domains.period import repository as period_repository
 
-
 def list_by_period_usecase(db, data, current_user):
     """Return (items, total) for histories filtered by period.
     Performs the same permission checks as the original router.

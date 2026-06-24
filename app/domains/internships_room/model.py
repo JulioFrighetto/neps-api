@@ -9,7 +9,6 @@ if TYPE_CHECKING:
     from app.domains.internships.model import Internship
 from app.domains.internships_schedule.model import InternshipsSchedule
 
-
 class InternshipsRoom(Base):
     __tablename__ = "internships_rooms"
 
@@ -24,9 +23,9 @@ class InternshipsRoom(Base):
         DateTime, server_default=func.now(), onupdate=func.now()
     )
 
-    internships: Mapped["Internship"] = relationship(  # noqa: F821
+    internships: Mapped["Internship"] = relationship(
         "Internship", back_populates="internships_rooms"
     )
-    internships_schedules: Mapped[list["InternshipsSchedule"]] = relationship(  # noqa: F821
+    internships_schedules: Mapped[list["InternshipsSchedule"]] = relationship(
         "InternshipsSchedule", back_populates="internships_room", cascade="all, delete-orphan"
     )

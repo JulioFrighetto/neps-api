@@ -7,8 +7,7 @@ from app.core.settings import settings
 from app.domains.internships.schemas import InternshipsUpdate
 from app.domains.user.model import User
 
-
 def update_internship_usecase(db, data: InternshipsUpdate):
     updated = repository.update(db, data.internship_id, data)
-    
+
     return updated

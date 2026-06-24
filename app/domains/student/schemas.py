@@ -5,7 +5,6 @@ from pydantic import BaseModel, ConfigDict, Field
 
 StudentStatus = Literal["PENDING", "PLACED", "COMPLETED"]
 
-
 class StudentBase(BaseModel):
     edu_institute_id: int
     course_id: int
@@ -13,10 +12,9 @@ class StudentBase(BaseModel):
     status: StudentStatus = "PENDING"
     is_active: bool = True
 
-
 class StudentCreate(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
-    
+
     edu_institute_id: int = Field(validation_alias="institution_id")
     course_id: int
     discipline_id: int
@@ -49,7 +47,6 @@ class StudentCreate(BaseModel):
         description="Nome do preceptor. Opcional.",
     )
 
-
 class StudentUpdate(BaseModel):
     course_id: int | None = None
     discipline_id: int | None = None
@@ -61,7 +58,6 @@ class StudentUpdate(BaseModel):
     internship_expected_end_date: date | None = None
     professor_name: str | None = None
     preceptor_name: str | None = None
-
 
 class StudentResponse(StudentBase):
     model_config = ConfigDict(from_attributes=True)

@@ -1,7 +1,6 @@
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
-
 class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite:///./neps.db"
     APP_NAME: str = "Neps API"
@@ -19,14 +18,12 @@ class Settings(BaseSettings):
         ]
     )
 
-    # JWT
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     RESET_TOKEN_EXPIRE_MINUTES: int = 30
 
-    # SMTP / Email
     SMTP_HOST: str | None = None
     SMTP_PORT: int = 587
     SMTP_USERNAME: str | None = None
@@ -35,24 +32,21 @@ class Settings(BaseSettings):
     SMTP_FROM_NAME: str = "NEPS API"
     SMTP_USE_TLS: bool = True
     SMTP_USE_SSL: bool = False
-    
-    # MailerSend
+
     MAILERSEND_API_TOKEN: str | None = None
     MAILERSEND_FROM_EMAIL: str | None = None
     MAILERSEND_FROM_NAME: str = "NEPS API"
-    # SendGrid (fallback when SMTP fails)
+
     SENDGRID_API_KEY: str | None = None
     SENDGRID_FROM_EMAIL: str | None = None
     SENDGRID_FROM_NAME: str = "NEPS API"
 
-    # MailerSend (alternative email internships)
     mailersend_api_token: str | None = None
     mailersend_from_email: str | None = None
     mailersend_from_name: str | None = None
 
     class Config:
         env_file = ".env"
-        extra = "ignore"  # Ignore extra environment variables
-
+        extra = "ignore"
 
 settings = Settings()

@@ -12,7 +12,6 @@ from app.domains.user.model import User
 from app.core.security import hash_password
 import secrets
 
-
 def get_all(db: Session, page: int = 1, per_page: int = 10, filters: dict | None = None) -> tuple[list[EducationInstitute], int]:
     query = db.query(EducationInstitute).options(
         selectinload(EducationInstitute.users),
@@ -25,7 +24,6 @@ def get_all(db: Session, page: int = 1, per_page: int = 10, filters: dict | None
     total = query.count()
     items = query.offset((page - 1) * per_page).limit(per_page).all()
     return items, total
-
 
 def get_by_id(db: Session, institute_id: int) -> EducationInstitute | None:
     return (
@@ -40,7 +38,6 @@ def get_by_id(db: Session, institute_id: int) -> EducationInstitute | None:
         .first()
     )
 
-
 def create(db: Session, data: EducationInstituteCreate) -> EducationInstitute:
     payload = data.model_dump(exclude_none=True)
     region_ids = payload.pop("region_ids", None)
@@ -48,16 +45,16 @@ def create(db: Session, data: EducationInstituteCreate) -> EducationInstitute:
     user_email = payload.pop("user_email", None)
     institute_email = payload.get("email")
     effective_user_email = user_email or institute_email
-    
+
     institute = EducationInstitute(**payload)
-    
+
     if region_ids:
         regions = db.query(Region).filter(Region.id.in_(region_ids)).all()
         institute.regions = regions
-    
+
     db.add(institute)
-    db.flush()  
-    
+    db.flush()
+
     if effective_user_email:
         temp_password = secrets.token_urlsafe(16)
         user = User(
@@ -69,18 +66,17 @@ def create(db: Session, data: EducationInstituteCreate) -> EducationInstitute:
             is_active=True,
         )
         db.add(user)
-    
+
     try:
         db.commit()
     except IntegrityError as exc:
         db.rollback()
-        # Assume unique constraint on users.email or institutes.email
+
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email já cadastrado",
         ) from exc
     return get_by_id(db, institute.id)
-
 
 def update(
     db: Session, institute_id: int, data: EducationInstituteUpdate
@@ -98,7 +94,6 @@ def update(
     db.commit()
     db.refresh(institute)
     return institute
-
 
 def delete(db: Session, institute_id: int) -> bool:
     institute = get_by_id(db, institute_id)

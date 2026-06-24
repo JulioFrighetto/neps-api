@@ -10,7 +10,6 @@ from app.domains.education_institute.schemas import EducationInstituteCreate
 
 logger = logging.getLogger(__name__)
 
-
 def create_usecase(db: Session, data: EducationInstituteCreate):
     institute = repository.create(db, data)
     target_email = data.user_email or data.email

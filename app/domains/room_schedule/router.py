@@ -13,7 +13,6 @@ router = APIRouter(prefix="/rooms", tags=["Room Schedules"])
 DayOfWeek = Literal["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"]
 PeriodName = Literal["MORNING", "AFTERNOON", "EVENING"]
 
-
 class AssignStudentToPeriodRequest(BaseModel):
     room_id: int
     day_of_week: DayOfWeek
@@ -21,15 +20,12 @@ class AssignStudentToPeriodRequest(BaseModel):
     period_id: int | None = None
     student_id: int
 
-
 class GetRoomScheduleRequest(BaseModel):
     room_id: int
-
 
 class AvailableSlotsRequest(BaseModel):
     student_id: int
     room_id: int | None = None
-
 
 @router.post("/schedule", response_model=dict)
 def get_room_schedule(payload: GetRoomScheduleRequest, db: Session = Depends(get_db)):
@@ -60,7 +56,6 @@ def get_room_schedule(payload: GetRoomScheduleRequest, db: Session = Depends(get
         "roomId": payload.room_id,
         "days": result_days,
     }
-
 
 @router.post("/schedule/student", response_model=dict, status_code=status.HTTP_200_OK)
 def assign_student_to_period(
@@ -93,7 +88,6 @@ def assign_student_to_period(
         "studentIds": [student.id for student in updated_period.students],
     }
 
-
 @router.delete("/schedule/student", status_code=status.HTTP_200_OK)
 def remove_student_from_period(
     payload: AssignStudentToPeriodRequest,
@@ -121,7 +115,6 @@ def remove_student_from_period(
         "period": payload.period,
         "studentIds": [student.id for student in updated_period.students],
     }
-
 
 @router.post("/available-slots", response_model=dict)
 def available_slots_for_student(payload: AvailableSlotsRequest, db: Session = Depends(get_db)):

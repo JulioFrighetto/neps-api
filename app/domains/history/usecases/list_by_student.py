@@ -2,7 +2,6 @@ from fastapi import HTTPException, status
 from app.domains.history import repository
 from app.domains.student.repository import get_by_id as get_student_by_id
 
-
 def list_by_student_usecase(db, data, current_user):
     """Return (items, total) for histories filtered by student with permission checks."""
     student = get_student_by_id(db, data.id)

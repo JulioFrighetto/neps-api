@@ -5,7 +5,6 @@ from app.domains.internships.model import Internship
 from app.domains.student.model import Student
 from app.domains.student.schemas import StudentCreate, StudentUpdate
 
-
 def get_all(db: Session, page: int = 1, per_page: int = 10, filters: dict | None = None) -> tuple[list[Student], int]:
     query = db.query(Student)
     if filters:
@@ -13,7 +12,6 @@ def get_all(db: Session, page: int = 1, per_page: int = 10, filters: dict | None
     total = query.count()
     items = query.offset((page - 1) * per_page).limit(per_page).all()
     return items, total
-
 
 def get_by_id(db: Session, student_id: int) -> Student | None:
     return (
@@ -27,7 +25,6 @@ def get_by_id(db: Session, student_id: int) -> Student | None:
         .first()
     )
 
-
 def get_by_discipline(db: Session, discipline_id: int, page: int = 1, per_page: int = 10, filters: dict | None = None) -> tuple[list[Student], int]:
     query = db.query(Student).filter(Student.discipline_id == discipline_id)
     if filters:
@@ -36,7 +33,6 @@ def get_by_discipline(db: Session, discipline_id: int, page: int = 1, per_page: 
     items = query.offset((page - 1) * per_page).limit(per_page).all()
     return items, total
 
-
 def get_by_institute(db: Session, institute_id: int, page: int = 1, per_page: int = 10, filters: dict | None = None) -> tuple[list[Student], int]:
     query = db.query(Student).filter(Student.edu_institute_id == institute_id)
     if filters:
@@ -44,7 +40,6 @@ def get_by_institute(db: Session, institute_id: int, page: int = 1, per_page: in
     total = query.count()
     items = query.offset((page - 1) * per_page).limit(per_page).all()
     return items, total
-
 
 def create(db: Session, data: StudentCreate) -> Student:
     values = data.model_dump()
@@ -55,7 +50,6 @@ def create(db: Session, data: StudentCreate) -> Student:
     db.commit()
     db.refresh(student)
     return student
-
 
 def update(db: Session, student_id: int, data: StudentUpdate) -> Student | None:
     student = get_by_id(db, student_id)
@@ -69,7 +63,6 @@ def update(db: Session, student_id: int, data: StudentUpdate) -> Student | None:
     db.commit()
     db.refresh(student)
     return student
-
 
 def delete(db: Session, student_id: int) -> bool:
     student = get_by_id(db, student_id)

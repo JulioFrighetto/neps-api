@@ -5,7 +5,6 @@ from sqlalchemy.orm import Session, selectinload
 from app.domains.history.model import History
 from app.domains.student.model import Student
 
-
 def get_by_period(db: Session, period_id: int, page: int = 1, per_page: int = 10) -> tuple[list[History], int]:
     query = (
         db.query(History)
@@ -19,7 +18,6 @@ def get_by_period(db: Session, period_id: int, page: int = 1, per_page: int = 10
     total = query.count()
     items = query.offset((page - 1) * per_page).limit(per_page).all()
     return items, total
-
 
 def get_by_room(db: Session, room_id: int, page: int = 1, per_page: int = 10) -> tuple[list[History], int]:
     query = (
@@ -37,7 +35,6 @@ def get_by_room(db: Session, room_id: int, page: int = 1, per_page: int = 10) ->
     items = query.offset((page - 1) * per_page).limit(per_page).all()
     return items, total
 
-
 def get_by_schedule(db: Session, schedule_id: int, page: int = 1, per_page: int = 10) -> tuple[list[History], int]:
     query = (
         db.query(History)
@@ -53,7 +50,6 @@ def get_by_schedule(db: Session, schedule_id: int, page: int = 1, per_page: int 
     total = query.count()
     items = query.offset((page - 1) * per_page).limit(per_page).all()
     return items, total
-
 
 def get_by_student(db: Session, student_id: int, page: int = 1, per_page: int = 10) -> tuple[list[History], int]:
     query = (
@@ -71,7 +67,6 @@ def get_by_student(db: Session, student_id: int, page: int = 1, per_page: int = 
     items = query.offset((page - 1) * per_page).limit(per_page).all()
     return items, total
 
-
 def resolve_room_id_for_student(db: Session, student_id: int) -> int | None:
     from app.domains.room_schedule.models_nested import Schedule, ScheduleDay, SchedulePeriod, schedule_period_students
 
@@ -86,7 +81,6 @@ def resolve_room_id_for_student(db: Session, student_id: int) -> int | None:
     )
     return row[0] if row else None
 
-
 def resolve_period_id_for_student(db: Session, student_id: int) -> int | None:
     from app.domains.period.model import Period, period_students
 
@@ -98,7 +92,6 @@ def resolve_period_id_for_student(db: Session, student_id: int) -> int | None:
         .first()
     )
     return row[0] if row else None
-
 
 def resolve_schedule_id_for_student(db: Session, student_id: int) -> int | None:
     from app.domains.room_schedule.models_nested import Schedule, ScheduleDay, SchedulePeriod, schedule_period_students
@@ -113,7 +106,6 @@ def resolve_schedule_id_for_student(db: Session, student_id: int) -> int | None:
         .first()
     )
     return row[0] if row else None
-
 
 def create_link_history(
     db: Session,
@@ -133,7 +125,6 @@ def create_link_history(
     db.add(history)
     return history
 
-
 def get_active_history(db: Session, period_id: int, student_id: int) -> History | None:
     return (
         db.query(History)
@@ -145,7 +136,6 @@ def get_active_history(db: Session, period_id: int, student_id: int) -> History 
         .order_by(History.id.desc())
         .first()
     )
-
 
 def create_or_update_link_history(
     db: Session,
@@ -171,7 +161,6 @@ def create_or_update_link_history(
         room_id=room_id,
         start_date=start_date,
     )
-
 
 def close_active_history(
     db: Session,

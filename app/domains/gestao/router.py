@@ -11,7 +11,6 @@ from app.domains.student.model import Student
 
 router = APIRouter(prefix="/", tags=["Gestão"])
 
-
 class GestaoStudentCreate(BaseModel):
     name: str
     cpf: str | None = None
@@ -20,7 +19,6 @@ class GestaoStudentCreate(BaseModel):
     discipline_id: int
     semester: int | None = None
     institution_id: int
-
 
 class GestaoStudentUpdate(BaseModel):
     name: str | None = None
@@ -31,15 +29,12 @@ class GestaoStudentUpdate(BaseModel):
     semester: int | None = None
     institution_id: int | None = None
 
-
 class GestaoStudentGetRequest(BaseModel):
     student_id: int
     include: str | None = None
 
-
 class GestaoStudentUpdateRequest(GestaoStudentUpdate):
     student_id: int
-
 
 class GestaoStudentResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -67,9 +62,7 @@ class GestaoStudentResponse(BaseModel):
     discipline: DisciplineSummary | None = None
     institution: InstitutionSummary | None = None
 
-
 AVAILABLE_FILTERS = ["name_like", "cpf", "email", "discipline_id", "institution_id", "semester"]
-
 
 def _to_response(student: Student, include: set[str] | None = None) -> GestaoStudentResponse:
     include = include or set()
@@ -97,7 +90,6 @@ def _to_response(student: Student, include: set[str] | None = None) -> GestaoStu
             else None
         ),
     )
-
 
 @router.get("/students", response_model=Page[GestaoStudentResponse])
 def list_students(
@@ -150,7 +142,6 @@ def list_students(
         filters=FilterInfo(applied=list(filters.keys()), available=AVAILABLE_FILTERS),
     )
 
-
 @router.post("/students/detail", response_model=GestaoStudentResponse)
 def get_student(data: GestaoStudentGetRequest, db: Session = Depends(get_db)):
     include_set = {item.strip().lower() for item in data.include.split(",")} if data.include else set()
@@ -165,7 +156,6 @@ def get_student(data: GestaoStudentGetRequest, db: Session = Depends(get_db)):
     if not student:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Aluno não encontrado")
     return _to_response(student, include_set)
-
 
 @router.post("/students", response_model=GestaoStudentResponse, status_code=status.HTTP_201_CREATED)
 def create_student(data: GestaoStudentCreate, db: Session = Depends(get_db)):
@@ -184,7 +174,6 @@ def create_student(data: GestaoStudentCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(student)
     return _to_response(student)
-
 
 @router.put("/students", response_model=GestaoStudentResponse)
 @router.patch("/students", response_model=GestaoStudentResponse)

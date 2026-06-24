@@ -1,7 +1,6 @@
 from fastapi.testclient import TestClient
 from app.main import app
 
-# Override auth dependency to return an admin-like object
 class DummyUser:
     def __init__(self):
         self.role = 'admin'

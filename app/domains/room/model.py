@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from app.domains.internships.model import Internship
 
-
 class Room(Base):
     __tablename__ = "rooms"
 
@@ -23,4 +22,4 @@ class Room(Base):
         DateTime, server_default=func.now(), onupdate=func.now()
     )
 
-    internships: Mapped["Internship"] = relationship("Internship", back_populates="rooms")  # noqa: F821
+    internships: Mapped["Internship"] = relationship("Internship", back_populates="rooms")

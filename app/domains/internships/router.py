@@ -24,28 +24,23 @@ router = APIRouter(prefix="/internships", tags=["Internships"])
 
 AVAILABLE_FILTERS = ["name_like", "region_id", "is_active"]
 
-
 from pydantic import BaseModel, ConfigDict, Field
-
 
 class InternshipsGetRequest(BaseModel):
     internship_id: int = Field(..., alias="internship_id")
-    # Compatibilidade com use‑case que espera `internship_id`
+
     @property
     def internship_id(self) -> int:
         return self.internship_id
 
-
 class InternshipsUpdateRequest(InternshipsUpdate):
     internship_id: int
-
 
 class InternshipsReplaceRequest(InternshipsCreate):
     internship_id: int = Field(..., alias="internship_id")
     @property
     def internship_id(self) -> int:
         return self.internship_id
-
 
 @router.get("/", response_model=Page[InternshipsResponse])
 def list_internships(
@@ -70,15 +65,12 @@ def list_internships(
         filters=FilterInfo(applied=list(filters.keys()), available=AVAILABLE_FILTERS),
     )
 
-
 @router.post("/detail", response_model=InternshipsResponse)
 def get_internship(data: InternshipsGetRequest, db: Session = Depends(get_db)):
     return get_internship_usecase(db, data.internship_id)
 
-
 class ByRegionRequest(BaseModel):
     region_id: int
-
 
 class InternshipBrief(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -87,10 +79,8 @@ class InternshipBrief(BaseModel):
     region_id: int | None = None
     is_active: bool
 
-
 class ByRegionResponse(BaseModel):
     items: list[InternshipBrief]
-
 
 @router.post("/by-region", response_model=ByRegionResponse)
 def list_internships_by_region(
@@ -108,16 +98,13 @@ def list_internships_by_region(
     )
     return ByRegionResponse(items=items)
 
-
 @router.post("/", response_model=InternshipsResponse, status_code=status.HTTP_201_CREATED)
 def create_internship(data: InternshipsCreate, db: Session = Depends(get_db)):
     return create_internship_usecase(db, data)
 
-
 @router.patch("/", response_model=InternshipsResponse)
 def update_internship(data: InternshipsUpdateRequest, db: Session = Depends(get_db)):
     return update_internship_usecase(db, data)
-
 
 @router.put("/", response_model=InternshipsResponse)
 def replace_internship(data: InternshipsReplaceRequest, db: Session = Depends(get_db)):

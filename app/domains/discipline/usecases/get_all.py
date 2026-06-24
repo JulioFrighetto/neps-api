@@ -4,7 +4,6 @@ from app.core.schemas import FilterInfo, Page, PaginationInfo
 from app.domains.discipline import repository
 from app.domains.discipline.schemas import DisciplineFilters
 
-
 def get_all_usecase(db, page, per_page, filters):
     items, total = repository.get_all(
         db,
@@ -27,4 +26,4 @@ def get_all_usecase(db, page, per_page, filters):
             available=DisciplineFilters.available_filters(),
         ),
     )
-    
+

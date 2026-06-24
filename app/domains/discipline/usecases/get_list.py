@@ -4,7 +4,6 @@ from app.core.schemas import FilterInfo, Page, PaginationInfo
 from app.domains.discipline import repository
 from app.domains.discipline.schemas import DisciplineFilters
 
-
 def getList(db, page, per_page, filters):
     items, total = repository.get_all(
         db,
@@ -16,4 +15,4 @@ def getList(db, page, per_page, filters):
     return Page(
         items=items,
     )
-    
+

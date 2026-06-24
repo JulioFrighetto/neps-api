@@ -17,7 +17,6 @@ router = APIRouter(prefix="/courses", tags=["Courses"])
 
 AVAILABLE_FILTERS = ["name_like"]
 
-
 def _get_page(db, page, per_page, filters, education_institute_id=None):
     items, total = repository.get_all(
         db,
@@ -41,7 +40,6 @@ def _get_page(db, page, per_page, filters, education_institute_id=None):
         ),
     )
 
-
 @router.get("/", response_model=Page[CourseResponse])
 def list_courses(
     filters: CourseFilters = Depends(),
@@ -62,7 +60,6 @@ def list_courses(
         filters=filters.model_dump(exclude_none=True),
         education_institute_id=education_institute_id,
     )
-
 
 @router.get("/list", response_model=Page[CourseBrief])
 def list_courses_brief(
@@ -91,7 +88,6 @@ def list_courses_brief(
         filters=page_obj.filters,
     )
 
-
 @router.post("/detail", response_model=CourseResponse)
 def get_course(data: CourseGetRequest, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     if current_user.role == "internships":
@@ -101,7 +97,6 @@ def get_course(data: CourseGetRequest, db: Session = Depends(get_db), current_us
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Curso não encontrado")
     return course
 
-
 @router.post("/", response_model=CourseResponse, status_code=status.HTTP_201_CREATED)
 def create_course(data: CourseCreate, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     if current_user.role not in ("admin", "education_institute"):
@@ -109,7 +104,6 @@ def create_course(data: CourseCreate, db: Session = Depends(get_db), current_use
     if current_user.role != "admin":
         data.education_institute_id = current_user.education_institute_id
     return repository.create(db, data)
-
 
 @router.put("/", response_model=CourseResponse)
 @router.patch("/", response_model=CourseResponse)
@@ -123,11 +117,9 @@ def update_course(data: CourseUpdateRequest, db: Session = Depends(get_db), curr
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Curso não encontrado")
     return course
 
-
 class CourseDisciplineRequest(BaseModel):
     course_id: int
     discipline_id: int
-
 
 @router.get("/disciplines", response_model=list[DisciplineBrief])
 def list_course_disciplines(
@@ -139,7 +131,6 @@ def list_course_disciplines(
     if not course:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Curso não encontrado")
     return course.disciplines
-
 
 @router.post("/disciplines/link", response_model=CourseResponse, status_code=status.HTTP_200_OK)
 def link_discipline_to_course(data: CourseDisciplineRequest, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
@@ -155,7 +146,6 @@ def link_discipline_to_course(data: CourseDisciplineRequest, db: Session = Depen
         db.commit()
         db.refresh(course)
     return course
-
 
 @router.delete("/disciplines", response_model=CourseResponse, status_code=status.HTTP_200_OK)
 def unlink_discipline_from_course(data: CourseDisciplineRequest, db: Session = Depends(get_db), current_user=Depends(get_current_user)):

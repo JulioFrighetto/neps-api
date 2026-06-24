@@ -6,7 +6,6 @@ from app.domains.course.schemas import CourseCreate, CourseUpdate
 from app.domains.discipline.model import Discipline
 from app.domains.education_institute.model import EducationInstitute
 
-
 def _sync_disciplines(db: Session, course: Course, items: list) -> None:
     for item in items:
         if item.id:
@@ -23,7 +22,6 @@ def _sync_disciplines(db: Session, course: Course, items: list) -> None:
             db.add(disc)
             db.flush()
             course.disciplines.append(disc)
-
 
 def get_all(
     db: Session,
@@ -43,7 +41,6 @@ def get_all(
     items = query.offset((page - 1) * per_page).limit(per_page).all()
     return items, total
 
-
 def get_by_id(db: Session, course_id: int) -> Course | None:
     return (
         db.query(Course)
@@ -52,12 +49,10 @@ def get_by_id(db: Session, course_id: int) -> Course | None:
         .first()
     )
 
-
 def _sync_education_institute(db: Session, course: Course, education_institute_id: int) -> None:
     institute = db.query(EducationInstitute).filter(EducationInstitute.id == education_institute_id).first()
     if institute and institute not in course.education_institutes:
         course.education_institutes.append(institute)
-
 
 def create(db: Session, data: CourseCreate) -> Course:
     values = data.model_dump(exclude={"disciplines", "education_institute_id"})
@@ -70,7 +65,6 @@ def create(db: Session, data: CourseCreate) -> Course:
     db.commit()
     db.refresh(course)
     return course
-
 
 def update(db: Session, course_id: int, data: CourseUpdate) -> Course | None:
     course = get_by_id(db, course_id)
@@ -86,7 +80,6 @@ def update(db: Session, course_id: int, data: CourseUpdate) -> Course | None:
     db.commit()
     db.refresh(course)
     return course
-
 
 def delete(db: Session, course_id: int) -> bool:
     course = get_by_id(db, course_id)

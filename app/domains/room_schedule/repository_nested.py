@@ -11,7 +11,6 @@ from app.domains.student.model import Student
 DAYS_OF_WEEK = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"]
 PERIODS = ["MORNING", "AFTERNOON", "EVENING"]
 
-
 def _student_has_conflict(
     db: Session,
     student_id: int,
@@ -33,7 +32,6 @@ def _student_has_conflict(
         query = query.filter(Schedule.room_id != room_id)
 
     return db.query(query.exists()).scalar()
-
 
 def create_schedule_for_room(db: Session, room_id: int) -> Schedule:
     existing = get_schedule_by_room(db, room_id)
@@ -60,7 +58,6 @@ def create_schedule_for_room(db: Session, room_id: int) -> Schedule:
     db.commit()
     return get_schedule_by_room(db, room_id) or schedule
 
-
 def get_schedule_by_room(db: Session, room_id: int) -> Schedule | None:
     return (
         db.query(Schedule)
@@ -71,7 +68,6 @@ def get_schedule_by_room(db: Session, room_id: int) -> Schedule | None:
         .first()
     )
 
-
 def get_by_id(db: Session, schedule_id: int) -> Schedule | None:
     return (
         db.query(Schedule)
@@ -81,7 +77,6 @@ def get_by_id(db: Session, schedule_id: int) -> Schedule | None:
         .filter(Schedule.id == schedule_id)
         .first()
     )
-
 
 def get_period_for_room(db: Session, room_id: int, day_of_week: str, period_name: str) -> SchedulePeriod | None:
     schedule = get_schedule_by_room(db, room_id)
@@ -94,7 +89,6 @@ def get_period_for_room(db: Session, room_id: int, day_of_week: str, period_name
                 if period.period == period_name:
                     return period
     return None
-
 
 def assign_student_to_period(
     db: Session,
@@ -149,7 +143,6 @@ def assign_student_to_period(
     db.refresh(period)
     return get_period_for_room(db, room_id, day_of_week, period_name)
 
-
 def remove_student_from_period(
     db: Session,
     room_id: int,
@@ -176,7 +169,6 @@ def remove_student_from_period(
     db.refresh(period)
     return get_period_for_room(db, room_id, day_of_week, period_name)
 
-
 def remove_student_from_all_periods(db: Session, student_id: int) -> int:
     result = db.execute(
         schedule_period_students.delete().where(
@@ -185,7 +177,6 @@ def remove_student_from_all_periods(db: Session, student_id: int) -> int:
     )
     db.commit()
     return result.rowcount or 0
-
 
 def get_available_slots_for_student(db: Session, student_id: int, room_id: int | None = None) -> list[dict]:
     """Return list of available slots for a student across rooms (or single room if room_id provided).
@@ -209,30 +200,27 @@ def get_available_slots_for_student(db: Session, student_id: int, room_id: int |
 
     available = []
     for room in rooms:
-        # only rooms belonging to the student's internship field
+
         if room.internship_id != student.internship_id:
             continue
 
-        # skip rooms that cannot serve this student due to gurney requirement
         if student.discipline and student.discipline.requires_gurney and not room.has_gurney:
             continue
 
         schedule = create_schedule_for_room(db, room.id)
         for day in schedule.days:
             for period in day.periods:
-                # skip if student already in this exact period in any room
+
                 if _student_has_conflict(db, student_id, day.day_of_week, period.period, room_id=None):
-                    # if student already assigned to this day+period in some room, not available
+
                     continue
 
-                # skip if already in this room+period
                 if any(s.id == student_id for s in period.students):
                     continue
 
                 occupied = len(period.students)
                 capacity = room.room_capacity
 
-                # skip if period is full (no vacancies)
                 if occupied >= capacity:
                     continue
 

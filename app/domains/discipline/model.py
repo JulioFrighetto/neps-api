@@ -9,7 +9,6 @@ from app.domains.course.model import course_disciplines
 from app.domains.discipline.schemas import DisciplineUpdate
 from app.domains.student.model import Student
 
-
 class Discipline(Base):
     __tablename__ = "disciplines"
 
@@ -28,5 +27,5 @@ class Discipline(Base):
     courses: Mapped[list["Course"]] = relationship(
         "Course", secondary=course_disciplines, back_populates="disciplines"
     )
-    region: Mapped["Region | None"] = relationship("Region")  # noqa: F821
+    region: Mapped["Region | None"] = relationship("Region")
 

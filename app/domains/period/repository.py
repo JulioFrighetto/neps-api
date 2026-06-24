@@ -8,14 +8,12 @@ from app.domains.history import repository as history_repository
 from app.domains.period.model import Period
 from app.domains.period.schemas import PeriodCreate, PeriodUpdate
 
-
 def _apply_visibility_filter(query: Query, institute_priority: int | None = None, today: date | None = None, applied_filters: set[str] | None = None) -> Query:
     if today is None:
         today = date.today()
 
     applied_filters = applied_filters or set()
 
-    # Admins (institute_priority is None) see all active periods without date restriction
     if institute_priority is None:
         if "is_active" not in applied_filters:
             query = query.filter(Period.is_active.is_(True))
@@ -24,17 +22,14 @@ def _apply_visibility_filter(query: Query, institute_priority: int | None = None
     if "is_active" not in applied_filters:
         query = query.filter(Period.is_active.is_(True))
 
-    # Priority institutes (priority == 0) see only periods within the priority window
     if institute_priority == 0:
         return query.filter(
             and_(Period.priority_start_date <= today, Period.priority_end_date >= today)
         )
 
-    # Non-priority institutes see only periods within the general open window
     return query.filter(
         and_(Period.start_date <= today, Period.end_date >= today)
     )
-
 
 def get_all(
     db: Session,
@@ -57,7 +52,6 @@ def get_all(
     items = query.offset((page - 1) * per_page).limit(per_page).all()
     return items, total
 
-
 def get_by_id(
     db: Session,
     period_id: int,
@@ -67,7 +61,6 @@ def get_by_id(
     query = db.query(Period).filter(Period.id == period_id)
     query = _apply_visibility_filter(query, institute_priority=institute_priority, today=today)
     return query.first()
-
 
 def get_by_id_with_students(
     db: Session,
@@ -79,9 +72,8 @@ def get_by_id_with_students(
     query = _apply_visibility_filter(query, institute_priority=institute_priority, today=today)
     return query.first()
 
-
 def link_student(db: Session, period_id: int, student) -> None:
-    # `student` should be a Student instance
+
     period = db.query(Period).filter(Period.id == period_id).first()
     if not period:
         raise ValueError("Period not found")
@@ -99,7 +91,6 @@ def link_student(db: Session, period_id: int, student) -> None:
     )
     db.commit()
 
-
 def unlink_student(db: Session, period_id: int, student) -> None:
     period = db.query(Period).filter(Period.id == period_id).first()
     if not period:
@@ -110,14 +101,12 @@ def unlink_student(db: Session, period_id: int, student) -> None:
     history_repository.close_active_history(db, period_id, student.id)
     db.commit()
 
-
 def create(db: Session, data: PeriodCreate) -> Period:
     period = Period(**data.model_dump())
     db.add(period)
     db.commit()
     db.refresh(period)
     return period
-
 
 def update(db: Session, period_id: int, data: PeriodUpdate) -> Period | None:
     period = get_by_id(db, period_id)
@@ -128,7 +117,6 @@ def update(db: Session, period_id: int, data: PeriodUpdate) -> Period | None:
     db.commit()
     db.refresh(period)
     return period
-
 
 def delete(db: Session, period_id: int) -> bool:
     period = get_by_id(db, period_id)
