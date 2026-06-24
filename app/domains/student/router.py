@@ -74,6 +74,12 @@ class StudentsByInstituteRequest(BaseModel):
     page: int = 1
     per_page: int = 10
 
+class StudentsByInstituteAndPeriodRequest(BaseModel):
+    institute_id: int
+    period_id: int
+    page: int = 1
+    per_page: int = 10
+
 class StudentUpdateRequest(StudentUpdate):
     student_id: int
 
@@ -252,6 +258,31 @@ def list_students_by_institute(
             total_pages=max(1, math.ceil(total / data.per_page)) if total > 0 else 0,
         ),
     )
+
+@router.post("/by-institute-period", response_model=Page[StudentListResponse])
+def list_students_by_institute_and_period(
+    data: StudentsByInstituteAndPeriodRequest,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    if (
+        current_user.role == "education_institute"
+        and data.institute_id != current_user.education_institute_id
+    ):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
+    items, total = repository.get_by_institute_and_period(
+        db, data.institute_id, data.period_id, page=data.page, per_page=data.per_page
+    )
+    return Page(
+        items=[_to_response(item) for item in items],
+        pagination=PaginationInfo(
+            page=data.page,
+            per_page=data.per_page,
+            total=total,
+            total_pages=max(1, math.ceil(total / data.per_page)) if total > 0 else 0,
+        ),
+    )
+
 
 @router.post("/", response_model=StudentListResponse, status_code=status.HTTP_201_CREATED)
 def create_student(data: StudentCreate, db: Session = Depends(get_db)):

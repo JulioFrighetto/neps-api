@@ -41,6 +41,25 @@ def get_by_institute(db: Session, institute_id: int, page: int = 1, per_page: in
     items = query.offset((page - 1) * per_page).limit(per_page).all()
     return items, total
 
+def get_by_institute_and_period(db: Session, institute_id: int, period_id: int, page: int = 1, per_page: int = 10) -> tuple[list[Student], int]:
+    from app.domains.period.model import period_students
+    query = (
+        db.query(Student)
+        .options(
+            selectinload(Student.discipline),
+            selectinload(Student.education_institute),
+            selectinload(Student.internship),
+        )
+        .join(period_students, period_students.c.student_id == Student.id)
+        .filter(
+            period_students.c.period_id == period_id,
+            Student.edu_institute_id == institute_id,
+        )
+    )
+    total = query.count()
+    items = query.offset((page - 1) * per_page).limit(per_page).all()
+    return items, total
+
 def create(db: Session, data: StudentCreate) -> Student:
     values = data.model_dump()
     if values.get("director_signed_pdf") is not None:
