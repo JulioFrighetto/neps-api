@@ -43,6 +43,7 @@ class UserCreate(UserBase):
 class UserUpdate(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     internship_id: int | None = Field(default=None, alias="internship_id")
+    education_institute_id: int | None = None
     name: str | None = None
     email: EmailStr | None = None
     is_active: bool | None = None
@@ -59,8 +60,8 @@ class UserResponse(UserBase):
 
     id: int
     role: str
-    # Expose alias directly in response, mapping to the model's internship_id column
     internship_id: int | None = Field(default=None, alias="internship_id")
+    education_institute_id: int | None = None
     created_at: datetime
     updated_at: datetime
 
