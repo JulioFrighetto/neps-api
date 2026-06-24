@@ -22,7 +22,7 @@ def _apply_visibility_filter(query: Query, institute_priority: int | None = None
     if "is_active" not in applied_filters:
         query = query.filter(Period.is_active.is_(True))
 
-    if institute_priority == 0:
+    if institute_priority:
         return query.filter(
             and_(Period.priority_start_date <= today, Period.priority_end_date >= today)
         )
