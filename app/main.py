@@ -14,6 +14,7 @@ from app.core.settings import settings
 from app.domains.course.router import router as course_router
 from app.domains.discipline.router import router as discipline_router
 from app.domains.education_institute.router import router as edu_institute_router
+from app.domains.convenio.router import router as convenio_router
 from app.domains.region.router import router as region_router
 from app.domains.internships.router import router as internship_router
 from app.domains.internships_room.router import router as internships_room_router
@@ -60,6 +61,7 @@ API_PREFIX = "/api/v1"
 app.include_router(auth_router, prefix=API_PREFIX)
 app.include_router(user_router, prefix=API_PREFIX)
 app.include_router(edu_institute_router, prefix=API_PREFIX)
+app.include_router(convenio_router, prefix=API_PREFIX)
 app.include_router(course_router, prefix=API_PREFIX)
 app.include_router(discipline_router, prefix=API_PREFIX)
 app.include_router(region_router, prefix=API_PREFIX)

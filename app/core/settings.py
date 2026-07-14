@@ -18,6 +18,10 @@ class Settings(BaseSettings):
         ]
     )
 
+    ADMIN_NAME: str = "Admin"
+    ADMIN_EMAIL: str = "alexdonay@gmail.com"
+    ADMIN_PASSWORD: str = "secret123"
+
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60

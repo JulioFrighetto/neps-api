@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: neps-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: neps
+      POSTGRES_PASSWORD: neps
+      POSTGRES_DB: neps
+    ports:
+      - "5434:5432"
+    volumes:
+      - neps-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U neps -d neps"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  neps-postgres-data:

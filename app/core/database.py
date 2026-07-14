@@ -1,12 +1,18 @@
+from pathlib import Path
+
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 from app.core.security import hash_password
 from app.core.settings import settings
 
+ALEMBIC_INI_PATH = Path(__file__).resolve().parent.parent.parent / "alembic.ini"
+
+IS_SQLITE = settings.DATABASE_URL.startswith("sqlite")
+
 engine = create_engine(
     settings.DATABASE_URL,
-    connect_args={"check_same_thread": False},
+    connect_args={"check_same_thread": False} if IS_SQLITE else {},
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -207,7 +213,23 @@ def _ensure_history_columns(conn) -> None:
     except Exception:
         pass
 
+def run_migrations() -> None:
+    """Aplica as migrations do Alembic (schema do Postgres é gerenciado por elas, não por create_all)."""
+    from alembic import command
+    from alembic.config import Config
+
+    config = Config(str(ALEMBIC_INI_PATH))
+    command.upgrade(config, "head")
+
 def init_db() -> None:
+    if not IS_SQLITE:
+        # Em Postgres o schema é gerenciado pelo Alembic (alembic/versions),
+        # não pelo create_all + pelas funções abaixo, que são ajustes ad-hoc
+        # específicos do SQLite (PRAGMA table_info, rebuild de tabelas via rename).
+        run_migrations()
+        seed_admin()
+        return
+
     Base.metadata.create_all(bind=engine)
     with engine.begin() as conn:
         _ensure_room_columns(conn)
@@ -321,7 +343,8 @@ def init_db() -> None:
     seed_admin()
 
 def seed_admin():
-    password = hash_password("secret123")
+    """Garante a existência do usuário admin inicial (idempotente em qualquer dialeto)."""
+    password = hash_password(settings.ADMIN_PASSWORD)
 
     sql = text(
         """
@@ -332,90 +355,91 @@ def seed_admin():
     )
 
     with engine.begin() as conn:
-        _ensure_user_role_column(conn)
-        _ensure_user_profile_columns(conn)
+        if IS_SQLITE:
+            _ensure_user_role_column(conn)
+            _ensure_user_profile_columns(conn)
 
-        def _ensure_education_institute_columns(conn) -> None:
-            columns = conn.execute(text("PRAGMA table_info(education_institutes)")).fetchall()
-            column_names = {column[1] for column in columns}
-            if "cnpj" not in column_names:
-                conn.execute(text("ALTER TABLE education_institutes ADD COLUMN cnpj VARCHAR(30) NULL"))
-            if "address" not in column_names:
-                conn.execute(text("ALTER TABLE education_institutes ADD COLUMN address VARCHAR(255) NULL"))
-            if "phone" not in column_names:
-                conn.execute(text("ALTER TABLE education_institutes ADD COLUMN phone VARCHAR(50) NULL"))
-            if "email" not in column_names:
-                conn.execute(text("ALTER TABLE education_institutes ADD COLUMN email VARCHAR(150) NULL"))
-            if "priority" not in column_names:
-                conn.execute(text("ALTER TABLE education_institutes ADD COLUMN priority INTEGER NOT NULL DEFAULT 0"))
-            if "is_active" not in column_names:
-                conn.execute(text("ALTER TABLE education_institutes ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT 1"))
+            def _ensure_education_institute_columns(conn) -> None:
+                columns = conn.execute(text("PRAGMA table_info(education_institutes)")).fetchall()
+                column_names = {column[1] for column in columns}
+                if "cnpj" not in column_names:
+                    conn.execute(text("ALTER TABLE education_institutes ADD COLUMN cnpj VARCHAR(30) NULL"))
+                if "address" not in column_names:
+                    conn.execute(text("ALTER TABLE education_institutes ADD COLUMN address VARCHAR(255) NULL"))
+                if "phone" not in column_names:
+                    conn.execute(text("ALTER TABLE education_institutes ADD COLUMN phone VARCHAR(50) NULL"))
+                if "email" not in column_names:
+                    conn.execute(text("ALTER TABLE education_institutes ADD COLUMN email VARCHAR(150) NULL"))
+                if "priority" not in column_names:
+                    conn.execute(text("ALTER TABLE education_institutes ADD COLUMN priority INTEGER NOT NULL DEFAULT 0"))
+                if "is_active" not in column_names:
+                    conn.execute(text("ALTER TABLE education_institutes ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT 1"))
 
-        def _ensure_discipline_columns(conn) -> None:
-            columns = conn.execute(text("PRAGMA table_info(disciplines)")).fetchall()
-            column_names = {column[1] for column in columns}
-            if "code" not in column_names:
-                conn.execute(text("ALTER TABLE disciplines ADD COLUMN code VARCHAR(20) NULL"))
-            if "region_id" not in column_names:
-                conn.execute(text("ALTER TABLE disciplines ADD COLUMN region_id INTEGER NULL"))
+            def _ensure_discipline_columns(conn) -> None:
+                columns = conn.execute(text("PRAGMA table_info(disciplines)")).fetchall()
+                column_names = {column[1] for column in columns}
+                if "code" not in column_names:
+                    conn.execute(text("ALTER TABLE disciplines ADD COLUMN code VARCHAR(20) NULL"))
+                if "region_id" not in column_names:
+                    conn.execute(text("ALTER TABLE disciplines ADD COLUMN region_id INTEGER NULL"))
 
-        def _ensure_internship_columns(conn) -> None:
-            columns = conn.execute(text("PRAGMA table_info(internships)")).fetchall()
-            column_names = {column[1] for column in columns}
-            if "name" not in column_names:
-                conn.execute(text("ALTER TABLE internships ADD COLUMN name VARCHAR(100) NOT NULL DEFAULT ''"))
-            if "region_id" not in column_names:
-                conn.execute(text("ALTER TABLE internships ADD COLUMN region_id INTEGER NULL"))
+            def _ensure_internship_columns(conn) -> None:
+                columns = conn.execute(text("PRAGMA table_info(internships)")).fetchall()
+                column_names = {column[1] for column in columns}
+                if "name" not in column_names:
+                    conn.execute(text("ALTER TABLE internships ADD COLUMN name VARCHAR(100) NOT NULL DEFAULT ''"))
+                if "region_id" not in column_names:
+                    conn.execute(text("ALTER TABLE internships ADD COLUMN region_id INTEGER NULL"))
 
-        _ensure_discipline_columns(conn)
-        _ensure_internship_columns(conn)
-        _ensure_education_institute_columns(conn)
+            _ensure_discipline_columns(conn)
+            _ensure_internship_columns(conn)
+            _ensure_education_institute_columns(conn)
 
-        def _ensure_student_columns(conn) -> None:
-            columns = conn.execute(text("PRAGMA table_info(students)")).fetchall()
-            column_names = {column[1] for column in columns}
-            if "name" not in column_names:
-                conn.execute(text("ALTER TABLE students ADD COLUMN name VARCHAR(100) NULL"))
-            if "cpf" not in column_names:
-                conn.execute(text("ALTER TABLE students ADD COLUMN cpf VARCHAR(20) NULL"))
-            if "email" not in column_names:
-                conn.execute(text("ALTER TABLE students ADD COLUMN email VARCHAR(150) NULL"))
-            if "phone" not in column_names:
-                conn.execute(text("ALTER TABLE students ADD COLUMN phone VARCHAR(20) NULL"))
-            if "semester" not in column_names:
-                conn.execute(text("ALTER TABLE students ADD COLUMN semester INTEGER NULL"))
-            if "document_url" not in column_names:
-                conn.execute(text("ALTER TABLE students ADD COLUMN document_url VARCHAR(500) NOT NULL DEFAULT ''"))
-            if "director_signed_pdf" not in column_names:
-                conn.execute(text("ALTER TABLE students ADD COLUMN director_signed_pdf BLOB NULL"))
-            if "internship_start_date" not in column_names:
-                conn.execute(text("ALTER TABLE students ADD COLUMN internship_start_date DATE NULL"))
-            if "internship_expected_end_date" not in column_names:
-                conn.execute(text("ALTER TABLE students ADD COLUMN internship_expected_end_date DATE NULL"))
-            if "discipline_id" not in column_names:
-                conn.execute(text("ALTER TABLE students ADD COLUMN discipline_id INTEGER NULL"))
-            if "professor_name" not in column_names:
-                conn.execute(text("ALTER TABLE students ADD COLUMN professor_name VARCHAR(100) NULL"))
-            if "preceptor_name" not in column_names:
-                conn.execute(text("ALTER TABLE students ADD COLUMN preceptor_name VARCHAR(100) NULL"))
+            def _ensure_student_columns(conn) -> None:
+                columns = conn.execute(text("PRAGMA table_info(students)")).fetchall()
+                column_names = {column[1] for column in columns}
+                if "name" not in column_names:
+                    conn.execute(text("ALTER TABLE students ADD COLUMN name VARCHAR(100) NULL"))
+                if "cpf" not in column_names:
+                    conn.execute(text("ALTER TABLE students ADD COLUMN cpf VARCHAR(20) NULL"))
+                if "email" not in column_names:
+                    conn.execute(text("ALTER TABLE students ADD COLUMN email VARCHAR(150) NULL"))
+                if "phone" not in column_names:
+                    conn.execute(text("ALTER TABLE students ADD COLUMN phone VARCHAR(20) NULL"))
+                if "semester" not in column_names:
+                    conn.execute(text("ALTER TABLE students ADD COLUMN semester INTEGER NULL"))
+                if "document_url" not in column_names:
+                    conn.execute(text("ALTER TABLE students ADD COLUMN document_url VARCHAR(500) NOT NULL DEFAULT ''"))
+                if "director_signed_pdf" not in column_names:
+                    conn.execute(text("ALTER TABLE students ADD COLUMN director_signed_pdf BLOB NULL"))
+                if "internship_start_date" not in column_names:
+                    conn.execute(text("ALTER TABLE students ADD COLUMN internship_start_date DATE NULL"))
+                if "internship_expected_end_date" not in column_names:
+                    conn.execute(text("ALTER TABLE students ADD COLUMN internship_expected_end_date DATE NULL"))
+                if "discipline_id" not in column_names:
+                    conn.execute(text("ALTER TABLE students ADD COLUMN discipline_id INTEGER NULL"))
+                if "professor_name" not in column_names:
+                    conn.execute(text("ALTER TABLE students ADD COLUMN professor_name VARCHAR(100) NULL"))
+                if "preceptor_name" not in column_names:
+                    conn.execute(text("ALTER TABLE students ADD COLUMN preceptor_name VARCHAR(100) NULL"))
 
-        _ensure_student_columns(conn)
+            _ensure_student_columns(conn)
 
-        conn.execute(text("""
-            CREATE TABLE IF NOT EXISTS education_institute_courses (
-                education_institute_id INTEGER NOT NULL REFERENCES education_institutes(id),
-                course_id INTEGER NOT NULL REFERENCES courses(id),
-                PRIMARY KEY (education_institute_id, course_id)
-            )
-        """))
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS education_institute_courses (
+                    education_institute_id INTEGER NOT NULL REFERENCES education_institutes(id),
+                    course_id INTEGER NOT NULL REFERENCES courses(id),
+                    PRIMARY KEY (education_institute_id, course_id)
+                )
+            """))
 
         conn.execute(
             sql,
             {
-                "name": "Admin",
-                "email": "alexdonay@gmail.com",
+                "name": settings.ADMIN_NAME,
+                "email": settings.ADMIN_EMAIL,
                 "password": password,
                 "role": "admin",
-                "is_active": 1,
+                "is_active": True,
             },
         )

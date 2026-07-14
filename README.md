@@ -63,12 +63,60 @@ source .venv/bin/activate   # Windows: .venv\Scripts\activate
 # 2. Instalar dependências
 pip install -r requirements.txt
 
-# 3. Rodar a API
+# 3. Subir o Postgres local (veja a seção "Banco de dados (Postgres)" abaixo)
+docker compose up -d db
+
+# 4. Aplicar as migrations e criar o admin inicial
+python scripts/seed.py
+
+# 5. Rodar a API
 uvicorn app.main:app --reload
 
-# 4. Acessar a documentação interativa
+# 6. Acessar a documentação interativa
 open http://localhost:8000/docs
 ```
+
+---
+
+## Banco de dados (Postgres)
+
+O projeto usa Postgres via Docker Compose (`docker-compose.yml`), com o schema
+gerenciado pelo Alembic (`alembic/versions`) — nada de `create_all` em produção.
+
+```bash
+# Subir o Postgres local (dados persistem no volume neps-postgres-data)
+docker compose up -d db
+
+# Aplicar migrations pendentes + criar o admin inicial
+python scripts/seed.py
+```
+
+A porta local é `5434` (mapeada para os `5432` do container, para não colidir
+com outros Postgres que você já tenha rodando). O `.env` já aponta para:
+
+```env
+DATABASE_URL="postgresql+psycopg2://neps:neps@localhost:5434/neps"
+```
+
+Para produção, basta trocar `DATABASE_URL` no `.env` do servidor pela connection
+string real — o restante do fluxo (migrations + seed) é o mesmo.
+
+### Criando uma nova migration
+
+Sempre que um `model.py` mudar (novo campo, nova tabela, etc.), gere e revise a
+migration correspondente:
+
+```bash
+# Com o Postgres local rodando (docker compose up -d db)
+alembic revision --autogenerate -m "descrição da mudança"
+
+# Revise o arquivo gerado em alembic/versions/ antes de aplicar
+alembic upgrade head
+```
+
+SQLite continua funcionando para desenvolvimento rápido/testes (basta usar
+`DATABASE_URL="sqlite:///./neps.db"`) — nesse caso o schema é criado via
+`create_all`, sem passar pelo Alembic.
 
 ---
 
@@ -139,8 +187,15 @@ python -c "import secrets; print(secrets.token_hex(32))"
 
 ## Rodar seed
 
+Aplica o schema (migrations do Alembic em Postgres, `create_all` em SQLite) e
+garante o usuário admin inicial. Funciona tanto em SQLite (dev) quanto em
+Postgres (produção) — basta configurar `DATABASE_URL` no `.env` apontando para
+o banco desejado. Para produção, defina também `ADMIN_EMAIL` e
+`ADMIN_PASSWORD` no `.env` antes de rodar (o padrão de desenvolvimento é
+`alexdonay@gmail.com` / `secret123`).
+
 ```bash
-python.exe -c "from app.core.database import Base, engine, seed_admin; Base.metadata.create_all(bind=engine); seed_admin(); print('seed_admin executed')"
+python scripts/seed.py
 ```
 
 ---

@@ -2,6 +2,7 @@ from app.domains.region.model import Region
 from app.domains.period.model import Period
 from app.domains.room.model import Room
 from app.domains.education_institute.model import EducationInstitute
+from app.domains.convenio.model import Convenio
 from app.domains.student.model import Student
 from app.domains.discipline.model import Discipline
 from app.domains.user.model import User
